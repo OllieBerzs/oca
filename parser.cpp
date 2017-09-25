@@ -52,7 +52,6 @@ public:
         if (tokens[(*index)].type != end) bump();
       }
     }
-    bump();
     return ret;
   }
 
@@ -79,11 +78,14 @@ public:
     else if (token.type == "(")
     {
       Expression* args = multi(",", ")");
+      //bump(); // Was needed before for some reason?!
       return next(new Expression("call", prev->value, nullptr, args));
     }
     else if (token.type == "{")
     {
-
+      Expression* body = multi("end", "}");
+      bump();
+      return next(new Expression("function", "", nullptr, body));
     }
     else if (token.type == "=")
     {
