@@ -91,8 +91,8 @@ void lex(const std::string& script, std::vector<Token>& tokens)
   while (index < script.size())
   {
     char c = script[index];
-    if (isOf(c, " \t"));
-    else if (isOf(c, "\n")) tokens.emplace_back("end", "");
+    if (isOf(c, " \n"));
+    else if (isOf(c, ";")) tokens.emplace_back("end", "");
     else if (isOf(c, "+-*/")) tokens.emplace_back("operator", std::string(1, c));
     else if (isOf(c, "(){},=:")) tokens.emplace_back(std::string(1, c), "");
     else if (isOf(c, "'")) tokens.emplace_back("string", scanString(script, index));

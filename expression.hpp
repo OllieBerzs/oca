@@ -2,65 +2,45 @@
 
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <memory>
 
 struct Expression
 {
-  std::string type = "---";
-  std::string value = "---";
-  //std::shared_ptr<Expression> left;
-  //std::shared_ptr<Expression> right;
+  std::string type;
+  std::string value;
   Expression* left;
   Expression* right;
 
-  Expression(const std::string& type, const std::string& value) : type(type), value(value)
-  {
-    left = nullptr;
-    right = nullptr;
-  }
+  Expression() : type("none"), value(""), left(nullptr), right(nullptr) {}
 
-  //Expression(const std::string& type, const std::string& value, const Expression& l, const Expression& r) : type(type), value(value)
-  Expression(const std::string& type, const std::string& value, Expression* l, Expression* r) : type(type), value(value)
-  {
-    //left = std::make_shared<Expression>(l.type, l.value, *l.left, *l.right);
-    //right = std::make_shared<Expression>(r.type, r.value, *r.left, *r.right);
-    left = l;
-    right = r;
-  }
+  Expression(const std::string& type, const std::string& value)
+    : type(type), value(value), left(nullptr), right(nullptr) {}
+
+  Expression(const std::string& type, const std::string& value, Expression* l, Expression* r)
+    : type(type), value(value), left(l), right(r) {}
 
   ~Expression()
   {
     delete left;
     delete right;
   }
-
-  void print()
-  {
-    std::cout << "=====\n";
-    std::cout << "[" << type << " " << value << "]\n";
-    if (left)
-    {
-      std::cout << "[left]\n";
-      left->print();
-    }
-    if (right)
-    {
-      std::cout << "[right]\n";
-      right->print();
-    }
-  }
 };
+
+inline void printTree(const Expression* e, std::ostream& stream, int indent = 0)
+{
+  if (e)
+  {
+    stream << e->type << " " << e->value << "\n ";
+    if (e->left) printTree(e->left, stream, indent + 4);
+    if (e->right) printTree(e->right, stream, indent + 4);
+    if (indent) stream << std::setw(indent) << ' ';
+  }
+}
 
 inline std::ostream& operator<<(std::ostream& stream, const Expression* expr)
 {
-  stream << "[" << expr->type << " " << expr->value << "]\n";
-  if (expr->left)
-  {
-    stream << "[left]\n" << expr->left << "\n";
-  }
-  if (expr->right)
-  {
-    stream << "[right]\n" << expr->right << "\n";
-  }
+  printTree(expr, stream);
+  stream << '\n';
   return stream;
 }
