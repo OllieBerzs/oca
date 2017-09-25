@@ -29,8 +29,7 @@ public:
     Expression* prev = nullptr;
 
     const Token& token = tokens[*index];
-    if (token.type == end) bump();
-    else
+    if (token.type != end)
     {
       Parser argParser(tokens, {sep, end}, index);
       while (tokens[*index].type != end)
@@ -52,6 +51,7 @@ public:
         if (tokens[(*index)].type != end) bump();
       }
     }
+    bump();
     return ret;
   }
 
@@ -78,13 +78,11 @@ public:
     else if (token.type == "(")
     {
       Expression* args = multi(",", ")");
-      //bump(); // Was needed before for some reason?!
       return next(new Expression("call", prev->value, nullptr, args));
     }
     else if (token.type == "{")
     {
       Expression* body = multi("end", "}");
-      bump();
       return next(new Expression("function", "", nullptr, body));
     }
     else if (token.type == "=")
