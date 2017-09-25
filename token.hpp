@@ -6,12 +6,12 @@
 struct Token
 {
   std::string type;
-  std::string data;
+  std::string value;
 
-  Token(const std::string& type, const std::string& data) : type(type), data(data) {}
+  Token(const std::string& type, const std::string& value) : type(type), value(value) {}
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Token& token)
 {
-  return stream << "(\"" << token.type << "\": \"" << token.data << "\")";
+  return stream << "(\"" << token.type << "\": \"" << token.value << "\")";
 }
