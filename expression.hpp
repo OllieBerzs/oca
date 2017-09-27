@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
+#include "memory.hpp"
 
 struct Expression
 {
@@ -12,18 +13,23 @@ struct Expression
   Expression* left;
   Expression* right;
 
-  Expression() : type("none"), value(""), left(nullptr), right(nullptr) {}
-
   Expression(const std::string& type, const std::string& value)
-    : type(type), value(value), left(nullptr), right(nullptr) {}
+    : type(type), value(value), left(nullptr), right(nullptr)
+  {
+    Memory::add();
+  }
 
   Expression(const std::string& type, const std::string& value, Expression* l, Expression* r)
-    : type(type), value(value), left(l), right(r) {}
+    : type(type), value(value), left(l), right(r)
+  {
+    Memory::add();
+  }
 
   ~Expression()
   {
     delete left;
     delete right;
+    Memory::rem();
   }
 };
 
@@ -31,16 +37,16 @@ inline void printTree(const Expression* e, std::ostream& stream, int indent = 0)
 {
   if (e)
   {
-    stream << e->type << " " << e->value << "\n ";
-    if (e->left) printTree(e->left, stream, indent + 4);
-    if (e->right) printTree(e->right, stream, indent + 4);
-    if (indent) stream << std::setw(indent) << ' ';
+    std::string data = "(\"" + e->type + " " + e->value + "\")\n";
+    stream << std::setw(data.size() + indent) << data;
+    if (e->left) printTree(e->left, stream, indent + 2);
+    if (e->right) printTree(e->right, stream, indent + 2);
   }
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const Expression* expr)
 {
   printTree(expr, stream);
-  stream << '\n';
+  stream << std::setw(0) << '\n';
   return stream;
 }

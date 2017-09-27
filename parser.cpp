@@ -3,22 +3,22 @@
 
 class Parser
 {
-  std::vector<Token> tokens;
-  std::vector<std::string> stop;
-  unsigned int* index;
+  std::vector<Token> _tokens;
+  std::vector<std::string> _stop;
+  unsigned int* _index;
 
 public:
   Parser(const std::vector<Token>& tokens, const std::vector<std::string>& stop, unsigned int* index)
-    : tokens(tokens), stop(stop), index(index) {}
+    : _tokens(tokens), _stop(stop), _index(index) {}
 
   void bump()
   {
-    (*index)++;
+    (*_index)++;
   }
 
   bool isEmpty()
   {
-    return (*index) >= tokens.size();
+    return (*_index) >= _tokens.size();
   }
 
   Expression* multi(const std::string& sep, const std::string& end)
@@ -28,14 +28,14 @@ public:
     Expression* ret = nullptr;
     Expression* prev = nullptr;
 
-    const Token& token = tokens[*index];
+    const Token& token = _tokens[*_index];
     if (token.type != end)
     {
-      Parser argParser(tokens, {sep, end}, index);
-      while (tokens[*index].type != end)
+      Parser argParser(_tokens, {sep, end}, _index);
+      while (_tokens[*_index].type != end)
       {
-        Expression* expr = argParser.next(new Expression);
-        if (expr->type != "none")
+        Expression* expr = argParser.next(nullptr);
+        if (expr != nullptr)
         {
           if (!ret)
           {
@@ -48,54 +48,66 @@ public:
             prev = prev->right;
           }
         }
-        if (tokens[(*index)].type != end) bump();
+        if (_tokens[(*_index)].type != end) bump();
       }
     }
     bump();
     return ret;
   }
 
+  Expression* findArgs()
+  {
+    if (_tokens[*_index].type == "(")
+    {
+      bump();
+      return multi(",", ")");
+    }
+    return nullptr;
+  }
+
   Expression* next(Expression* prev)
   {
     if (isEmpty()) ERR << "Parser: ran out of tokens";
 
-    const Token& token = tokens[*index];
-    for (const std::string& s : stop)
+    const Token& token = _tokens[*_index];
+    for (const std::string& s : _stop)
     {
       if (token.type == s) return prev;
     }
     bump();
 
-    if (prev->type == "none" && (token.type == "symbol" || token.type == "number" || token.type == "string"))
+    if (prev == nullptr && (token.type == "symbol" || token.type == "number" || token.type == "string"))
     {
       return next(new Expression(token.type, token.value));
     }
     else if (token.type == "operator")
     {
-      Expression* nxt = next(new Expression);
+      Expression* nxt = next(nullptr);
       return next(new Expression("operation", token.value, prev, nxt));
     }
     else if (token.type == "(")
     {
       Expression* args = multi(",", ")");
-      return next(new Expression("call", prev->value, nullptr, args));
+      return next(new Expression("call", "", new Expression("symbol", prev->value), args));
     }
     else if (token.type == "{")
     {
+      Expression* args = findArgs();
+      //std::cout << args << '\n';
       Expression* body = multi("end", "}");
-      return next(new Expression("function", "", nullptr, body));
+      return next(new Expression("function", "", args, body));
     }
     else if (token.type == "=")
     {
       if (prev->type != "symbol") ERR << "Parser: Assignment to " << prev->type;
-      Expression* nxt = next(new Expression);
+      Expression* nxt = next(nullptr);
       return next(new Expression("assignment", token.type, prev, nxt));
     }
     else
     {
       ERR << "Parser: Unknown token " << token;
     }
-    return new Expression;
+    return nullptr;
   }
 };
 
@@ -105,8 +117,8 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
   Parser parser(tokens, {"end"}, index);
   while (!parser.isEmpty())
   {
-    Expression* expr = parser.next(new Expression);
-    if (expr->type != "none")
+    Expression* expr = parser.next(nullptr);
+    if (expr != nullptr)
     {
       expressions.push_back(expr);
     }
