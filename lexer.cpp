@@ -17,14 +17,15 @@ std::string scanString(std::string script, unsigned int& index)
 {
   std::string ret;
 
-  // Put index after the single quote
+  char quote = script[index];
+  // Put index after the first quote
   index++;
 
   bool end = false;
   while (!end)
   {
     char c = script[index];
-    if (c == '\'') end = true;
+    if (c == quote) end = true;
     else
     {
       ret += c;
@@ -39,14 +40,29 @@ std::string scanNumber(std::string script, unsigned int& index)
 {
   std::string ret;
 
+  bool noDot = true;
   bool end = false;
   while (!end)
   {
     char c = script[index];
-    if (isOf(c, "." NUMBERS))
+    if (isOf(c, NUMBERS))
     {
       ret += c;
       index++;
+    }
+    else if (c == '.' && isOf(script[index + 1], NUMBERS))
+    {
+      if (noDot)
+      {
+        ret += c;
+        index++;
+        noDot = false;
+      }
+      else
+      {
+        end = true;
+        index--;
+      }
     }
     else
     {
@@ -91,13 +107,20 @@ void lex(const std::string& script, std::vector<Token>& tokens)
   while (index < script.size())
   {
     char c = script[index];
-    if (isOf(c, " \n"));
-    else if (isOf(c, ";")) tokens.emplace_back("end", "");
-    else if (isOf(c, "+-*/")) tokens.emplace_back("operator", std::string(1, c));
-    else if (isOf(c, "(){},=:")) tokens.emplace_back(std::string(1, c), "");
-    else if (isOf(c, "'")) tokens.emplace_back("string", scanString(script, index));
-    else if (isOf(c, "." NUMBERS)) tokens.emplace_back("number", scanNumber(script, index));
-    else if (isOf(c, "_" LETTERS)) tokens.emplace_back("symbol", scanSymbol(script, index));
+
+    if (c == ' '); // Skip space
+    else if (c == '\n') tokens.emplace_back(T_NEWLINE, "");
+    else if (c == '(') tokens.emplace_back(T_LBRACKET, "");
+    else if (c == ')') tokens.emplace_back(T_RBRACKET, "");
+    else if (c == '.') tokens.emplace_back(T_DOT, "");
+    else if (c == ',') tokens.emplace_back(T_COMMA, "");
+    // Types
+    else if (isOf(c, "'\"")) tokens.emplace_back(T_STRING, scanString(script, index));
+    else if (isOf(c, NUMBERS)) tokens.emplace_back(T_NUMBER, scanNumber(script, index));
+    // Names
+    else if (isOf(c, "+-*/=")) tokens.emplace_back(T_NAME, c);
+    else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index));
+
     else ERR << "Lexer: Unknown character at index " << index;
     index++;
   }

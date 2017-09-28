@@ -2,7 +2,7 @@
 #include "errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
-#include "evaluator.hpp"
+//#include "evaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
     std::cout << "-------------------------" << '\n';
   }
 
-  std::cout << "---------VALUES----------" << '\n';
+  /*std::cout << "---------VALUES----------" << '\n';
   std::cout << "-------------------------" << '\n';
 
   Scope scope(nullptr);
@@ -59,5 +59,5 @@ int main(int argc, char** argv)
 
   int remaining = Memory::get();
   std::cout << "memory usage: " << total << " -> " << remaining << '\n';
-  std::cout << "Expressions in script: " << exprCount << '\n';
+  std::cout << "Expressions in script: " << exprCount << '\n';*/
 }

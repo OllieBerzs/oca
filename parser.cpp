@@ -4,11 +4,11 @@
 class Parser
 {
   std::vector<Token> _tokens;
-  std::vector<std::string> _stop;
+  std::vector<int> _stop;
   unsigned int* _index;
 
 public:
-  Parser(const std::vector<Token>& tokens, const std::vector<std::string>& stop, unsigned int* index)
+  Parser(const std::vector<Token>& tokens, const std::vector<int>& stop, unsigned int* index)
     : _tokens(tokens), _stop(stop), _index(index) {}
 
   void bump()
@@ -21,7 +21,7 @@ public:
     return (*_index) >= _tokens.size();
   }
 
-  Expression* multi(const std::string& sep, const std::string& end)
+  Expression* multi(int sep, int end)
   {
     if (isEmpty()) ERR << "Parser: missing '" << end << "'";
 
@@ -39,12 +39,12 @@ public:
         {
           if (!ret)
           {
-            ret = new Expression("arg", "", expr, nullptr);
+            ret = new Expression(E_ARG, "", expr, nullptr);
             prev = ret;
           }
           else
           {
-            prev->right = new Expression("arg", "", expr, nullptr);
+            prev->right = new Expression(E_ARG, "", expr, nullptr);
             prev = prev->right;
           }
         }
@@ -57,10 +57,10 @@ public:
 
   Expression* findArgs()
   {
-    if (_tokens[*_index].type == "(")
+    if (_tokens[*_index].type == T_LBRACKET)
     {
       bump();
-      return multi(",", ")");
+      return multi(T_COMMA, T_RBRACKET);
     }
     return nullptr;
   }
@@ -70,37 +70,51 @@ public:
     if (isEmpty()) ERR << "Parser: ran out of tokens";
 
     const Token& token = _tokens[*_index];
-    for (const std::string& s : _stop)
-    {
-      if (token.type == s) return prev;
-    }
+    for (int i : _stop) if (token.type == i) return prev;
     bump();
 
-    if (prev == nullptr && (token.type == "symbol" || token.type == "number" || token.type == "string"))
+    //if (prev == nullptr && (token.type == T_NAME || token.type == T_NUMBER || token.type == T_STRING))
+    //{
+    //  return next(new Expression(token.type, token.value));
+    //}
+    if (token.type == T_NAME)
     {
-      return next(new Expression(token.type, token.value));
+      if (token.value == "=") // Add '=' to previous name to make a setter method
+      {
+        if (prev && prev->type == E_METHOD)
+        {
+          return next(new Expression(E_METHOD, prev->value + token.value));
+        }
+        else
+        {
+          ERR << "No name before '='";
+        }
+      }
+      else
+      {
+        if (_tokens[(*_index) - 2].type == T_DOT)
+        {
+          return next(new Expression(E_METHOD, token.value, prev, nullptr));
+        }
+        return next(new Expression(E_METHOD, token.value));
+      }
     }
-    else if (token.type == "operator")
+    else if (token.type == T_NUMBER)
     {
-      Expression* nxt = next(nullptr);
-      return next(new Expression("operation", token.value, prev, nxt));
+      return next(new Expression(E_NUMBER, token.value));
     }
-    else if (token.type == "(")
+    else if (token.type == T_STRING)
     {
-      Expression* args = multi(",", ")");
-      return next(new Expression("call", "", new Expression("symbol", prev->value), args));
+      return next(new Expression(E_STRING, token.value));
     }
-    else if (token.type == "{")
+    else if (token.type == T_DOT)
     {
-      Expression* args = findArgs();
-      Expression* body = multi("end", "}");
-      return next(new Expression("function", "", args, body));
+      return next(prev);
     }
-    else if (token.type == "=")
+    else if (token.type == T_LBRACKET)
     {
-      if (prev->type != "symbol") ERR << "Parser: Assignment to " << prev->type;
-      Expression* nxt = next(nullptr);
-      return next(new Expression("assignment", token.type, prev, nxt));
+      Expression* args = multi(T_COMMA, T_RBRACKET);
+      return next(new Expression(E_CALL, prev->value, prev->left, args));
     }
     else
     {
@@ -113,7 +127,7 @@ public:
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
   unsigned int* index = new unsigned int(0);
-  Parser parser(tokens, {"end"}, index);
+  Parser parser(tokens, {T_NEWLINE}, index);
   while (!parser.isEmpty())
   {
     Expression* expr = parser.next(nullptr);
