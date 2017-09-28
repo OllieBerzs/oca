@@ -1,6 +1,6 @@
 #pragma once
 
-#include "table.hpp"
+#include "scope.hpp"
 #include "expression.hpp"
 
-Value* evaluate(Expression* expr, Table& env);
+Value* evaluate(Expression* expr, Scope& env);

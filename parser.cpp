@@ -93,7 +93,6 @@ public:
     else if (token.type == "{")
     {
       Expression* args = findArgs();
-      //std::cout << args << '\n';
       Expression* body = multi("end", "}");
       return next(new Expression("function", "", args, body));
     }

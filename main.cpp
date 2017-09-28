@@ -2,7 +2,7 @@
 #include "errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
-#include <iomanip>
+#include "evaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -30,10 +30,22 @@ int main(int argc, char** argv)
 
   for (auto e : expressions)
   {
-    std::cout << e;
+    std::cout << *e;
     std::cout << "-------------------------" << '\n';
   }
 
+  std::cout << "---------VALUES----------" << '\n';
+  std::cout << "-------------------------" << '\n';
+
+  Scope scope(nullptr);
+
+  for (auto e : expressions)
+  {
+    Value* val = evaluate(e, scope);
+    std::cout << *val << "\n";
+  }
+
+  std::cout << "-------------------------" << '\n';
   std::cout << "---------MEMORY----------" << '\n';
   std::cout << "-------------------------" << '\n';
 
@@ -43,6 +55,7 @@ int main(int argc, char** argv)
   // cleanup
   for (auto e : expressions) delete e;
   expressions.clear();
+  scope.clean();
 
   int remaining = Memory::get();
   std::cout << "memory usage: " << total << " -> " << remaining << '\n';

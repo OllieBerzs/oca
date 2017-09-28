@@ -5,20 +5,20 @@
 #include "expression.hpp"
 #include "memory.hpp"
 
-class Table;
+class Scope;
 struct Value
 {
   std::string type;
 
   // Number
-  float num;
+  float num = 0.0f;
 
   // String
-  std::string str;
+  std::string str = "";
 
   // Function
-  Expression* fun;
-  Table* env;
+  Expression* fun = nullptr;
+  Scope* env = nullptr;
 
   Value() : type("null")
   {
@@ -35,10 +35,31 @@ struct Value
     Memory::add();
   }
 
-  Value(Expression* fun, Table* env) : type("fun"), fun(fun), env(env)
+  Value(Expression* fun, Scope* env) : type("fun"), fun(fun), env(env)
   {
     Memory::add();
   }
 
   ~Value();
 };
+
+inline std::ostream& operator<<(std::ostream& stream, const Value& val)
+{
+  if (val.type == "num")
+  {
+    stream << val.num;
+  }
+  else if (val.type == "str")
+  {
+    stream << val.str;
+  }
+  else if (val.type == "fun")
+  {
+    stream << "< function: " << val.fun << " >";
+  }
+  else if (val.type == "null")
+  {
+    stream << "null";
+  }
+  return stream;
+}

@@ -33,20 +33,16 @@ struct Expression
   }
 };
 
-inline void printTree(const Expression* e, std::ostream& stream, int indent = 0)
+inline void printTree(const Expression& e, std::ostream& stream, int indent = 0)
 {
-  if (e)
-  {
-    std::string data = "(\"" + e->type + " " + e->value + "\")\n";
-    stream << std::setw(data.size() + indent) << data;
-    if (e->left) printTree(e->left, stream, indent + 2);
-    if (e->right) printTree(e->right, stream, indent + 2);
-  }
+  std::string data = "(\"" + e.type + " " + e.value + "\")\n";
+  stream << std::setw(data.size() + indent) << data;
+  if (e.left) printTree(*e.left, stream, indent + 2);
+  if (e.right) printTree(*e.right, stream, indent + 2);
 }
 
-inline std::ostream& operator<<(std::ostream& stream, const Expression* expr)
+inline std::ostream& operator<<(std::ostream& stream, const Expression& expr)
 {
   printTree(expr, stream);
-  stream << std::setw(0) << '\n';
   return stream;
 }
