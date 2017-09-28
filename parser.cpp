@@ -81,9 +81,9 @@ public:
     {
       if (token.value == "=") // Add '=' to previous name to make a setter method
       {
-        if (prev && prev->type == E_METHOD)
+        if (prev && prev->type == E_CALL)
         {
-          return next(new Expression(E_METHOD, prev->value + token.value));
+          return next(new Expression(E_CALL, prev->value + token.value));
         }
         else
         {
@@ -94,9 +94,9 @@ public:
       {
         if (_tokens[(*_index) - 2].type == T_DOT)
         {
-          return next(new Expression(E_METHOD, token.value, prev, nullptr));
+          return next(new Expression(E_CALL, token.value, prev, nullptr));
         }
-        return next(new Expression(E_METHOD, token.value));
+        return next(new Expression(E_CALL, token.value));
       }
     }
     else if (token.type == T_NUMBER)
