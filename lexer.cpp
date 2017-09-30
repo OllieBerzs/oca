@@ -101,6 +101,11 @@ std::string scanSymbol(std::string script, unsigned int& index)
   return ret;
 }
 
+void skipLine(const std::string& script, unsigned int& index)
+{
+  while (script[index] != '\n') index++;
+}
+
 void lex(const std::string& script, std::vector<Token>& tokens)
 {
   unsigned int index = 0;
@@ -109,6 +114,7 @@ void lex(const std::string& script, std::vector<Token>& tokens)
     char c = script[index];
 
     if (c == ' '); // Skip space
+    else if (c == '#') skipLine(script, index);
     else if (c == '\n') tokens.emplace_back(T_NEWLINE, "");
     else if (c == '(') tokens.emplace_back(T_LBRACKET, "");
     else if (c == ')') tokens.emplace_back(T_RBRACKET, "");
