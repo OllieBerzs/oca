@@ -104,6 +104,7 @@ std::string scanSymbol(std::string script, unsigned int& index)
 void skipLine(const std::string& script, unsigned int& index)
 {
   while (script[index] != '\n') index++;
+  index--;
 }
 
 void lex(const std::string& script, std::vector<Token>& tokens)
