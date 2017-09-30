@@ -2,7 +2,7 @@
 #include "errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
-//#include "evaluator.hpp"
+#include "evaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -34,30 +34,31 @@ int main(int argc, char** argv)
     std::cout << "-------------------------" << '\n';
   }
 
-  /*std::cout << "---------VALUES----------" << '\n';
+  std::cout << "---------VALUES----------" << '\n';
   std::cout << "-------------------------" << '\n';
 
   Scope scope(nullptr);
 
+  scope.set("print", new Method([](const Nargs& args) -> Object*
+  {
+    if (args[0]) std::cout << args[0]->toString() << '\n';
+    else std::cout << "null" << '\n';
+    return nullptr;
+  }));
+
   for (auto e : expressions)
   {
-    Value* val = evaluate(e, scope);
-    std::cout << *val << "\n";
+    Object* obj = evaluate(e, scope);
+    if (obj) std::cout << "=> " << obj->toString() << "\n";
+    else std::cout << "=> " << "null" << "\n";
+    delete e;
   }
+
+  scope.clean();
 
   std::cout << "-------------------------" << '\n';
   std::cout << "---------MEMORY----------" << '\n';
   std::cout << "-------------------------" << '\n';
 
-  unsigned int exprCount = expressions.size();
-  int total = Memory::get();
-
-  // cleanup
-  for (auto e : expressions) delete e;
-  expressions.clear();
-  scope.clean();
-
-  int remaining = Memory::get();
-  std::cout << "memory usage: " << total << " -> " << remaining << '\n';
-  std::cout << "Expressions in script: " << exprCount << '\n';*/
+  std::cout << "memory usage: [" << Memory::get() << "]\n";
 }

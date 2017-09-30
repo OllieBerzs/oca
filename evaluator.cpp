@@ -1,117 +1,56 @@
 #include "evaluator.hpp"
 
-Value* operation(Expression* expr, Scope& env)
-{
-  Value* arg1 = evaluate(expr->left, env);
-  Value* arg2 = evaluate(expr->right, env);
-  if (expr->value == "+")
-  {
-    return new Value(arg1->num + arg2->num);
-  }
-  else if (expr->value == "-")
-  {
-    return new Value(arg1->num - arg2->num);
-  }
-  else if (expr->value == "*")
-  {
-    return new Value(arg1->num * arg2->num);
-  }
-  else if (expr->value == "/")
-  {
-    return new Value(arg1->num / arg2->num);
-  }
-  else
-  {
-    ERR << "Unknown operator '" << expr->value << "'";
-  }
-  return new Value();
-}
-
-Value* getArgs(Expression* expr, Scope& env, int& count)
+void getArgs(Expression* expr, Scope& env, std::vector<Object*>& args)
 {
   Expression* arg = expr->right;
   while (arg)
   {
-    count++;
+    args.push_back(evaluate(arg->left, env));
     arg = arg->right;
   }
-  Value* args = new Value[count];
-  arg = expr->right;
-  for (int i = 0; i < count; i++)
-  {
-    args[i] = *evaluate(arg->left, env);
-    arg = arg->right;
-  }
-  return args;
 }
 
-Value* call(Expression* expr, Scope& env)
+Object* call(Expression* expr, Scope& env)
 {
-  Value* fn = evaluate(expr->left, env);
-  int argCount = 0;
-  Value* args = getArgs(expr, env, argCount);
-  if (fn->type == "fun")
-  {
+  const std::string& name = expr->value;
+  //const Expression* caller = expr->left;
+  std::vector<Object*> args;
+  getArgs(expr, env, args);
 
-  }
-  else if (fn->type == "native")
-  {
+  Method* method = env.get(name);
+  if (!method) ERR << "No method named '" << name << "'";
 
+  if (method->native)
+  {
+    Object* ret = method->function(args);
+    for (auto a : args) delete a;
+    return ret;
   }
   else
   {
-    ERR << "Not a function: " << expr;
+
   }
   return nullptr;
 }
 
-Value* evaluate(Expression* expr, Scope& env)
+Object* evaluate(Expression* expr, Scope& env)
 {
-  const std::string& type = expr->type;
-  if (type == "number")
+  int type = expr->type;
+  if (type == E_NUMBER)
   {
-    std::cout << "number" << '\n';
-    return new Value(std::stof(expr->value));
+    return new Number(std::stof(expr->value));
   }
-  else if (type == "string")
+  else if (type == E_STRING)
   {
-    std::cout << "string" << '\n';
-    return new Value(expr->value);
+    return new String(expr->value);
   }
-  else if (type == "null")
-  {
-    std::cout << "null" << '\n';
-    return new Value();
-  }
-  else if (type == "operation")
-  {
-    std::cout << "operation" << '\n';
-    return operation(expr, env);
-  }
-  else if (type == "symbol")
-  {
-    std::cout << "symbol" << '\n';
-    return env.get(expr->value);
-  }
-  else if (type == "assignment")
-  {
-    std::cout << "assignment" << '\n';
-    const std::string& name = expr->left->value;
-    Value* val = evaluate(expr->right, env);
-    env.set(name, val);
-    return val;
-  }
-  else if (type == "call")
+  else if (type == E_CALL)
   {
     return call(expr, env);
   }
-  else if (type == "function")
+  else if (type == E_METHOD)
   {
-    return new Value(expr, new Scope(&env));
-  }
-  else
-  {
-
+    return nullptr;
   }
   return nullptr;
 }

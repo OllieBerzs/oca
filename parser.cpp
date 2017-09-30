@@ -65,41 +65,18 @@ public:
     return nullptr;
   }
 
-  Expression* next(Expression* prev)
+  Expression* next(Expression* prevExpr)
   {
     if (isEmpty()) ERR << "Parser: ran out of tokens";
 
+    const Token& prevToken = _tokens[(*_index) - 1];
     const Token& token = _tokens[*_index];
-    for (int i : _stop) if (token.type == i) return prev;
+    const Token& nextToken = _tokens[(*_index) + 1];
+
+    for (int i : _stop) if (token.type == i) return prevExpr;
     bump();
 
-    //if (prev == nullptr && (token.type == T_NAME || token.type == T_NUMBER || token.type == T_STRING))
-    //{
-    //  return next(new Expression(token.type, token.value));
-    //}
-    if (token.type == T_NAME)
-    {
-      if (token.value == "=") // Add '=' to previous name to make a setter method
-      {
-        if (prev && prev->type == E_CALL)
-        {
-          return next(new Expression(E_CALL, prev->value + token.value));
-        }
-        else
-        {
-          ERR << "No name before '='";
-        }
-      }
-      else
-      {
-        if (_tokens[(*_index) - 2].type == T_DOT)
-        {
-          return next(new Expression(E_CALL, token.value, prev, nullptr));
-        }
-        return next(new Expression(E_CALL, token.value));
-      }
-    }
-    else if (token.type == T_NUMBER)
+    if (token.type == T_NUMBER)
     {
       return next(new Expression(E_NUMBER, token.value));
     }
@@ -109,12 +86,26 @@ public:
     }
     else if (token.type == T_DOT)
     {
-      return next(prev);
+      return next(prevExpr);
     }
-    else if (token.type == T_LBRACKET)
+    else if (token.type == T_NAME)
     {
-      Expression* args = multi(T_COMMA, T_RBRACKET);
-      return next(new Expression(E_CALL, prev->value, prev->left, args));
+      std::string name = token.value;
+      if (nextToken.value == "=")
+      {
+        name += nextToken.value; // Setter method
+        bump();
+      }
+
+      Expression* args = nullptr;
+      if (_tokens[*_index].type == T_LBRACKET)
+      {
+        bump();
+        args = multi(T_COMMA, T_RBRACKET);
+      }
+
+      if (prevToken.type == T_DOT) return next(new Expression(E_CALL, name, prevExpr, args));
+      else return next(new Expression(E_CALL, name, nullptr, args));
     }
     else
     {

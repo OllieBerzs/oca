@@ -1,18 +1,25 @@
 #include "memory.hpp"
 
-int Memory::_size = 0;
+std::string Memory::_mem = "";
 
-void Memory::add()
+void Memory::add(char c)
 {
-  _size++;
+  _mem += c;
 }
 
-void Memory::rem()
+void Memory::rem(char c)
 {
-  _size--;
+  for (unsigned int i = 0; i < _mem.size(); i++)
+  {
+    if (_mem[i] == c)
+    {
+      _mem.erase(i, 1);
+      break;
+    }
+  }
 }
 
-int Memory::get()
+std::string Memory::get()
 {
-  return _size;
+  return _mem;
 }

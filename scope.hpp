@@ -2,11 +2,11 @@
 
 #include <map>
 #include "errors.hpp"
-#include "value.hpp"
+#include "object.hpp"
 
 class Scope
 {
-  std::map<std::string, Value*> items;
+  std::map<std::string, Method*> names;
   Scope* parent;
 
 public:
@@ -14,7 +14,8 @@ public:
 
   void clean()
   {
-    for (auto elem : items) delete elem.second;
+    for (auto elem : names) delete elem.second;
+    names.clear();
   }
 
   ~Scope()
@@ -22,44 +23,42 @@ public:
     clean();
   }
 
-  void set(const std::string& name, Value* value)
+  void set(const std::string& name, Method* value)
   {
-    items.emplace(name, value);
+    names.emplace(name, value);
   }
 
-  Value* get(const std::string& name)
+  Method* get(const std::string& name)
   {
-    auto val = items.find(name);
-    if (val == items.end())
+    auto met = names.find(name);
+    if (met == names.end())
     {
       if (parent) return parent->get(name);
-      //else ERR << "Unknown symbol '" << name << "'";
       else return nullptr;
     }
     else
     {
-      return val->second;
+      return met->second;
     }
-    return val->second;
+    return met->second;
   }
 
-  Value* operator[](const std::string& name)
+  Method* operator[](const std::string& name)
   {
-    Value* val = get(name);
-    if (val)
+    Method* met = get(name);
+    if (met)
     {
-      return val;
+      return met;
     }
     else
     {
-      items.emplace(name, val);
-      return val;
+      names.emplace(name, met);
+      return met;
     }
   }
 };
 
-inline Value::~Value()
+inline Object::~Object()
 {
-  Memory::rem();
   if (env) delete env;
 }

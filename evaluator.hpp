@@ -3,4 +3,4 @@
 #include "scope.hpp"
 #include "expression.hpp"
 
-Value* evaluate(Expression* expr, Scope& env);
+Object* evaluate(Expression* expr, Scope& env);

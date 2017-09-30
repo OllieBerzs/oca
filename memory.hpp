@@ -1,11 +1,13 @@
 #pragma once
 
+#include <string>
+
 class Memory
 {
-  static int _size;
+  static std::string _mem;
 
 public:
-  static void add();
-  static void rem();
-  static int get();
+  static void add(char c);
+  static void rem(char c);
+  static std::string get();
 };

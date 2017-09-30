@@ -8,19 +8,21 @@
 
 enum
 {
-  E_METHOD,
   E_NUMBER,
   E_STRING,
   E_CALL,
-  E_ARG
+  E_METHOD,
+  E_ARG,
+  E_NULL
 };
-const std::string E_TYPES[5]
+const std::string E_TYPES[6]
 {
-  "method",
   "number",
   "string",
   "call",
-  "arg"
+  "method",
+  "arg",
+  "null"
 };
 
 struct Expression
@@ -33,20 +35,20 @@ struct Expression
   Expression(int type, const std::string& value)
     : type(type), value(value), left(nullptr), right(nullptr)
   {
-    Memory::add();
+    Memory::add('e');
   }
 
   Expression(int type, const std::string& value, Expression* l, Expression* r)
     : type(type), value(value), left(l), right(r)
   {
-    Memory::add();
+    Memory::add('e');
   }
 
   ~Expression()
   {
     delete left;
     delete right;
-    Memory::rem();
+    Memory::rem('e');
   }
 };
 
