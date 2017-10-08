@@ -57,8 +57,3 @@ public:
     }
   }
 };
-
-inline Object::~Object()
-{
-  if (env) delete env;
-}

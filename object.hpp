@@ -11,11 +11,11 @@ class Scope;
 
 struct Object
 {
-  Scope* env = nullptr;
+  std::map<std::string, Method*> methods;
 
-  virtual ~Object();
+  virtual ~Object() {};
 
-  virtual std::string toString();
+  virtual std::string toString() const;
 };
 
 struct Number : public Object
@@ -25,7 +25,7 @@ struct Number : public Object
   Number(float num);
   ~Number();
 
-  std::string toString();
+  std::string toString() const;
 };
 
 struct String : public Object
@@ -35,7 +35,7 @@ struct String : public Object
   String(const std::string& str);
   ~String();
 
-  std::string toString();
+  std::string toString() const;
 };
 
 // Typedefs for native functions
@@ -47,8 +47,11 @@ struct Method : public Object
   Nfunc function;
   std::vector<Expression*> exprs;
   bool native;
+  Scope* scope; // Delete from outside
 
-  Method(const std::vector<Expression*>& exprs, Scope* env);
+  Method(const std::vector<Expression*>& exprs, Scope* scope);
   Method(const Nfunc& function);
   ~Method();
+
+  std::string toString() const;
 };
