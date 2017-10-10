@@ -1,13 +1,13 @@
 PARSER => expr
 LEXER => number string name bracketl bracketr comma newline dot
 
+---------------PARSER---------------------
 expr : call | string | number
-
 call : (expr >> dot)[01] >> name >> bracketl[01] >> (expr)[>=0 <comma>] >> (bracketr | newline) ==> caller name args
 
+---------------LEXER----------------------
 number : ( 0-9 )[>0]
 string : (' | ") >> * >> (' | ")
-
 name : (a-Z | _)[1] >> (a-Z | 0-9 | _)[>0]
 dot : .
 bracketl : (
