@@ -22,7 +22,13 @@ struct Error
   ~Error()
   {
     colorize(0x04);
+    #if defined(__linux)
+    std::cout << "\033[31m";
+    #endif
     std::cout << stream.str() << '\n';
+    #if defined(__linux)
+    std::cout << "\033[0m";
+    #endif
     // Reset color
     colorize(0x07);
     exit(0);

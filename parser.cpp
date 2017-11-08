@@ -4,6 +4,7 @@
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
   unsigned int i = 0;
+  unsigned int line = 1;
   while (i < tokens.size())
   {
     Expression* e = nullptr;
@@ -16,13 +17,14 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
       }
       else
       {
-        ERR << "No newline at end of expression " << expressions.size() - 1 << "\n";
+        ERR << "No newline after expression on line " << line;
       }
     }
     else
     {
-      ERR << "Script does not contain an expression!";
+      ERR << "Invalid syntax on line " << line;
     }
+    line++;
   }
 }
 
