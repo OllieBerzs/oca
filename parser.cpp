@@ -32,22 +32,8 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
     unsigned int orig = i;
 
-    if (call(out, i, tokens))
+    if (call(out, i, tokens) || string(out, i, tokens) || number(out, i, tokens))
     {
-        return true;
-    }
-
-    if (tokens[i].type == T_STRING)
-    {
-        out = new Expression(E_STRING, tokens[i].value);
-        i++;
-        return true;
-    }
-
-    if (tokens[i].type == T_NUMBER)
-    {
-        out = new Expression(E_NUMBER, tokens[i].value);
-        i++;
         return true;
     }
 
@@ -109,6 +95,60 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     return true;
 }
 
+bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+    unsigned int orig = i;
+
+    if (tokens[i].type != T_STRING)
+    {
+        i = orig;
+        return false;
+    }
+    i++;
+
+    // Check if has dot after, if does attach another method
+    Expression* dot = nullptr;
+    if (tokens[i].type == T_DOT)
+    {
+        i++;
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out = new Expression(E_STRING, tokens[i].value, dot, nullptr);
+    return true;
+}
+
+bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+    unsigned int orig = i;
+
+    if (tokens[i].type != T_NUMBER)
+    {
+        i = orig;
+        return false;
+    }
+    i++;
+
+    // Check if has dot after, if does attach another method
+    Expression* dot = nullptr;
+    if (tokens[i].type == T_DOT)
+    {
+        i++;
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out = new Expression(E_NUMBER, tokens[i].value, dot, nullptr);
+    return true;
+}
+
 bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
     unsigned int orig = i;
@@ -120,6 +160,7 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         Expression* anotherArg = nullptr;
         if (tokens[i].type == T_COMMA)
         {
+            i++;
             if (!args(anotherArg, i, tokens))
             {
                 i = orig;
