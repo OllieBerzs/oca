@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <memory>
 #include "memory.hpp"
+#include "colors.hpp"
 
 enum
 {
@@ -31,15 +32,16 @@ struct Expression
     std::string value;
     Expression* left;
     Expression* right;
+    Expression* other;
 
     Expression(int type, const std::string& value)
-    : type(type), value(value), left(nullptr), right(nullptr)
+        : type(type), value(value), left(nullptr), right(nullptr), other(nullptr)
     {
         Memory::add('e');
     }
 
     Expression(int type, const std::string& value, Expression* l, Expression* r)
-    : type(type), value(value), left(l), right(r)
+        : type(type), value(value), left(l), right(r), other(nullptr)
     {
         Memory::add('e');
     }
@@ -52,16 +54,26 @@ struct Expression
     }
 };
 
-inline void printTree(const Expression& e, std::ostream& stream, int indent = 0)
+inline void printTree(const Expression& e, std::ostream& stream, const std::string& branch, int indent = 0)
 {
-    std::string data = "(\"" + E_TYPES[e.type] + " " + e.value + "\")\n";
+    std::string data = YELLOW + branch + RESET + "(\"" + CYAN + E_TYPES[e.type] + GREEN + " " + e.value + RESET + "\")\n";
     stream << std::setw(data.size() + indent) << data;
-    if (e.left) printTree(*e.left, stream, indent + 2);
-    if (e.right) printTree(*e.right, stream, indent + 2);
+    if (e.left)
+    {
+        printTree(*e.left, stream, "L", indent + 2);
+    }
+    if (e.right)
+    {
+        printTree(*e.right, stream, "R", indent + 2);
+    }
+    if (e.other)
+    {
+        printTree(*e.other, stream, "O", indent + 2);
+    }
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const Expression& expr)
 {
-    printTree(expr, stream);
+    printTree(expr, stream, "");
     return stream;
 }

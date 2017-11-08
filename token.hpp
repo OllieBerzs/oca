@@ -2,6 +2,7 @@
 
 #include <string>
 #include <ostream>
+#include "colors.hpp"
 
 enum
 {
@@ -37,5 +38,5 @@ struct Token
 
 inline std::ostream& operator<<(std::ostream& stream, const Token& token)
 {
-    return stream << "(\"" << T_TYPES[token.type] << "\": \"" << token.value << "\")";
+    return stream << RESET << "(\"" << CYAN << T_TYPES[token.type] << RESET << "\": \"" << GREEN << token.value << RESET << "\")";
 }

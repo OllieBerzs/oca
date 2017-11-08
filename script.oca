@@ -1,3 +1,6 @@
 print(54).as(1)
 10.times
-yo dude, gal, "snake"
+yo dude(3, 2, 1), gal, "snake"
+a + b
+2 + 4 - 7
+6

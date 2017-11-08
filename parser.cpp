@@ -91,6 +91,20 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         }
     }
 
+    // Check for arithmetic methods
+    if (tokens[i].type == T_NAME &&
+        (tokens[i].value == "+"
+        || tokens[i].value == "-"
+        || tokens[i].value == "*"
+        || tokens[i].value == "/"))
+    {
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
     out = new Expression(E_CALL, name, dot, a);
     return true;
 }
@@ -104,6 +118,7 @@ bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         i = orig;
         return false;
     }
+    std::string value = tokens[i].value;
     i++;
 
     // Check if has dot after, if does attach another method
@@ -118,7 +133,21 @@ bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         }
     }
 
-    out = new Expression(E_STRING, tokens[i].value, dot, nullptr);
+    // Check for arithmetic methods
+    if (tokens[i].type == T_NAME &&
+        (tokens[i].value == "+"
+        || tokens[i].value == "-"
+        || tokens[i].value == "*"
+        || tokens[i].value == "/"))
+    {
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out = new Expression(E_STRING, value, dot, nullptr);
     return true;
 }
 
@@ -131,6 +160,7 @@ bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         i = orig;
         return false;
     }
+    std::string value = tokens[i].value;
     i++;
 
     // Check if has dot after, if does attach another method
@@ -145,7 +175,21 @@ bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         }
     }
 
-    out = new Expression(E_NUMBER, tokens[i].value, dot, nullptr);
+    // Check for arithmetic methods
+    if (tokens[i].type == T_NAME &&
+        (tokens[i].value == "+"
+        || tokens[i].value == "-"
+        || tokens[i].value == "*"
+        || tokens[i].value == "/"))
+    {
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out = new Expression(E_NUMBER, value, dot, nullptr);
     return true;
 }
 
@@ -167,7 +211,7 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
                 return false;
             }
         }
-        arg->right = anotherArg;
+        arg->other = anotherArg;
     }
 
     out = arg;
