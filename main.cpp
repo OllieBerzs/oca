@@ -17,13 +17,16 @@ int main(int argc, char** argv)
   //Scope scope(nullptr);
   //nativeMethods(scope);
 
-  lex(script, tokens);
-  parse(tokens, exprs);
-
   std::cout << "=========================" << '\n';
+
+  lex(script, tokens);
+
   for (const Token& token : tokens) std::cout << token << '\n';
   std::cout << "-------------------------" << '\n';
   std::cout << "-------------------------" << '\n';
+
+  parse(tokens, exprs);
+
   for (auto e : exprs) std::cout << *e << '\n';
   std::cout << "-------------------------" << '\n';
   std::cout << "-------------------------" << '\n';

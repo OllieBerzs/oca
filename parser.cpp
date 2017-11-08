@@ -4,14 +4,25 @@
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
   unsigned int i = 0;
-  Expression* e = nullptr;
-  if (expr(e, i, tokens))
+  while (i < tokens.size())
   {
-    expressions.push_back(e);
-  }
-  else
-  {
-    ERR << "Script does not contain an expression!";
+    Expression* e = nullptr;
+    if (expr(e, i, tokens))
+    {
+      expressions.push_back(e);
+      if (tokens[i].type == T_NEWLINE)
+      {
+        i++;
+      }
+      else
+      {
+        ERR << "No newline at end of expression " << expressions.size() - 1 << "\n";
+      }
+    }
+    else
+    {
+      ERR << "Script does not contain an expression!";
+    }
   }
 }
 
