@@ -88,7 +88,19 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     }
     i++;
 
-    out = new Expression(E_CALL, name, nullptr, a);
+    // Check if has dot after, if does attach another method
+    Expression* dot = nullptr;
+    if (tokens[i].type == T_DOT)
+    {
+        i++;
+        if (!call(dot, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out = new Expression(E_CALL, name, dot, a);
     return true;
 }
 
