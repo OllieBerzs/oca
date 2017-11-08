@@ -1,132 +1,95 @@
 #include "parser.hpp"
 #include "errors.hpp"
 
-class Parser
-{
-  std::vector<Token> _tokens;
-  std::vector<int> _stop;
-  unsigned int* _index;
-
-public:
-  Parser(const std::vector<Token>& tokens, const std::vector<int>& stop, unsigned int* index)
-    : _tokens(tokens), _stop(stop), _index(index) {}
-
-  void bump()
-  {
-    (*_index)++;
-  }
-
-  bool isEmpty()
-  {
-    return (*_index) >= _tokens.size();
-  }
-
-  Expression* multi(int sep, int end)
-  {
-    if (isEmpty()) ERR << "Parser: missing '" << end << "'";
-
-    Expression* ret = nullptr;
-    Expression* prev = nullptr;
-
-    const Token& token = _tokens[*_index];
-    if (token.type != end)
-    {
-      Parser argParser(_tokens, {sep, end}, _index);
-      while (_tokens[*_index].type != end)
-      {
-        Expression* expr = argParser.next(nullptr);
-        if (expr != nullptr)
-        {
-          if (!ret)
-          {
-            ret = new Expression(E_ARG, "", expr, nullptr);
-            prev = ret;
-          }
-          else
-          {
-            prev->right = new Expression(E_ARG, "", expr, nullptr);
-            prev = prev->right;
-          }
-        }
-        if (_tokens[(*_index)].type != end) bump();
-      }
-    }
-    bump();
-    return ret;
-  }
-
-  Expression* findArgs()
-  {
-    if (_tokens[*_index].type == T_LBRACKET)
-    {
-      bump();
-      return multi(T_COMMA, T_RBRACKET);
-    }
-    return nullptr;
-  }
-
-  Expression* next(Expression* prevExpr)
-  {
-    if (isEmpty()) ERR << "Parser: ran out of tokens";
-
-    const Token& prevToken = _tokens[(*_index) - 1];
-    const Token& token = _tokens[*_index];
-    const Token& nextToken = _tokens[(*_index) + 1];
-
-    for (int i : _stop) if (token.type == i) return prevExpr;
-    bump();
-
-    if (token.type == T_NUMBER)
-    {
-      return next(new Expression(E_NUMBER, token.value));
-    }
-    else if (token.type == T_STRING)
-    {
-      return next(new Expression(E_STRING, token.value));
-    }
-    else if (token.type == T_DOT)
-    {
-      return next(prevExpr);
-    }
-    else if (token.type == T_NAME)
-    {
-      std::string name = token.value;
-      if (nextToken.value == "=")
-      {
-        name += nextToken.value; // Setter method
-        bump();
-      }
-
-      Expression* args = nullptr;
-      if (_tokens[*_index].type == T_LBRACKET)
-      {
-        bump();
-        args = multi(T_COMMA, T_RBRACKET);
-      }
-
-      if (prevToken.type == T_DOT) return next(new Expression(E_CALL, name, prevExpr, args));
-      else return next(new Expression(E_CALL, name, nullptr, args));
-    }
-    else
-    {
-      ERR << "Parser: Unknown token " << token;
-    }
-    return nullptr;
-  }
-};
-
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
-  unsigned int* index = new unsigned int(0);
-  Parser parser(tokens, {T_NEWLINE}, index);
-  while (!parser.isEmpty())
+  unsigned int i = 0;
+  Expression* e = nullptr;
+  if (expr(e, i, tokens))
   {
-    Expression* expr = parser.next(nullptr);
-    if (expr != nullptr)
-    {
-      expressions.push_back(expr);
-    }
-    parser.bump();
+    expressions.push_back(e);
   }
-  delete index;
+  else
+  {
+    ERR << "Script does not contain an expression!";
+  }
+}
+
+bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+  unsigned int orig = i;
+
+  if (call(out, i, tokens))
+  {
+    return true;
+  }
+
+  if (tokens[i].type == T_STRING)
+  {
+    out = new Expression(E_STRING, tokens[i].value);
+    i++;
+    return true;
+  }
+
+  if (tokens[i].type == T_NUMBER)
+  {
+    out = new Expression(E_NUMBER, tokens[i].value);
+    i++;
+    return true;
+  }
+
+  i = orig;
+  return false;
+}
+
+bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+  unsigned int orig = i;
+
+  if (tokens[i].type != T_NAME)
+  {
+    i = orig;
+    return false;
+  }
+  std::string name = tokens[i].value;
+  i++;
+
+  if (tokens[i].type != T_LPAREN)
+  {
+    i = orig;
+    return false;
+  }
+  i++;
+
+  Expression* a = nullptr;
+  if (!args(a, i, tokens))
+  {
+    i = orig;
+    return false;
+  }
+
+  if (tokens[i].type != T_RPAREN)
+  {
+    i = orig;
+    return false;
+  }
+  i++;
+
+  out = new Expression(E_CALL, name, nullptr, a);
+  return true;
+}
+
+bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+  unsigned int orig = i;
+
+  Expression* e = nullptr;
+  if (!expr(e, i, tokens))
+  {
+    i = orig;
+    return false;
+  }
+
+  out = e;
+  return true;
 }

@@ -14,13 +14,21 @@ int main(int argc, char** argv)
 
   std::string script = file(argv[1]);
 
-  Scope scope(nullptr);
-  nativeMethods(scope);
+  //Scope scope(nullptr);
+  //nativeMethods(scope);
 
   lex(script, tokens);
   parse(tokens, exprs);
 
   std::cout << "=========================" << '\n';
+  for (const Token& token : tokens) std::cout << token << '\n';
+  std::cout << "-------------------------" << '\n';
+  std::cout << "-------------------------" << '\n';
+  for (auto e : exprs) std::cout << *e << '\n';
+  std::cout << "-------------------------" << '\n';
+  std::cout << "-------------------------" << '\n';
+
+  /*std::cout << "=========================" << '\n';
   for (const Token& token : tokens) std::cout << token << '\n';
   std::cout << "-------------------------" << '\n';
   std::cout << "-------------------------" << '\n';
@@ -42,5 +50,5 @@ int main(int argc, char** argv)
 
   std::cout << "memory usage: [" << Memory::get() << "]\n";
 
-  std::cout << "=========================" << '\n';
+  std::cout << "=========================" << '\n';*/
 }

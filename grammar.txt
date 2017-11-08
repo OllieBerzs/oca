@@ -1,4 +1,0 @@
-<expr> ::= <call> | <string> | <number>;
-<call> ::= <expr> <dot> <name> <leftParen> <args> <rightParen>;
-<args> ::= <args> <comma> <expr> | <expr>;
-<name> ::= <name> <number> | <letter>;

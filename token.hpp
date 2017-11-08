@@ -6,8 +6,8 @@
 enum
 {
   T_NEWLINE,
-  T_LBRACKET,
-  T_RBRACKET,
+  T_LPAREN,
+  T_RPAREN,
   T_DOT,
   T_COMMA,
   T_STRING,
@@ -17,8 +17,8 @@ enum
 const std::string T_TYPES[8]
 {
   "newline",
-  "lbracket",
-  "rbracket",
+  "lparen",
+  "rparen",
   "dot",
   "comma",
   "string",

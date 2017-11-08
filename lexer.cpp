@@ -117,8 +117,8 @@ void lex(const std::string& script, std::vector<Token>& tokens)
     if (isOf(c, " \r")); // Skip space
     else if (c == '#') skipLine(script, index);
     else if (c == '\n') tokens.emplace_back(T_NEWLINE, "");
-    else if (c == '(') tokens.emplace_back(T_LBRACKET, "");
-    else if (c == ')') tokens.emplace_back(T_RBRACKET, "");
+    else if (c == '(') tokens.emplace_back(T_LPAREN, "");
+    else if (c == ')') tokens.emplace_back(T_RPAREN, "");
     else if (c == '.') tokens.emplace_back(T_DOT, "");
     else if (c == ',') tokens.emplace_back(T_COMMA, "");
     // Types

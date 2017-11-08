@@ -1,0 +1,5 @@
+# Grammar for parser
+
+<expr> ::= <call> | <string> | <number>;
+<call> ::= <expr> <dot> <name> <lparen> <args> <rparen> | <name> <lparen> <args> <rparen>;
+<args> ::= <expr> <comma> <args> | <expr>;
