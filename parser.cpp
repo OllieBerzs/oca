@@ -17,12 +17,12 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
             }
             else
             {
-                ERR << "No newline after expression on line " << line;
+                ERR << "No newline after expression on line " << line << "\n- last token " << tokens[i];
             }
         }
         else
         {
-            ERR << "Invalid syntax on line " << line;
+            ERR << "Invalid syntax on line " << line << "\n- last token " << tokens[i];
         }
         line++;
     }
@@ -67,10 +67,11 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     std::string name = tokens[i].value;
     i++;
 
+    bool hasParen = true;
     if (tokens[i].type != T_LPAREN)
     {
-        i = orig;
-        return false;
+        i--;
+        hasParen = false;
     }
     i++;
 
@@ -81,10 +82,14 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         return false;
     }
 
-    if (tokens[i].type != T_RPAREN)
+    if (tokens[i].type != T_RPAREN && hasParen)
     {
         i = orig;
         return false;
+    }
+    else if (!hasParen)
+    {
+        i--;
     }
     i++;
 
@@ -108,13 +113,22 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
     unsigned int orig = i;
 
-    Expression* e = nullptr;
-    if (!expr(e, i, tokens))
+    Expression* arg = nullptr;
+    if (expr(arg, i, tokens))
     {
-        i = orig;
-        return false;
+        // check for more arguments if followed by comma
+        Expression* anotherArg = nullptr;
+        if (tokens[i].type == T_COMMA)
+        {
+            if (!args(anotherArg, i, tokens))
+            {
+                i = orig;
+                return false;
+            }
+        }
+        arg->right = anotherArg;
     }
 
-    out = e;
+    out = arg;
     return true;
 }
