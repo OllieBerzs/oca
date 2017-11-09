@@ -1,5 +1,8 @@
 #include "evaluator.hpp"
 
+namespace oca::internal
+{
+
 void getArgs(Expression* expr, Scope& env, std::vector<Object*>& args)
 {
     Expression* arg = expr->right;
@@ -54,3 +57,5 @@ Object* evaluate(Expression* expr, Scope& env)
     }
     return nullptr;
 }
+
+} // namespace oca::internal

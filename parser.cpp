@@ -1,6 +1,9 @@
 #include "parser.hpp"
 #include "errors.hpp"
 
+namespace oca::internal
+{
+
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
     unsigned int i = 0;
@@ -168,3 +171,5 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     out = arg;
     return true;
 }
+
+} // namespace oca::internal

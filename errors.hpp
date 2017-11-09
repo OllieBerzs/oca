@@ -1,19 +1,11 @@
 #pragma once
 
 #include <sstream>
-#include <string>
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
-
-inline void colorize(int color)
-{
-#if defined(_WIN32) || defined(_WIN64)
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-#endif
-}
 
 struct Error
 {
@@ -21,16 +13,22 @@ struct Error
 
     ~Error()
     {
-        colorize(0x04);
-        #if defined(__linux)
+        // Set message color to red
+        #if defined(_WIN32) || defined(_WIN64)
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x04);
+        #elif defined(__linux)
         std::cout << "\033[31m";
         #endif
+
         std::cout << stream.str() << '\n';
-        #if defined(__linux)
+
+        // Reset color
+        #if defined(_WIN32) || defined(_WIN64)
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x07);
+        #elif defined(__linux)
         std::cout << "\033[0m";
         #endif
-        // Reset color
-        colorize(0x07);
+
         exit(0);
     }
 };

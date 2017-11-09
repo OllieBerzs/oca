@@ -4,6 +4,9 @@
 #include "errors.hpp"
 #include "object.hpp"
 
+namespace oca::internal
+{
+
 class Scope
 {
     std::map<std::string, Method*> names;
@@ -57,3 +60,5 @@ public:
         }
     }
 };
+
+} // namespace oca::internal

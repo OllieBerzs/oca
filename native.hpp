@@ -2,6 +2,9 @@
 
 #include "scope.hpp"
 
+namespace oca::internal
+{
+
 void nativeMethods(Scope& scope)
 {
     scope.set("print", new Method([](const Nargs& args) -> Object*
@@ -11,3 +14,5 @@ void nativeMethods(Scope& scope)
         return nullptr;
     }));
 }
+
+} // namespace oca::internal

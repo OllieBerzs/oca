@@ -6,6 +6,9 @@
 #include <functional>
 #include "expression.hpp"
 
+namespace oca::internal
+{
+
 struct Method;
 class Scope;
 
@@ -55,3 +58,5 @@ struct Method : public Object
 
     std::string toString() const;
 };
+
+} // namespace oca::internal

@@ -1,6 +1,9 @@
 #include "scope.hpp"
 #include "memory.hpp"
 
+namespace oca::internal
+{
+
 std::string Object::toString() const { return "err"; }
 
 Number::Number(float num) : num(num)
@@ -37,3 +40,5 @@ Method::~Method()
 }
 
 std::string Method::toString() const { return "<method: " + std::to_string(native) + ">"; }
+
+} // namespace oca::internal

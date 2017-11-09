@@ -1,6 +1,9 @@
 #include "lexer.hpp"
 #include "errors.hpp"
 
+namespace oca::internal
+{
+
 #define NUMBERS "0123456789"
 #define LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -144,3 +147,5 @@ void lex(const std::string& script, std::vector<Token>& tokens)
         num++;
     }
 }
+
+} // namespace oca::internal

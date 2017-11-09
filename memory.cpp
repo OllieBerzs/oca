@@ -1,5 +1,8 @@
 #include "memory.hpp"
 
+namespace oca::internal
+{
+
 std::string Memory::_mem = "";
 
 void Memory::add(char c)
@@ -23,3 +26,5 @@ std::string Memory::get()
 {
     return _mem;
 }
+
+} // namespace oca::internal

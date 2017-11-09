@@ -4,6 +4,9 @@
 #include <ostream>
 #include "colors.hpp"
 
+namespace oca::internal
+{
+
 enum
 {
     T_NEWLINE,
@@ -40,3 +43,5 @@ inline std::ostream& operator<<(std::ostream& stream, const Token& token)
 {
     return stream << RESET << "(\"" << CYAN << T_TYPES[token.type] << RESET << "\": \"" << GREEN << token.value << RESET << "\")";
 }
+
+} // namespace oca::internal

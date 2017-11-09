@@ -7,6 +7,9 @@
 #include "memory.hpp"
 #include "colors.hpp"
 
+namespace oca::internal
+{
+
 enum
 {
     E_NUMBER,
@@ -77,3 +80,5 @@ inline std::ostream& operator<<(std::ostream& stream, const Expression& expr)
     printTree(expr, stream, "");
     return stream;
 }
+
+} // namespace oca::internal
