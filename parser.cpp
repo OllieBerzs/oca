@@ -38,7 +38,6 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         return false;
     }
 
-    //TODO: move attachables here
     //TODO: add support for parentheses
     // Check for attachables
     Expression* attach = nullptr;
