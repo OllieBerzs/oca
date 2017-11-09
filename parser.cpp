@@ -32,13 +32,43 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
     unsigned int orig = i;
 
-    if (call(out, i, tokens) || string(out, i, tokens) || number(out, i, tokens))
+    if (!call(out, i, tokens) && !string(out, i, tokens) && !number(out, i, tokens))
     {
-        return true;
+        i = orig;
+        return false;
     }
 
-    i = orig;
-    return false;
+    //TODO: move attachables here
+    //TODO: add support for parentheses
+    // Check for attachables
+    Expression* attach = nullptr;
+    if (tokens[i].type == T_DOT)
+    {
+        i++;
+        if (!call(attach, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    // Check for arithmetic methods
+    if (tokens[i].type == T_NAME &&
+        (tokens[i].value == "+"
+        || tokens[i].value == "-"
+        || tokens[i].value == "*"
+        || tokens[i].value == "/"))
+    {
+        if (!call(attach, i, tokens))
+        {
+            i = orig;
+            return false;
+        }
+    }
+
+    out->left = attach;
+
+    return true;
 }
 
 bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
@@ -79,33 +109,7 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     }
     i++;
 
-    // Check if has dot after, if does attach another method
-    Expression* dot = nullptr;
-    if (tokens[i].type == T_DOT)
-    {
-        i++;
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    // Check for arithmetic methods
-    if (tokens[i].type == T_NAME &&
-        (tokens[i].value == "+"
-        || tokens[i].value == "-"
-        || tokens[i].value == "*"
-        || tokens[i].value == "/"))
-    {
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    out = new Expression(E_CALL, name, dot, a);
+    out = new Expression(E_CALL, name, nullptr, a);
     return true;
 }
 
@@ -121,33 +125,7 @@ bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     std::string value = tokens[i].value;
     i++;
 
-    // Check if has dot after, if does attach another method
-    Expression* dot = nullptr;
-    if (tokens[i].type == T_DOT)
-    {
-        i++;
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    // Check for arithmetic methods
-    if (tokens[i].type == T_NAME &&
-        (tokens[i].value == "+"
-        || tokens[i].value == "-"
-        || tokens[i].value == "*"
-        || tokens[i].value == "/"))
-    {
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    out = new Expression(E_STRING, value, dot, nullptr);
+    out = new Expression(E_STRING, value);
     return true;
 }
 
@@ -163,33 +141,7 @@ bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     std::string value = tokens[i].value;
     i++;
 
-    // Check if has dot after, if does attach another method
-    Expression* dot = nullptr;
-    if (tokens[i].type == T_DOT)
-    {
-        i++;
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    // Check for arithmetic methods
-    if (tokens[i].type == T_NAME &&
-        (tokens[i].value == "+"
-        || tokens[i].value == "-"
-        || tokens[i].value == "*"
-        || tokens[i].value == "/"))
-    {
-        if (!call(dot, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    out = new Expression(E_NUMBER, value, dot, nullptr);
+    out = new Expression(E_NUMBER, value);
     return true;
 }
 

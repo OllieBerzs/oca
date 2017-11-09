@@ -3,4 +3,4 @@ print(54).as(1)
 yo dude(3, 2, 1), gal, "snake"
 a + b
 2 + 4 - 7
-6
+sup() + "hello"
