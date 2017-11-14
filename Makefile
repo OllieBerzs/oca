@@ -1,4 +1,4 @@
-SOURCES := main.cpp lexer.cpp parser.cpp evaluator.cpp object.cpp memory.cpp
+SOURCES := main.cpp lexer.cpp parser.cpp evaluator.cpp object.cpp memory.cpp errors.cpp
 OBJECTS := $(patsubst %,temp/%,$(SOURCES:.cpp=.o))
 
 all: temp oca

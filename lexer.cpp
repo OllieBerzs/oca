@@ -7,6 +7,8 @@ namespace oca::internal
 #define NUMBERS "0123456789"
 #define LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+unsigned int lexchar = 0;
+
 bool isOf(char c, std::string str)
 {
     for (char ch : str)
@@ -16,7 +18,7 @@ bool isOf(char c, std::string str)
     return false;
 }
 
-std::string scanString(std::string script, unsigned int& index, unsigned int& num)
+std::string scanString(std::string script, unsigned int& index)
 {
     std::string ret;
 
@@ -33,14 +35,14 @@ std::string scanString(std::string script, unsigned int& index, unsigned int& nu
         {
             ret += c;
             index++;
-            num++;
+            lexchar++;
         }
     }
 
     return ret;
 }
 
-std::string scanNumber(std::string script, unsigned int& index, unsigned int& num)
+std::string scanNumber(std::string script, unsigned int& index)
 {
     std::string ret;
 
@@ -53,7 +55,7 @@ std::string scanNumber(std::string script, unsigned int& index, unsigned int& nu
         {
             ret += c;
             index++;
-            num++;
+            lexchar++;
         }
         else if (c == '.' && isOf(script[index + 1], NUMBERS))
         {
@@ -67,28 +69,28 @@ std::string scanNumber(std::string script, unsigned int& index, unsigned int& nu
             {
                 end = true;
                 index--;
-                num--;
+                lexchar--;
             }
         }
         else
         {
             end = true;
             index--;
-            num--;
+            lexchar--;
         }
     }
 
     return ret;
 }
 
-std::string scanSymbol(std::string script, unsigned int& index, unsigned int& num)
+std::string scanSymbol(std::string script, unsigned int& index)
 {
     std::string ret;
 
     // First character cannot be a number
     ret += script[index];
     index++;
-    num++;
+    lexchar++;
 
     bool end = false;
     while (!end)
@@ -98,53 +100,60 @@ std::string scanSymbol(std::string script, unsigned int& index, unsigned int& nu
         {
             ret += c;
             index++;
-            num++;
+            lexchar++;
         }
         else
         {
             end = true;
             index--;
-            num--;
+            lexchar--;
         }
     }
 
     return ret;
 }
 
-void skipLine(const std::string& script, unsigned int& index, unsigned int& line, unsigned int& num)
+void skipLine(const std::string& script, unsigned int& index)
 {
     while (script[index] != '\n') index++;
-    index--;
-    line++;
-    num = 0;
+    Error::lineNum++;
+    lexchar = -1;
+}
+
+void newLine(std::vector<Token>& tokens)
+{
+    std::cout << lexchar;
+    if (lexchar != 0) tokens.emplace_back(T_NEWLINE, "");
+    Error::lineNum++;
+    lexchar = -1;
 }
 
 void lex(const std::string& script, std::vector<Token>& tokens)
 {
+    Error::lineNum = 1;
+
     unsigned int index = 0;
-    unsigned int line = 1;
-    unsigned int num = 0;
     while (index < script.size())
     {
         char c = script[index];
 
         if (isOf(c, " \r")); // Skip space
-        else if (c == '#') skipLine(script, index, line, num);
-        else if (c == '\n') { tokens.emplace_back(T_NEWLINE, ""); line++; num = 0; }
+        else if (c == '#') skipLine(script, index);
+        else if (c == '\n') newLine(tokens);
         else if (c == '(') tokens.emplace_back(T_LPAREN, "");
         else if (c == ')') tokens.emplace_back(T_RPAREN, "");
         else if (c == '.') tokens.emplace_back(T_DOT, "");
         else if (c == ',') tokens.emplace_back(T_COMMA, "");
         // Types
-        else if (isOf(c, "'\"")) tokens.emplace_back(T_STRING, scanString(script, index, num));
-        else if (isOf(c, NUMBERS)) tokens.emplace_back(T_NUMBER, scanNumber(script, index, num));
+        else if (isOf(c, "'\"")) tokens.emplace_back(T_STRING, scanString(script, index));
+        else if (isOf(c, NUMBERS)) tokens.emplace_back(T_NUMBER, scanNumber(script, index));
         // Names
-        else if (isOf(c, "+-*/=")) tokens.emplace_back(T_NAME, c);
-        else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index, num));
+        else if (isOf(c, "+-*/%^=")) tokens.emplace_back(T_NAME, c);
+        else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index));
 
-        else ERR << "Unknown character " << num << " on line " << line;
+        else ERR << "Unknown character " << lexchar << " \"" << script[index] << "\"";
         index++;
-        num++;
+        lexchar++;
     }
 }
 

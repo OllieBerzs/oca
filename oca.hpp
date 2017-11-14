@@ -10,6 +10,8 @@ namespace oca
 
 void script(const std::string& source, bool outTokens = false, bool outTree = false, bool outOutput = true, bool outMemory = false)
 {
+    Error::script = source;
+
     std::vector<internal::Token> tokens;
     std::vector<internal::Expression*> exprs;
 

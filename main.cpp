@@ -2,7 +2,11 @@
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) ERR << "No script file provided";
+    if (argc < 2)
+    {
+        // TODO: Launch real-time interpreter
+        exit(0);
+    }
 
     //Scope scope(nullptr);
     //nativeMethods(scope);

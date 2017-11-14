@@ -44,30 +44,7 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     //TODO: add support for parentheses
     // Check for attachables
     Expression* attach = nullptr;
-    if (tokens[i].type == T_DOT)
-    {
-        i++;
-        if (!call(attach, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
-    // Check for arithmetic methods
-    if (tokens[i].type == T_NAME &&
-        (tokens[i].value == "+"
-        || tokens[i].value == "-"
-        || tokens[i].value == "*"
-        || tokens[i].value == "/"))
-    {
-        if (!call(attach, i, tokens))
-        {
-            i = orig;
-            return false;
-        }
-    }
-
+    attachment(attach, i, tokens);
     out->left = attach;
 
     return true;
@@ -170,6 +147,38 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 
     out = arg;
     return true;
+}
+
+bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+    unsigned int orig = i;
+
+    if (tokens[i].type == T_DOT)
+    {
+        i++;
+        if (call(out, i, tokens))
+        {
+            return true;
+        }
+    }
+
+    // Check for arithmetic methods
+    if (tokens[i].type == T_NAME &&
+        (tokens[i].value == "+"
+        || tokens[i].value == "-"
+        || tokens[i].value == "*"
+        || tokens[i].value == "/"
+        || tokens[i].value == "%"
+        || tokens[i].value == "^"))
+    {
+        if (call(out, i, tokens))
+        {
+            return true;
+        }
+    }
+
+    i = orig;
+    return false;
 }
 
 } // namespace oca::internal
