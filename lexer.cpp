@@ -117,13 +117,13 @@ void skipLine(const std::string& script, unsigned int& index)
 {
     while (script[index] != '\n') index++;
     Error::lineNum++;
+    index--;
     lexchar = -1;
 }
 
 void newLine(std::vector<Token>& tokens)
 {
-    std::cout << lexchar;
-    if (lexchar != 0) tokens.emplace_back(T_NEWLINE, "");
+    tokens.emplace_back(T_NEWLINE, "");
     Error::lineNum++;
     lexchar = -1;
 }

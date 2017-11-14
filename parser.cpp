@@ -6,28 +6,22 @@ namespace oca::internal
 
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
+    Error::lineNum = 1;
+
     unsigned int i = 0;
-    unsigned int line = 1;
     while (i < tokens.size())
     {
+        // skip newlines
+        while (tokens[i].type == T_NEWLINE && i < tokens.size())
+        {
+            i++;
+            Error::lineNum++;
+        }
+        if (i == tokens.size()) break;
+
         Expression* e = nullptr;
-        if (expr(e, i, tokens))
-        {
-            expressions.push_back(e);
-            if (tokens[i].type == T_NEWLINE)
-            {
-                i++;
-            }
-            else
-            {
-                ERR << "No newline after expression on line " << line << "\n- last token " << tokens[i];
-            }
-        }
-        else
-        {
-            ERR << "Invalid syntax on line " << line << "\n- last token " << tokens[i];
-        }
-        line++;
+        if (expr(e, i, tokens)) expressions.push_back(e);
+        else ERR << "Invalid syntax";
     }
 }
 
