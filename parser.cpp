@@ -215,4 +215,9 @@ bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tok
     return unmatch(i, orig);
 }
 
+bool block(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+    
+}
+
 } // namespace oca::internal

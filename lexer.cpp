@@ -18,6 +18,30 @@ bool isOf(char c, const std::string& str)
     return false;
 }
 
+bool match(const std::string& script, unsigned int index, const std::vector<std::string>& lookFor)
+{
+    for (const std::string& s : lookFor)
+    {
+        unsigned int i = index;
+        bool same = false;
+        for (char c : s)
+        {
+            if (script[i] != c)
+            {
+                same = false;
+                break;
+            }
+            i++;
+            same = true;
+        }
+        if (same)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string scanString(const std::string& script, unsigned int& index)
 {
     std::string ret;
@@ -83,16 +107,15 @@ std::string scanNumber(const std::string& script, unsigned int& index)
     return ret;
 }
 
-std::string scanBool(const std::string& script, unsigned int& index, bool clear)
+std::string scanBool(const std::string& script, unsigned int& index)
 {
-    unsigned int orig = index;
     std::string ret = "";
 
     bool end = false;
     while (!end)
     {
         char c = script[index];
-        if (isOf(c, "_" LETTERS NUMBERS))
+        if (isOf(c, LETTERS))
         {
             ret += c;
             index++;
@@ -104,18 +127,6 @@ std::string scanBool(const std::string& script, unsigned int& index, bool clear)
             index--;
             lexchar--;
         }
-    }
-
-    if (ret != "true" && ret != "false")
-    {
-        ret = "";
-        index = orig;
-        lexchar = orig;
-    }
-    if (clear)
-    {
-        index = orig;
-        lexchar = orig;
     }
 
     return ret;
@@ -182,10 +193,13 @@ void lex(const std::string& script, std::vector<Token>& tokens)
         else if (c == ')') tokens.emplace_back(T_RPAREN, "");
         else if (c == '.') tokens.emplace_back(T_DOT, "");
         else if (c == ',') tokens.emplace_back(T_COMMA, "");
+        // Keywords
+        else if (match(script, index, {"do"})) { tokens.emplace_back(T_DO, ""); index += 2; }
+        else if (match(script, index, {"end"})) { tokens.emplace_back(T_END, ""); index += 3; }
         // Types
         else if (isOf(c, "'\"")) tokens.emplace_back(T_STRING, scanString(script, index));
         else if (isOf(c, NUMBERS)) tokens.emplace_back(T_NUMBER, scanNumber(script, index));
-        else if (scanBool(script, index, true) != "") tokens.emplace_back(T_BOOL, scanBool(script, index, false));
+        else if (match(script, index, {"true", "false"})) tokens.emplace_back(T_BOOL, scanBool(script, index));
         // Names
         else if (isOf(c, "+-*/%^=")) tokens.emplace_back(T_NAME, c);
         else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index));

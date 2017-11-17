@@ -17,9 +17,11 @@ enum
     T_STRING,
     T_NUMBER,
     T_BOOL,
-    T_NAME
+    T_NAME,
+    T_DO,
+    T_END
 };
-const std::string T_TYPES[9]
+const std::string T_TYPES[11]
 {
     "newline",
     "lparen",
@@ -29,7 +31,9 @@ const std::string T_TYPES[9]
     "string",
     "number",
     "boolean",
-    "name"
+    "name",
+    "do",
+    "end"
 };
 
 struct Token

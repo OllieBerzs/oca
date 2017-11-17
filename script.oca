@@ -2,7 +2,9 @@
 
 print(54).as(1)
 
-10.times
+10.times do
+
+end
 (a + 2).times
 
 yo dude(3, 2, 1), gal, "snake"
