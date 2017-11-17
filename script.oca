@@ -9,3 +9,5 @@ yo dude(3, 2, 1), gal, "snake"
 
 a = b + c
 2 + 4 - 7
+
+bool = true

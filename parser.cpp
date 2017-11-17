@@ -58,7 +58,7 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
         i++;
         out = new Expression(E_CASE, "");
     }
-    else if (!call(out, i, tokens) && !string(out, i, tokens) && !number(out, i, tokens))
+    else if (!call(out, i, tokens) && !string(out, i, tokens) && !number(out, i, tokens) && !boolean(out, i, tokens))
     {
         return unmatch(i, orig);
     }
@@ -147,6 +147,21 @@ bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     i++;
 
     out = new Expression(E_NUMBER, value);
+    return true;
+}
+
+bool boolean(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+    unsigned int orig = i;
+
+    if (tokens[i].type != T_BOOL)
+    {
+        return unmatch(i, orig);
+    }
+    std::string value = tokens[i].value;
+    i++;
+
+    out = new Expression(E_BOOL, value);
     return true;
 }
 

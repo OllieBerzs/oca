@@ -13,6 +13,7 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
+bool boolean(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
 

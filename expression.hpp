@@ -14,16 +14,18 @@ enum
 {
     E_NUMBER,
     E_STRING,
+    E_BOOL,
     E_CALL,
     E_METHOD,
     E_ARG,
     E_CASE,
     E_NULL
 };
-const std::string E_TYPES[7]
+const std::string E_TYPES[8]
 {
     "number",
     "string",
+    "boolean",
     "call",
     "method",
     "arg",

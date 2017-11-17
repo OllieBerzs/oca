@@ -9,7 +9,7 @@ namespace oca::internal
 
 unsigned int lexchar = 0;
 
-bool isOf(char c, std::string str)
+bool isOf(char c, const std::string& str)
 {
     for (char ch : str)
     {
@@ -18,7 +18,7 @@ bool isOf(char c, std::string str)
     return false;
 }
 
-std::string scanString(std::string script, unsigned int& index)
+std::string scanString(const std::string& script, unsigned int& index)
 {
     std::string ret;
 
@@ -42,7 +42,7 @@ std::string scanString(std::string script, unsigned int& index)
     return ret;
 }
 
-std::string scanNumber(std::string script, unsigned int& index)
+std::string scanNumber(const std::string& script, unsigned int& index)
 {
     std::string ret;
 
@@ -83,7 +83,45 @@ std::string scanNumber(std::string script, unsigned int& index)
     return ret;
 }
 
-std::string scanSymbol(std::string script, unsigned int& index)
+std::string scanBool(const std::string& script, unsigned int& index, bool clear)
+{
+    unsigned int orig = index;
+    std::string ret = "";
+
+    bool end = false;
+    while (!end)
+    {
+        char c = script[index];
+        if (isOf(c, "_" LETTERS NUMBERS))
+        {
+            ret += c;
+            index++;
+            lexchar++;
+        }
+        else
+        {
+            end = true;
+            index--;
+            lexchar--;
+        }
+    }
+
+    if (ret != "true" && ret != "false")
+    {
+        ret = "";
+        index = orig;
+        lexchar = orig;
+    }
+    if (clear)
+    {
+        index = orig;
+        lexchar = orig;
+    }
+
+    return ret;
+}
+
+std::string scanSymbol(const std::string& script, unsigned int& index)
 {
     std::string ret;
 
@@ -147,6 +185,7 @@ void lex(const std::string& script, std::vector<Token>& tokens)
         // Types
         else if (isOf(c, "'\"")) tokens.emplace_back(T_STRING, scanString(script, index));
         else if (isOf(c, NUMBERS)) tokens.emplace_back(T_NUMBER, scanNumber(script, index));
+        else if (scanBool(script, index, true) != "") tokens.emplace_back(T_BOOL, scanBool(script, index, false));
         // Names
         else if (isOf(c, "+-*/%^=")) tokens.emplace_back(T_NAME, c);
         else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index));
