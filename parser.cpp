@@ -6,6 +6,11 @@ namespace oca::internal
 
 unsigned int errorToken = 0;
 
+bool isArithmetic(const std::string& name)
+{
+    return name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || name == "^";
+}
+
 bool unmatch(unsigned int& i, unsigned int orig)
 {
     errorToken = i;
@@ -79,6 +84,13 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     std::string name = tokens[i].value;
     i++;
 
+    // check for assignment
+    if (tokens[i].value == "=")
+    {
+        name += "=";
+        i++;
+    }
+
     bool hasParen = true;
     if (tokens[i].type != T_LPAREN)
     {
@@ -143,7 +155,8 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     unsigned int orig = i;
 
     Expression* arg = nullptr;
-    if (expr(arg, i, tokens))
+    if (isArithmetic(tokens[i].value)); //skip
+    else if (expr(arg, i, tokens))
     {
         // check for more arguments if followed by comma
         Expression* anotherArg = nullptr;
@@ -176,13 +189,7 @@ bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tok
     }
 
     // Check for arithmetic methods
-    if (tokens[i].type == T_NAME &&
-        (tokens[i].value == "+"
-        || tokens[i].value == "-"
-        || tokens[i].value == "*"
-        || tokens[i].value == "/"
-        || tokens[i].value == "%"
-        || tokens[i].value == "^"))
+    if (tokens[i].type == T_NAME && isArithmetic(tokens[i].value))
     {
         if (call(out, i, tokens))
         {

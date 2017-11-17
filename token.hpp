@@ -16,9 +16,10 @@ enum
     T_COMMA,
     T_STRING,
     T_NUMBER,
+    T_BOOL,
     T_NAME
 };
-const std::string T_TYPES[8]
+const std::string T_TYPES[9]
 {
     "newline",
     "lparen",
@@ -27,6 +28,7 @@ const std::string T_TYPES[8]
     "comma",
     "string",
     "number",
+    "boolean",
     "name"
 };
 
