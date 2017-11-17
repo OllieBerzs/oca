@@ -4,5 +4,6 @@
 <call> ::= name lparen <args> rparen | name <args>;
 <args> ::= <expr> comma <args> | <expr> | 0;
 <attachment> ::= dot <call>;
-<block> ::= do <expr_list> end;
+<block> ::= do lparen <params> rparen <expr_list> end | do <expr_list> end;
+<params> ::= name comma <params> | name;
 <expr_list> ::= <expr> <expr_list> | <expr> | 0;
