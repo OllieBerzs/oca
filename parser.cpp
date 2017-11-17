@@ -4,6 +4,15 @@
 namespace oca::internal
 {
 
+unsigned int errorToken = 0;
+
+bool unmatch(unsigned int& i, unsigned int orig)
+{
+    errorToken = i;
+    i = orig;
+    return false;
+}
+
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
     Error::lineNum = 1;
@@ -21,7 +30,7 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
 
         Expression* e = nullptr;
         if (expr(e, i, tokens)) expressions.push_back(e);
-        else ERR << "Invalid syntax";
+        else ERR << "Invalid syntax " << tokens[errorToken];
     }
 }
 
@@ -29,17 +38,32 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
     unsigned int orig = i;
 
-    if (!call(out, i, tokens) && !string(out, i, tokens) && !number(out, i, tokens))
+    Expression* content = nullptr;
+    if (tokens[i].type == T_LPAREN)
     {
-        i = orig;
-        return false;
+        i++;
+        if (!expr(content, i, tokens))
+        {
+            return unmatch(i, orig);
+        }
+        if (tokens[i].type != T_RPAREN)
+        {
+            return unmatch(i, orig);
+        }
+        i++;
+        out = new Expression(E_CASE, "");
+    }
+    else if (!call(out, i, tokens) && !string(out, i, tokens) && !number(out, i, tokens))
+    {
+        return unmatch(i, orig);
     }
 
     //TODO: add support for parentheses
     // Check for attachables
     Expression* attach = nullptr;
     attachment(attach, i, tokens);
-    out->left = attach;
+    out->attachment = attach;
+    out->content = content;
 
     return true;
 }
@@ -50,8 +74,7 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 
     if (tokens[i].type != T_NAME)
     {
-        i = orig;
-        return false;
+        return unmatch(i, orig);
     }
     std::string name = tokens[i].value;
     i++;
@@ -64,17 +87,15 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     }
     i++;
 
-    Expression* a = nullptr;
-    if (!args(a, i, tokens))
+    Expression* arg = nullptr;
+    if (!args(arg, i, tokens))
     {
-        i = orig;
-        return false;
+        return unmatch(i, orig);
     }
 
     if (tokens[i].type != T_RPAREN && hasParen)
     {
-        i = orig;
-        return false;
+        return unmatch(i, orig);
     }
     else if (!hasParen)
     {
@@ -82,7 +103,8 @@ bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     }
     i++;
 
-    out = new Expression(E_CALL, name, nullptr, a);
+    out = new Expression(E_CALL, name);
+    out->argument = arg;
     return true;
 }
 
@@ -92,8 +114,7 @@ bool string(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 
     if (tokens[i].type != T_STRING)
     {
-        i = orig;
-        return false;
+        return unmatch(i, orig);
     }
     std::string value = tokens[i].value;
     i++;
@@ -108,8 +129,7 @@ bool number(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 
     if (tokens[i].type != T_NUMBER)
     {
-        i = orig;
-        return false;
+        return unmatch(i, orig);
     }
     std::string value = tokens[i].value;
     i++;
@@ -132,11 +152,10 @@ bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
             i++;
             if (!args(anotherArg, i, tokens))
             {
-                i = orig;
-                return false;
+                return unmatch(i, orig);
             }
         }
-        arg->other = anotherArg;
+        arg->next = anotherArg;
     }
 
     out = arg;
@@ -171,8 +190,7 @@ bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tok
         }
     }
 
-    i = orig;
-    return false;
+    return unmatch(i, orig);
 }
 
 } // namespace oca::internal

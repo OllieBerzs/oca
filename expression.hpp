@@ -17,15 +17,17 @@ enum
     E_CALL,
     E_METHOD,
     E_ARG,
+    E_CASE,
     E_NULL
 };
-const std::string E_TYPES[6]
+const std::string E_TYPES[7]
 {
     "number",
     "string",
     "call",
     "method",
     "arg",
+    "case",
     "null"
 };
 
@@ -33,26 +35,22 @@ struct Expression
 {
     int type;
     std::string value;
-    Expression* left;
-    Expression* right;
-    Expression* other;
+    Expression* attachment = nullptr;
+    Expression* next = nullptr;
+    Expression* argument = nullptr;
+    Expression* content = nullptr;
 
-    Expression(int type, const std::string& value)
-        : type(type), value(value), left(nullptr), right(nullptr), other(nullptr)
-    {
-        Memory::add('e');
-    }
-
-    Expression(int type, const std::string& value, Expression* l, Expression* r)
-        : type(type), value(value), left(l), right(r), other(nullptr)
+    Expression(int type, const std::string& value) : type(type), value(value)
     {
         Memory::add('e');
     }
 
     ~Expression()
     {
-        delete left;
-        delete right;
+        delete attachment;
+        delete next;
+        delete argument;
+        delete content;
         Memory::rem('e');
     }
 };
@@ -61,17 +59,22 @@ inline void printTree(const Expression& e, std::ostream& stream, const std::stri
 {
     std::string data = YELLOW + branch + RESET + "(\"" + CYAN + E_TYPES[e.type] + GREEN + " " + e.value + RESET + "\")\n";
     stream << std::setw(data.size() + indent) << data;
-    if (e.left)
+
+    if (e.content)
     {
-        printTree(*e.left, stream, "L", indent + 2);
+        printTree(*e.content, stream, "()", indent + 2);
     }
-    if (e.right)
+    if (e.argument)
     {
-        printTree(*e.right, stream, "R", indent + 2);
+        printTree(*e.argument, stream, "args", indent + 2);
     }
-    if (e.other)
+    if (e.next)
     {
-        printTree(*e.other, stream, "O", indent + 2);
+        printTree(*e.next, stream, "->", indent + 2);
+    }
+    if (e.attachment)
+    {
+        printTree(*e.attachment, stream, ".", indent + 2);
     }
 }
 

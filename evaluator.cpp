@@ -5,12 +5,12 @@ namespace oca::internal
 
 void getArgs(Expression* expr, Scope& env, std::vector<Object*>& args)
 {
-    Expression* arg = expr->right;
-    while (arg)
-    {
-        args.push_back(evaluate(arg->left, env));
-        arg = arg->right;
-    }
+    //Expression* arg = expr->right;
+    //while (arg)
+    //{
+    //    args.push_back(evaluate(arg->left, env));
+    //    arg = arg->right;
+    //}
 }
 
 Object* call(Expression* expr, Scope& env)
