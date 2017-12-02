@@ -41,6 +41,7 @@ struct Expression
     Expression* next = nullptr;
     Expression* argument = nullptr;
     Expression* content = nullptr;
+    Expression* block = nullptr;
 
     Expression(int type, const std::string& value) : type(type), value(value)
     {
@@ -53,6 +54,7 @@ struct Expression
         delete next;
         delete argument;
         delete content;
+        delete block;
         Memory::rem('e');
     }
 };

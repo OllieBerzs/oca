@@ -20,7 +20,7 @@ bool unmatch(unsigned int& i, unsigned int orig)
 
 void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
 {
-    Error::lineNum = 1;
+    Error::line = 1;
 
     unsigned int i = 0;
     while (i < tokens.size())
@@ -29,13 +29,17 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
         while (tokens[i].type == T_NEWLINE && i < tokens.size())
         {
             i++;
-            Error::lineNum++;
+            Error::line++;
         }
         if (i == tokens.size()) break;
 
         Expression* e = nullptr;
         if (expr(e, i, tokens)) expressions.push_back(e);
-        else ERR << "Invalid syntax " << tokens[errorToken];
+        else
+        {
+            Error::message = "Invalid syntax " + tokens[errorToken];
+            Error::panic();
+        }
     }
 }
 
@@ -217,7 +221,7 @@ bool attachment(Expression*& out, unsigned int& i, const std::vector<Token>& tok
 
 bool block(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 {
-    
+
 }
 
 } // namespace oca::internal

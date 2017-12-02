@@ -165,7 +165,7 @@ std::string scanSymbol(const std::string& script, unsigned int& index)
 void skipLine(const std::string& script, unsigned int& index)
 {
     while (script[index] != '\n') index++;
-    Error::lineNum++;
+    Error::line++;
     index--;
     lexchar = -1;
 }
@@ -173,13 +173,13 @@ void skipLine(const std::string& script, unsigned int& index)
 void newLine(std::vector<Token>& tokens)
 {
     tokens.emplace_back(T_NEWLINE, "");
-    Error::lineNum++;
+    Error::line++;
     lexchar = -1;
 }
 
 void lex(const std::string& script, std::vector<Token>& tokens)
 {
-    Error::lineNum = 1;
+    Error::line = 1;
 
     unsigned int index = 0;
     while (index < script.size())
@@ -204,7 +204,11 @@ void lex(const std::string& script, std::vector<Token>& tokens)
         else if (isOf(c, "+-*/%^=")) tokens.emplace_back(T_NAME, c);
         else if (isOf(c, "_" LETTERS)) tokens.emplace_back(T_NAME, scanSymbol(script, index));
 
-        else ERR << "Unknown character " << lexchar << " \"" << script[index] << "\"";
+        else
+        {
+            Error::message = "Unknown character " + std::to_string(lexchar) + " \"" + std::to_string(script[index]) + "\"";
+            Error::panic();
+        }
         index++;
         lexchar++;
     }

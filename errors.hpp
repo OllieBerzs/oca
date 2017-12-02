@@ -1,30 +1,14 @@
 #pragma once
 
-#include <sstream>
-#include <iostream>
+#include <string>
 
 struct Error
 {
     static std::string script;
-    static unsigned int lineNum;
+    static std::string message;
+    static unsigned int line;
+    static unsigned int column;
 
-    std::stringstream stream;
-
-    std::string getLine();
-
-    ~Error();
+    static std::string getLine();
+    static void panic();
 };
-
-template <typename T>
-Error& operator<<(Error& e, T&& t)
-{
-    e.stream << std::forward<T>(t);
-    return e;
-}
-template <typename T>
-Error& operator<<(Error&& e, T&& t)
-{
-    return e << std::forward<T>(t);
-}
-
-#define ERR Error()
