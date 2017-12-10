@@ -1,10 +1,9 @@
 #pragma once
 
-#include "scope.hpp"
 #include "expression.hpp"
+#include "scope.hpp"
 
-namespace oca::internal
-{
+namespace oca::internal {
 
 Object* evaluate(Expression* expr, Scope& env);
 

@@ -1,62 +1,57 @@
 #pragma once
 
-#include <map>
-#include <vector>
-#include <string>
-#include <functional>
 #include "expression.hpp"
+#include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
-namespace oca::internal
-{
+namespace oca::internal {
 
 struct Method;
 class Scope;
 
-struct Object
-{
-    std::map<std::string, Method*> methods;
+struct Object {
+  std::map<std::string, Method*> methods;
 
-    virtual ~Object() {};
+  virtual ~Object(){};
 
-    virtual std::string toString() const;
+  virtual std::string toString() const;
 };
 
-struct Number : public Object
-{
-    float num;
+struct Number : public Object {
+  float num;
 
-    Number(float num);
-    ~Number();
+  Number(float num);
+  ~Number();
 
-    std::string toString() const;
+  std::string toString() const;
 };
 
-struct String : public Object
-{
-    std::string str;
+struct String : public Object {
+  std::string str;
 
-    String(const std::string& str);
-    ~String();
+  String(const std::string& str);
+  ~String();
 
-    std::string toString() const;
+  std::string toString() const;
 };
 
 // Typedefs for native functions
-typedef std::vector<Object*> Nargs;
+typedef std::vector<Object*>                                Nargs;
 typedef std::function<Object*(const std::vector<Object*>&)> Nfunc;
 
-struct Method : public Object
-{
-    Nfunc function;
-    std::vector<Expression*> exprs;
-    bool native;
-    Scope* scope; // Delete from outside
+struct Method : public Object {
+  Nfunc                    function;
+  std::vector<Expression*> exprs;
+  bool                     native;
+  Scope*                   scope; // Delete from outside
 
-    Method(const std::vector<Expression*>& exprs, Scope* scope);
-    Method(const Nfunc& function);
-    ~Method();
+  Method(const std::vector<Expression*>& exprs, Scope* scope);
+  Method(const Nfunc& function);
+  ~Method();
 
-    std::string toString() const;
+  std::string toString() const;
 };
 
 } // namespace oca::internal

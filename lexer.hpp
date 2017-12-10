@@ -1,12 +1,22 @@
 #pragma once
 
+#include "token.hpp"
 #include <string>
 #include <vector>
-#include "token.hpp"
 
-namespace oca::internal
-{
+namespace oca::internal {
 
 void lex(const std::string& script, std::vector<Token>& tokens);
+
+bool number(const std::string& script, unsigned int& index,
+            std::vector<Token>& tokens);
+bool string(const std::string& script, unsigned int& index,
+            std::vector<Token>& tokens);
+bool boolean(const std::string& script, unsigned int& index,
+             std::vector<Token>& tokens);
+bool name(const std::string& script, unsigned int& index,
+          std::vector<Token>& tokens);
+bool keyword(const std::string& script, unsigned int& index,
+             std::vector<Token>& tokens);
 
 } // namespace oca::internal

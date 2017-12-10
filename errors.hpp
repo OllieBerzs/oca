@@ -2,13 +2,15 @@
 
 #include <string>
 
-struct Error
-{
-    static std::string script;
-    static std::string message;
-    static unsigned int line;
-    static unsigned int column;
+typedef unsigned int uint;
+using std::string;
 
-    static std::string getLine();
-    static void panic();
+struct Error {
+  static string script;
+  static string message;
+  static uint   line;
+  static uint   column;
+
+  static string getLine();
+  static void   panic();
 };

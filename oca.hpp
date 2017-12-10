@@ -1,59 +1,57 @@
-#include "utils.hpp"
 #include "errors.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
 #include "evaluator.hpp"
+#include "lexer.hpp"
 #include "native.hpp"
+#include "parser.hpp"
+#include "utils.hpp"
 
-namespace oca
-{
+namespace oca {
 
-void script(const std::string& source, bool outTokens = false, bool outTree = false, bool outOutput = true, bool outMemory = false)
-{
-    Error::script = source;
+void script(const std::string& source, bool outTokens = false,
+            bool outTree = false, bool outOutput = true,
+            bool outMemory = false) {
+  Error::script = source;
 
-    std::vector<internal::Token> tokens;
-    std::vector<internal::Expression*> exprs;
+  std::vector<internal::Token>       tokens;
+  std::vector<internal::Expression*> exprs;
 
-    lex(source, tokens);
+  lex(source, tokens);
 
-    if (outTokens)
-    {
-        std::cout << "\n============TOKENS===========\n\n";
-        for (const internal::Token& token : tokens) std::cout << token << '\n';
-    }
+  if (outTokens) {
+    std::cout << "\n============TOKENS===========\n\n";
+    for (const internal::Token& token : tokens) std::cout << token << '\n';
+  }
 
-    parse(tokens, exprs);
+  parse(tokens, exprs);
 
-    if (outTree)
-    {
-        std::cout << "\n============TREE=============\n\n";
-        for (auto e : exprs) std::cout << *e << '\n';
-    }
-
-    /*std::cout << "=========================" << '\n';
-    for (const Token& token : tokens) std::cout << token << '\n';
-    std::cout << "-------------------------" << '\n';
-    std::cout << "-------------------------" << '\n';
+  if (outTree) {
+    std::cout << "\n============TREE=============\n\n";
     for (auto e : exprs) std::cout << *e << '\n';
-    std::cout << "-------------------------" << '\n';
-    std::cout << "-------------------------" << '\n';
-    for (auto e : exprs)
-    {
-    Object* o = evaluate(e, scope);
-    if (o) std::cout << "=> " << o->toString() << '\n';
-    else std::cout << "=> null" << '\n';
-    }
-    std::cout << "-------------------------" << '\n';
-    std::cout << "-------------------------" << '\n';
+  }
 
-    // Cleanup
-    for (auto e : exprs) delete e;
-    scope.clean();
+  /*std::cout << "=========================" << '\n';
+  for (const Token& token : tokens) std::cout << token << '\n';
+  std::cout << "-------------------------" << '\n';
+  std::cout << "-------------------------" << '\n';
+  for (auto e : exprs) std::cout << *e << '\n';
+  std::cout << "-------------------------" << '\n';
+  std::cout << "-------------------------" << '\n';
+  for (auto e : exprs)
+  {
+  Object* o = evaluate(e, scope);
+  if (o) std::cout << "=> " << o->toString() << '\n';
+  else std::cout << "=> null" << '\n';
+  }
+  std::cout << "-------------------------" << '\n';
+  std::cout << "-------------------------" << '\n';
 
-    std::cout << "memory usage: [" << Memory::get() << "]\n";
+  // Cleanup
+  for (auto e : exprs) delete e;
+  scope.clean();
 
-    std::cout << "=========================" << '\n';*/
+  std::cout << "memory usage: [" << Memory::get() << "]\n";
+
+  std::cout << "=========================" << '\n';*/
 }
 
 } // namespace oca
