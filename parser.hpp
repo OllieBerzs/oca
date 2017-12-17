@@ -6,21 +6,20 @@
 
 namespace oca::internal {
 
-void parse(const std::vector<Token>& tokens,
-           std::vector<Expression*>& expressions);
+typedef unsigned int             uint;
+typedef std::vector<Token>       Tokens;
+typedef std::vector<Expression*> Expressions;
 
-bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
-bool call(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
-bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
-bool attachment(Expression*& out, unsigned int& i,
-                const std::vector<Token>& tokens);
-bool block(Expression*& out, unsigned int& i, const std::vector<Token>& tokens);
+void parse(const Tokens& tokens, Expressions& expressions);
 
-bool string(Expression*& out, unsigned int& i,
-            const std::vector<Token>& tokens);
-bool number(Expression*& out, unsigned int& i,
-            const std::vector<Token>& tokens);
-bool boolean(Expression*& out, unsigned int& i,
-             const std::vector<Token>& tokens);
+bool expr(Expression*& out, uint& i, const Tokens& tokens);
+bool call(Expression*& out, uint& i, const Tokens& tokens);
+bool args(Expression*& out, uint& i, const Tokens& tokens);
+bool attachment(Expression*& out, uint& i, const Tokens& tokens);
+bool block(Expression*& out, uint& i, const Tokens& tokens);
+
+bool string(Expression*& out, uint& i, const Tokens& tokens);
+bool number(Expression*& out, uint& i, const Tokens& tokens);
+bool boolean(Expression*& out, uint& i, const Tokens& tokens);
 
 } // namespace oca::internal

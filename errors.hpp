@@ -3,14 +3,13 @@
 #include <string>
 
 typedef unsigned int uint;
-using std::string;
 
 struct Error {
-  static string script;
-  static string message;
-  static uint   line;
-  static uint   column;
+  static std::string script;
+  static std::string message;
+  static uint        line;
+  static uint        column;
 
-  static string getLine();
-  static void   panic();
+  static std::string getLine();
+  static void        panic();
 };

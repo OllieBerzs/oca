@@ -7,24 +7,22 @@
 #include <memory>
 #include <string>
 
-using std::string;
-
 namespace oca::internal {
 
 enum { E_NUMBER, E_STRING, E_BOOL, E_CALL, E_METHOD, E_ARG, E_CASE, E_NULL };
-const string E_TYPES[8]{"number", "string", "boolean", "call",
-                        "method", "arg",    "case",    "null"};
+const std::string E_TYPES[8]{"number", "string", "boolean", "call",
+                             "method", "arg",    "case",    "null"};
 
 struct Expression {
   int         type;
-  string      value;
+  std::string value;
   Expression* attachment = nullptr;
   Expression* next = nullptr;
   Expression* argument = nullptr;
   Expression* content = nullptr;
   Expression* block = nullptr;
 
-  Expression(int type, const string& value) : type(type), value(value) {
+  Expression(int type, const std::string& value) : type(type), value(value) {
     Memory::add('e');
   }
 
@@ -39,9 +37,13 @@ struct Expression {
 };
 
 inline void printTree(const Expression& e, std::ostream& stream,
-                      const string& branch, int indent = 0) {
-  string data = YELLOW + branch + RESET + "(\"" + CYAN + E_TYPES[e.type] + GREEN
-                + " " + e.value + RESET + "\")\n";
+                      const std::string& branch, int indent = 0) {
+  std::string data = YELLOW + branch;
+  data += RESET + "(\"";
+  data += CYAN + E_TYPES[e.type];
+  data += GREEN + " " + e.value;
+  data += RESET + "\")\n";
+
   stream << std::setw(data.size() + indent) << data;
 
   if (e.content) printTree(*e.content, stream, "()", indent + 2);

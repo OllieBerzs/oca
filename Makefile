@@ -18,8 +18,12 @@ clean:
 	@rm -rf temp
 	@rm oca
 
+run: all
+	@echo Running script.oca
+	@oca script.oca
+
 remake: clean all
 
-.PHONY: all remake clean
+.PHONY: all remake clean run
 
 -include $(OBJECTS:.o=.d)
