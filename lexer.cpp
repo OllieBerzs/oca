@@ -1,5 +1,6 @@
-#include "errors.hpp"
 #include "lexer.hpp"
+#include "errors.hpp"
+#include <iostream>
 
 namespace oca::internal {
 
@@ -15,8 +16,6 @@ bool isOf(char c, const std::string& str) {
 }
 
 void lex(const std::string& script, std::vector<Token>& tokens) {
-  Error::line = 1;
-
   unsigned int index = 0;
   while (index < script.size()) {
     char c = script[index];
@@ -55,19 +54,18 @@ void lex(const std::string& script, std::vector<Token>& tokens) {
       tokens.emplace_back(T_NAME, c);
     else if (isOf(c, "_" LETTERS))
       tokens.emplace_back(T_NAME, scanSymbol(script, index));
-
-    else {
-      Error::message = "Unknown character " + std::to_string(lexchar) + " \""
-                       + std::to_string(script[index]) + "\"";
-      Error::panic();
-    }
+    else
+      std::cout << "Unknown symbol " << c << "\n";
     index++;
     lexchar++;
   }
 }
 
-bool match(const std::string& script, unsigned int index,
-           const std::vector<std::string>& lookFor) {
+bool match(
+  const std::string&              script,
+  unsigned int                    index,
+  const std::vector<std::string>& lookFor) {
+
   for (const std::string& s : lookFor) {
     unsigned int i = index;
     bool         same = false;
@@ -84,11 +82,10 @@ bool match(const std::string& script, unsigned int index,
   return false;
 }
 
-bool number(const std::string& script, unsigned int& index,
-            std::vector<Token>& tokens) {
-}
+bool integer(
+  const std::string& script, unsigned int& index, std::vector<Token>& tokens) {}
 
-std::string scanString(const std::string& script, unsigned int& index) {
+/*std::string scanString(const std::string& script, unsigned int& index) {
   std::string ret;
 
   char quote = script[index];
@@ -188,15 +185,13 @@ std::string scanSymbol(const std::string& script, unsigned int& index) {
 
 void skipLine(const std::string& script, unsigned int& index) {
   while (script[index] != '\n') index++;
-  Error::line++;
   index--;
   lexchar = -1;
 }
 
 void newLine(std::vector<Token>& tokens) {
   tokens.emplace_back(T_NEWLINE, "");
-  Error::line++;
   lexchar = -1;
-}
+}*/
 
 } // namespace oca::internal

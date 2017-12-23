@@ -7,28 +7,24 @@
 
 namespace oca {
 
-void script(const std::string& source, bool outTokens = false,
-            bool outTree = false, bool outOutput = true,
-            bool outMemory = false) {
-  Error::script = source;
+void script(const std::string& source) {
 
   std::vector<internal::Token>       tokens;
   std::vector<internal::Expression*> exprs;
 
   lex(source, tokens);
 
-  if (outTokens) {
-    std::cout << "\n============TOKENS===========\n\n";
-    for (const internal::Token& token : tokens) std::cout << token << '\n';
-  }
+#ifdef OUT_TOKENS
+  std::cout << "\n============TOKENS===========\n\n";
+  for (const internal::Token& token : tokens) std::cout << token << '\n';
+#endif
 
   parse(tokens, exprs);
 
-  if (outTree) {
-    std::cout << "\n============TREE=============\n\n";
-    for (auto e : exprs) std::cout << *e << '\n';
-  }
-
+#ifdef OUT_TREE
+  std::cout << "\n============TREE=============\n\n";
+  for (auto e : exprs) std::cout << *e << '\n';
+#endif
   /*std::cout << "=========================" << '\n';
   for (const Token& token : tokens) std::cout << token << '\n';
   std::cout << "-------------------------" << '\n';

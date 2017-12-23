@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+/*#include <string>
 
 typedef unsigned int uint;
 
@@ -12,4 +12,4 @@ struct Error {
 
   static std::string getLine();
   static void        panic();
-};
+};*/

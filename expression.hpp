@@ -39,10 +39,10 @@ struct Expression {
 inline void printTree(const Expression& e, std::ostream& stream,
                       const std::string& branch, int indent = 0) {
   std::string data = YELLOW + branch;
-  data += RESET + "(\"";
+  data += RESET + std::string("(\"");
   data += CYAN + E_TYPES[e.type];
-  data += GREEN + " " + e.value;
-  data += RESET + "\")\n";
+  data += GREEN + std::string(" ") + e.value;
+  data += RESET + std::string("\")\n");
 
   stream << std::setw(data.size() + indent) << data;
 

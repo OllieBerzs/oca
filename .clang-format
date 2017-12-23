@@ -1,17 +1,19 @@
 ﻿---
 AccessModifierOffset: '-2'
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: AlwaysBreak
 AlignConsecutiveDeclarations: 'true'
 AlignOperands: 'true'
 AlignTrailingComments: 'true'
 AllowShortBlocksOnASingleLine: 'true'
 AllowShortCaseLabelsOnASingleLine: 'true'
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: 'true'
 AllowShortLoopsOnASingleLine: 'true'
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: 'true'
+BinPackArguments: 'true'
+BinPackParameters: 'false'
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: 'false'
@@ -20,9 +22,10 @@ BreakStringLiterals: 'true'
 ColumnLimit: '80'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'false'
 ConstructorInitializerIndentWidth: '2'
+ContinuationIndentWidth: '2'
 IndentCaseLabels: 'false'
 IndentWidth: '2'
-MaxEmptyLinesToKeep: '3'
+MaxEmptyLinesToKeep: '1'
 NamespaceIndentation: None
 PointerAlignment: Left
 SpaceBeforeAssignmentOperators: 'true'

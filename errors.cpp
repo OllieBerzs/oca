@@ -1,4 +1,4 @@
-#include "colorput.hpp"
+/*#include "colorput.hpp"
 #include "errors.hpp"
 
 std::string Error::getLine() {
@@ -22,4 +22,4 @@ void Error::panic() {
   colorize(RESET);
 
   exit(0);
-}
+}*/

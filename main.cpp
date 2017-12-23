@@ -1,3 +1,5 @@
+#define OUT_TOKENS
+
 #include "oca.hpp"
 
 int main(int argc, char** argv) {
@@ -9,5 +11,5 @@ int main(int argc, char** argv) {
   // Scope scope(nullptr);
   // nativeMethods(scope);
 
-  oca::script(file(argv[1]), false, true);
+  oca::script(file(argv[1]));
 }
