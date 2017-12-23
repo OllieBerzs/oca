@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-namespace oca::internal {
+namespace oca::internal
+{
 
 #define LEX_PARAMS
 

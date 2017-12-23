@@ -5,9 +5,11 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
-namespace oca {
+namespace oca
+{
 
-void script(const std::string& source) {
+void script(const std::string& source)
+{
 
   std::vector<internal::Token>       tokens;
   std::vector<internal::Expression*> exprs;

@@ -2,38 +2,34 @@
 #include "errors.hpp"
 #include <iostream>
 
-namespace oca::internal {
+namespace oca::internal
+{
 
 #define NUMBERS "0123456789"
 #define LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 unsigned int lexchar = 0;
 
-bool isOf(char c, const std::string& str) {
+bool isOf(char c, const std::string& str)
+{
   for (char ch : str)
     if (c == ch) return true;
   return false;
 }
 
-void lex(const std::string& script, std::vector<Token>& tokens) {
+void lex(const std::string& script, std::vector<Token>& tokens)
+{
   unsigned int index = 0;
   while (index < script.size()) {
     char c = script[index];
 
-    if (isOf(c, " \r"))
-      ; // Skip space
-    else if (c == '#')
-      skipLine(script, index);
-    else if (c == '\n')
-      newLine(tokens);
-    else if (c == '(')
-      tokens.emplace_back(T_LPAREN, "");
-    else if (c == ')')
-      tokens.emplace_back(T_RPAREN, "");
-    else if (c == '.')
-      tokens.emplace_back(T_DOT, "");
-    else if (c == ',')
-      tokens.emplace_back(T_COMMA, "");
+    if (isOf(c, " \r"); // Skip space
+    else if (c == '#') skipLine(script, index);
+    else if (c == '\n') newLine(tokens);
+    else if (c == '(') tokens.emplace_back(T_LPAREN, "");
+    else if (c == ')') tokens.emplace_back(T_RPAREN, "");
+    else if (c == '.') tokens.emplace_back(T_DOT, "");
+    else if (c == ',') tokens.emplace_back(T_COMMA, "");
     // Keywords
     else if (match(script, index, {"do"})) {
       tokens.emplace_back(T_DO, "");
@@ -50,12 +46,10 @@ void lex(const std::string& script, std::vector<Token>& tokens) {
     else if (match(script, index, {"true", "false"}))
       tokens.emplace_back(T_BOOL, scanBool(script, index));
     // Names
-    else if (isOf(c, "+-*/%^="))
-      tokens.emplace_back(T_NAME, c);
+    else if (isOf(c, "+-*/%^=")) tokens.emplace_back(T_NAME, c);
     else if (isOf(c, "_" LETTERS))
       tokens.emplace_back(T_NAME, scanSymbol(script, index));
-    else
-      std::cout << "Unknown symbol " << c << "\n";
+    else std::cout << "Unknown symbol " << c << "\n";
     index++;
     lexchar++;
   }
@@ -64,8 +58,8 @@ void lex(const std::string& script, std::vector<Token>& tokens) {
 bool match(
   const std::string&              script,
   unsigned int                    index,
-  const std::vector<std::string>& lookFor) {
-
+  const std::vector<std::string>& lookFor)
+{
   for (const std::string& s : lookFor) {
     unsigned int i = index;
     bool         same = false;
@@ -77,13 +71,17 @@ bool match(
       i++;
       same = true;
     }
-    if (same) { return true; }
+    if (same) {
+      return true;
+    }
   }
   return false;
 }
 
 bool integer(
-  const std::string& script, unsigned int& index, std::vector<Token>& tokens) {}
+  const std::string& script, unsigned int& index, std::vector<Token>& tokens)
+{
+}
 
 /*std::string scanString(const std::string& script, unsigned int& index) {
   std::string ret;

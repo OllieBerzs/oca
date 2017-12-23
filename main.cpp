@@ -2,7 +2,8 @@
 
 #include "oca.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   if (argc < 2) {
     // TODO: Launch real-time interpreter
     exit(0);
