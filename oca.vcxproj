@@ -126,11 +126,13 @@
     <ClInclude Include="src\lexer.hpp" />
     <ClInclude Include="src\oca.hpp" />
     <ClInclude Include="src\token.hpp" />
+    <ClInclude Include="src\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="grammar.bnf" />
     <None Include="README.md" />
+    <None Include="script.oca" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

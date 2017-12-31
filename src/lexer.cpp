@@ -141,10 +141,12 @@ bool string(const std::string &script, unsigned int &index, std::vector<Token> &
     if (index >= script.size())
     {
       std::cout << "Missing end quote [" << lexLine << " " << lexColumn << "]\n";
+      std::cin.get();
+      exit(0);
     }
     c = script[index];
   }
-  tokens.emplace_back("string", str, lexLine, lexColumn, str.size());
+  tokens.emplace_back("string", str, lexLine, lexColumn, (unsigned int)str.size());
   return true;
 }
 

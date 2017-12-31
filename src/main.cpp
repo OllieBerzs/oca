@@ -1,9 +1,11 @@
 #define OUT_TOKENS
 
 #include "oca.hpp"
+#include "utils.hpp"
 
 int main(int argc, char** argv)
 {
-  oca::script("10.4");
+  if (argc < 2) std::cout << "No file provided\n";
+  oca::script(file(argv[1]));
   std::cin.get();
 }

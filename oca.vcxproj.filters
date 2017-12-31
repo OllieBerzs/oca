@@ -32,10 +32,14 @@
     <ClInclude Include="src\token.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="grammar.bnf" />
     <None Include="README.md" />
+    <None Include="script.oca" />
   </ItemGroup>
 </Project>
