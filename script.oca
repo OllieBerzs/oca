@@ -1,2 +1,3 @@
-10.4
-'hello' 54
+def add do |a, b|
+  return a + b
+end
