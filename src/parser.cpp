@@ -46,8 +46,7 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
 
   // Check for attachables
   Expression* attach = nullptr;
-  if (i < tokens.size()) attachment(attach, i, tokens);
-  if (attach)
+  while (attachment(attach, i, tokens))
   {
     Expression* temp = new Expression("attach", "");
     temp->left = out;
