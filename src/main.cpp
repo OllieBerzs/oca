@@ -1,4 +1,5 @@
 #define OUT_TOKENS
+#define OUT_TREE
 
 #include "oca.hpp"
 #include "utils.hpp"

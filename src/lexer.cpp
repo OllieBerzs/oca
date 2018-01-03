@@ -30,6 +30,7 @@ void lex(const std::string& script, std::vector<Token>& tokens)
     {
       std::cout << "Unknown symbol \"" << script[index] << "\" ["
         << lexLine << " " << lexColumn << "]\n";
+      std::cin.get();
       exit(0);
     }
   }
@@ -103,7 +104,7 @@ bool number(const std::string& script, unsigned int& index, std::vector<Token>& 
   {
     if (c == '.')
     {
-      if (isInt) isInt = false;
+      if (isInt && index + 1 < script.length() && isIn(script[index + 1], NUMBERS)) isInt = false;
       else break;
     }
     num += c;

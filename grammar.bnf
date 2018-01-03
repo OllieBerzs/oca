@@ -22,7 +22,6 @@
 
 <block> ::= do pipe <param_list> pipe <expr_list> <block_end>
           | do <expr_list> <block_end>
-          | <expr>
 
 <block_end> ::= end
               | else <block>
