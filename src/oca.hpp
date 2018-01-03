@@ -8,9 +8,10 @@
 namespace oca
 {
 
-void script(const std::string& source)
+void script(const std::string& source, const std::string& filename = "")
 {
   internal::errors::Script::data = source;
+  internal::errors::Script::file = filename;
 
   // Lexing
   std::vector<internal::Token> tokens;

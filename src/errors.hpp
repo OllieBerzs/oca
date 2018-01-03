@@ -6,7 +6,11 @@
 
 namespace oca::internal::errors
 {
-  struct Script { static std::string data; };
+  struct Script 
+  { 
+    static std::string file;
+    static std::string data; 
+  };
 
-  void parseError(const Token& token, const std::string& message);
+  void parseError(const Token& token, const std::string& type, const std::string& message);
 }

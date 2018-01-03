@@ -23,7 +23,7 @@ void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressio
   {
     Expression* e = nullptr;
     if (expr(e, i, tokens)) expressions.push_back(e);
-    else errors::parseError(tokens[i], "Invalid syntax token");
+    else errors::parseError(tokens[i], "INVALID TOKEN", "Invalid syntax token");
   }
 }
 
