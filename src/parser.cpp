@@ -55,8 +55,13 @@ bool expr(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
     out = new Expression("outer", "");
     out->left = intern;
   } 
-  else if (!block(out, i, tokens) && !call(out, i, tokens) && !string(out, i, tokens) 
-    && !integer(out, i, tokens) && !floating(out, i, tokens) && !boolean(out, i, tokens))
+  else if (!block(out, i, tokens) 
+        && !call(out, i, tokens) 
+        && !definition(out, i, tokens)
+        && !string(out, i, tokens) 
+        && !integer(out, i, tokens) 
+        && !floating(out, i, tokens) 
+        && !boolean(out, i, tokens))
   {
     return back(i, orig);
   }
@@ -206,6 +211,26 @@ bool block(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
   mainBlock->right = exprs;
   out->left = mainBlock;
   out->right = elseBlock;
+  return true;
+}
+bool definition(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)
+{
+  unsigned int orig = i;
+
+  if (tokenAt(i, tokens).type != "def") return back(i, orig);
+  next(i);
+  if (tokenAt(i, tokens).type != "name")
+  {
+    errors::parseError(tokens[i], "MISSING NAME", "Definition must have a name");
+  }
+  std::string name = tokens[i].value;
+  next(i);
+  out = new Expression("def", name);
+  if (!expr(out->right, i, tokens))
+  {
+    errors::parseError(tokens[i], "MISSING EXPRESSION", "No expression provided to definition");
+  }
+
   return true;
 }
 
