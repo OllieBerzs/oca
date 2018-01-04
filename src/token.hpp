@@ -22,7 +22,8 @@ struct Token
 
 inline std::ostream& operator<<(std::ostream& stream, const Token& token)
 {
-  return stream << "(\"" << token.type << "\": \"" << token.value << "\")";
+  return stream << "(\"" << token.type << "\": \"" << token.value << "\")"
+    << "[" << token.line << " " << token.column << "]";
 }
 
 } // namespace oca::internal

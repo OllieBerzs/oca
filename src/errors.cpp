@@ -1,4 +1,5 @@
 #include "errors.hpp"
+#include <cmath>
 
 #if defined(_WIN32) || defined(_WIN64)
   #include <windows.h>
@@ -44,8 +45,9 @@ namespace oca::internal::errors
 
     // prepare error indicator
     std::string indicator = "";
-    for (unsigned int i = 0; i < (lineNum / 10) + 2; i++) indicator += ' ';
-    for (unsigned int i = 0; i < token.column; i++) indicator += ' ';
+    unsigned int digits = lineNum > 0 ? (int)log10((double)lineNum) + 1 : 1;
+    for (unsigned int i = 0; i < digits + 2; i++) indicator += ' ';
+    for (unsigned int i = 0; i < token.column - 1; i++) indicator += ' ';
     for (unsigned int i = 0; i < token.length; i++) indicator += '^';
 
     // print error
@@ -56,7 +58,8 @@ namespace oca::internal::errors
     colorize(RED);
     std::cout << indicator << "\n";
     colorize(RESET);
-    std::cout << message << " " << token << "\n";
+    std::cout << message << "\n";
+    std::cout << token << "\n";
 
     // exit
     std::cin.get();

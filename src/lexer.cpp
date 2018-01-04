@@ -34,6 +34,7 @@ void lex(const std::string& script, std::vector<Token>& tokens)
       exit(0);
     }
   }
+  tokens.emplace_back("__last__", "", 0, 0, 0);
 }
 
 bool isIn(char c, const std::string& str)
@@ -112,8 +113,9 @@ bool number(const std::string& script, unsigned int& index, std::vector<Token>& 
     c = script[++index];
   }
 
-  if (isInt) tokens.emplace_back("integer", num, lexLine, lexColumn, 0);
-  else tokens.emplace_back("float", num, lexLine, lexColumn, 0);
+  unsigned int length = (unsigned int)num.size();
+  if (isInt) tokens.emplace_back("integer", num, lexLine, lexColumn - length, length);
+  else tokens.emplace_back("float", num, lexLine, lexColumn - length, length);
 
   return true;
 }
@@ -141,19 +143,20 @@ bool string(const std::string& script, unsigned int& index, std::vector<Token>& 
   }
   index++;
   lexColumn++;
-  tokens.emplace_back("string", str, lexLine, lexColumn, (unsigned int)str.size());
+  unsigned int length = (unsigned int)str.size();
+  tokens.emplace_back("string", str, lexLine, lexColumn - length, length);
   return true;
 }
 bool boolean(const std::string& script, unsigned int& index, std::vector<Token>& tokens)
 {
   if (match("true", script, index))
   {
-    tokens.emplace_back("boolean", "true", lexLine, lexColumn, 4);
+    tokens.emplace_back("boolean", "true", lexLine, lexColumn - 4, 4);
     return true;
   }
   else if (match("false", script, index))
   { 
-    tokens.emplace_back("boolean", "false", lexLine, lexColumn, 5);
+    tokens.emplace_back("boolean", "false", lexLine, lexColumn - 5, 5);
     return true;
   }
   return false;
@@ -162,32 +165,32 @@ bool keyword(const std::string& script, unsigned int& index, std::vector<Token>&
 {
   if (match("def", script, index))
   {
-    tokens.emplace_back("def", "", lexLine, lexColumn, 3);
+    tokens.emplace_back("def", "", lexLine, lexColumn - 3, 3);
     return true;
   }
   if (match("ext", script, index))
   {
-    tokens.emplace_back("ext", "", lexLine, lexColumn, 3);
+    tokens.emplace_back("ext", "", lexLine, lexColumn - 3, 3);
     return true;
   }
   if (match("return", script, index))
   {
-    tokens.emplace_back("return", "", lexLine, lexColumn, 6);
+    tokens.emplace_back("return", "", lexLine, lexColumn - 6, 6);
     return true;
   }
   if (match("do", script, index))
   {
-    tokens.emplace_back("do", "", lexLine, lexColumn, 2);
+    tokens.emplace_back("do", "", lexLine, lexColumn - 2, 2);
     return true;
   }
   if (match("end", script, index))
   {
-    tokens.emplace_back("end", "", lexLine, lexColumn, 3);
+    tokens.emplace_back("end", "", lexLine, lexColumn - 3, 3);
     return true;
   }
   if (match("else", script, index))
   {
-    tokens.emplace_back("else", "", lexLine, lexColumn, 4);
+    tokens.emplace_back("else", "", lexLine, lexColumn - 4, 4);
     return true;
   }
   return false;
@@ -199,7 +202,7 @@ bool name(const std::string& script, unsigned int& index, std::vector<Token>& to
   {
     std::string chr = "";
     chr += c;
-    tokens.emplace_back("name", chr, lexLine, lexColumn, 1);
+    tokens.emplace_back("name", chr, lexLine, lexColumn - 1, 1);
     index++;
     lexColumn++;
     return true;
@@ -211,9 +214,10 @@ bool name(const std::string& script, unsigned int& index, std::vector<Token>& to
     c = script[++index];
     lexColumn++;
   }
-  if (nam.length() > 0)
+  unsigned int length = (unsigned int)nam.length();
+  if (length > 0)
   {
-    tokens.emplace_back("name", nam, lexLine, lexColumn, (unsigned int)nam.length());
+    tokens.emplace_back("name", nam, lexLine, lexColumn - length, length);
     return true;
   }
   return false;

@@ -1,8 +1,7 @@
 # Grammar for parser
 
-<expr> ::= <expr> <block> 
-         | <expr> <attachment> 
-         | <call> 
+<expr> ::= <expr> <attachment> 
+		 | <call> 
          | <block>
          | string 
          | integer
@@ -11,7 +10,9 @@
          | lparen <expr> rparen
          | <def>
 
-<call> ::= name lparen <args> rparen 
+<call> ::= name lparen <args> rparen <block>
+         | name <args> <block>
+		 | name lparen <args> rparen
          | name <args>
 
 <args> ::= <expr> comma <args>
@@ -24,7 +25,7 @@
           | do <expr_list> <block_end>
 
 <block_end> ::= end
-              | else <block>
+              | else <expr_list> end // else happens if break occurs to search for a return value
 
 <param_list> ::= name comma <params> 
                | name
