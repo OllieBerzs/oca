@@ -141,18 +141,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\errors.cpp" />
+    <ClCompile Include="src\evaluator.cpp" />
     <ClCompile Include="src\lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\errors.hpp" />
+    <ClInclude Include="src\evaluator.hpp" />
     <ClInclude Include="src\expression.hpp" />
     <ClInclude Include="src\lexer.hpp" />
     <ClInclude Include="src\oca.hpp" />
     <ClInclude Include="src\parser.hpp" />
+    <ClInclude Include="src\scope.hpp" />
     <ClInclude Include="src\token.hpp" />
     <ClInclude Include="src\utils.hpp" />
+    <ClInclude Include="src\value.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

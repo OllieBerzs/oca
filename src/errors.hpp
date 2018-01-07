@@ -13,4 +13,5 @@ namespace oca::internal::errors
   };
 
   void parseError(const Token& token, const std::string& type, const std::string& message);
+  void evalError(const std::string& type, const std::string& message);
 }

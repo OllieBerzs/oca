@@ -35,3 +35,4 @@
               | 0
 
 <def> ::= def name <expr>
+// add modifiers like public, global, pointless to definitions 

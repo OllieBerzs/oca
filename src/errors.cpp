@@ -65,4 +65,16 @@ namespace oca::internal::errors
     std::cin.get();
     exit(0);
   }
-}
+  void evalError(const std::string& type, const std::string& message)
+  {
+    // print error
+    colorize(CYAN);
+    std::cout << "-- " << type << " ---------------------- " << Script::file << "\n\n";
+    colorize(RESET);
+    std::cout << message << "\n";
+
+    // exit
+    std::cin.get();
+    exit(0);
+  }
+} // namespace oca::internal::errors
