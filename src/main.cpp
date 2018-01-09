@@ -1,14 +1,16 @@
 //#define OUT_TOKENS
 #define OUT_TREE
+//#define OUT_VALUES
 
 #include "oca.hpp"
-#include "utils.hpp"
 
 int main(int argc, char** argv)
 {
   if (argc < 2) std::cout << "No file provided\n";
 
-  oca::script(file(argv[1]), argv[1]);
+  oca::State state;
+  oca::useLib(state);
+  oca::scriptFile(state, argv[1]);
 
   std::cin.get();
 }

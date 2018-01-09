@@ -10,6 +10,7 @@ namespace oca::internal
     else if (expr->type == "float") return new Value("float", expr, false);
     else if (expr->type == "string") return new Value("string", expr, false);
     else if (expr->type == "boolean") return new Value("boolean", expr, false);
+    else if (expr->type == "block") return new Value("block", expr, false);
     else if (expr->type == "def") return define(scope, expr);
     else if (expr->type == "call") return call(scope, expr);
     else return new Value("nil", nullptr, false);
@@ -29,7 +30,7 @@ namespace oca::internal
     // get arguments
     std::vector<Value*> args;
     Expression* arg = expr->right;
-    while (arg)
+    while (arg && arg->left)
     {
       args.push_back(evaluate(scope, arg->left));
       arg = arg->right;
@@ -40,6 +41,18 @@ namespace oca::internal
     if (method->type == "native")
     {
       return method->native(args);
+    }
+    else
+    {
+      Expression* body = method->expr->left;
+      Value* ret = nullptr;
+      Scope methodScope(scope);
+      while (body)
+      {
+        ret = evaluate(&methodScope, body->right);
+        body = body->left;
+      }
+      return ret;
     }
     return new Value("nil", nullptr, false);
   }

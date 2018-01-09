@@ -2,17 +2,19 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 #include "expression.hpp"
 
 namespace oca::internal
 {
-
+  struct Value;
+  typedef std::function<Value*(std::vector<Value*>)> NativeMethod;
   struct Value
   {
     std::string type;
     Expression* expr;
     bool isNamed;
-    Value* (*native)(std::vector<Value*>);
+    NativeMethod native;
 
     Value(const std::string& type, Expression* expr, bool n) 
       : type(type), expr(expr), isNamed(n) {}
