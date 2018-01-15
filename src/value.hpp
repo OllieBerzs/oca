@@ -13,11 +13,11 @@ namespace oca::internal
   {
     std::string type;
     Expression* expr;
-    bool isNamed;
+    unsigned int refCount;
     NativeMethod native;
 
-    Value(const std::string& type, Expression* expr, bool n) 
-      : type(type), expr(expr), isNamed(n) {}
+    Value(const std::string& type, Expression* expr) 
+      : type(type), expr(expr), refCount(0) {}
     ~Value()
     {
       if (expr) delete expr;

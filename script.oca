@@ -1,5 +1,5 @@
-def hi do 
-  print 'Hello, World!' 
+def pow do |a|
+  a
 end
 
-hi
+5.pow

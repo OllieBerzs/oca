@@ -18,7 +18,10 @@ namespace oca::internal
 
     void clean()
     {
-      for (auto n : names) delete n.second;
+      for (auto n : names)
+      {
+        if (n.second->refCount == 0) delete n.second;
+      }
       names.clear();
     }
 

@@ -66,14 +66,20 @@ namespace oca::internal
       return back(i, orig);
     }
 
-    // Check for attachables
+    // check for attachables
     Expression* attach = nullptr;
+    // out = expression, first arg
     while (attachment(attach, i, tokens))
     {
-      Expression* temp = new Expression("attach", "");
-      temp->left = out;
-      temp->right = attach;
-      out = temp;
+      Expression* args = attach->right;
+      Expression* newArgs = new Expression("arg", "");
+      // put expression as first argument
+      newArgs->left = out;
+      newArgs->right = args;
+      // apply new arguments
+      attach->right = newArgs;
+      // make attached call new expression
+      out = attach;
     }
 
     return true;
@@ -150,16 +156,16 @@ namespace oca::internal
     if (tokenAt(i, tokens).type != "do") return back(i, orig);
     next(i);
 
-    out = new Expression("block", "head");
-    Expression* mainBlock = new Expression("block", "body");
-    Expression* elseBlock = nullptr;
+    out = new Expression("block", "");
+    Expression* mainBody = new Expression("b_main", "");
+    Expression* elseBody = new Expression("b_else", "");
  
     // get parameters
-    Expression* par = nullptr;
+    Expression* pars = nullptr;
     if (tokenAt(i, tokens).type == "|")
     {
       next(i);
-      if (!params(par, i, tokens, tokenAt(i, tokens).line))
+      if (!params(pars, i, tokens, tokenAt(i, tokens).line))
       {
         errors::parseError(tokenAt(i, tokens), "EMPTY PIPES", "No parameters for block with '||'");
       }
@@ -170,47 +176,43 @@ namespace oca::internal
       next(i);
     }
 
-    // get body
-    Expression* exprs = nullptr;
-    if (!expr(exprs, i, tokens))
-    {
-      errors::parseError(tokens[i], "MISSING EXPRESSION", "No expression provided to block");
-    }
+    // get main body
+    Expression* mainExprs = new Expression("expr", "");
+    Expression* e = mainExprs;
     while (tokenAt(i, tokens).type != "end" && tokenAt(i, tokens).type != "else")
     {
-      Expression* anotherExpr = nullptr;
-      if (!expr(anotherExpr, i, tokens))
+      if (!expr(e->left, i, tokens))
       {
         errors::parseError(tokens[i], "NOT AN EXPRESSION", "Expected an expression");
       }
-      exprs->right = anotherExpr;
+      e->right = new Expression("expr", "");
+      e = e->right;
     }
 
     // get else body
+    Expression* elseExprs = new Expression("expr", "");
+    e = elseExprs;
     if (tokenAt(i, tokens).type == "else")
     {
       next(i);
-      if (!expr(elseBlock, i, tokens))
-      {
-        errors::parseError(tokens[i], "MISSING EXPRESSION", "No expression provided to else block");
-      }
       while (tokenAt(i, tokens).type != "end")
       {
-        Expression* anotherExpr = nullptr;
-        if (!expr(anotherExpr, i, tokens))
+        if (!expr(e->left, i, tokens))
         {
           errors::parseError(tokens[i], "NOT AN EXPRESSION", "Expected an expression");
         }
-        elseBlock->right = anotherExpr;
+        e->right = new Expression("expr", "");
+        e = e->right;
       }
     }
     next(i);
 
     // build block
-    mainBlock->left = par;
-    mainBlock->right = exprs;
-    out->left = mainBlock;
-    out->right = elseBlock;
+    mainBody->left = pars;
+    mainBody->right = mainExprs;
+    elseBody->right = elseExprs;
+    out->left = mainBody;
+    out->right = elseBody;
     return true;
   }
   bool definition(Expression*& out, unsigned int& i, const std::vector<Token>& tokens)

@@ -26,7 +26,6 @@ namespace oca::internal
   inline void printTree(const Expression& e, std::ostream& stream, const std::string& branch, 
     int indent = 0) 
   {
-    if (e.type == "arg" && !e.left) return;
     std::string data = branch + "(\"" + e.type;
     if (e.value != "") data += " " + e.value;
     data += "\")\n";

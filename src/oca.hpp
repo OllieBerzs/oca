@@ -40,16 +40,16 @@ namespace oca
         Value* val = evaluate(&scope, e);
         #ifdef OUT_VALUES
           if (val->type == "nil") std::cout << "->nil\n";
-          else std::cout << "->" << val->expr->value << "\n";
+          else std::cout << "->" << val->type << " " << val->expr->value << "\n";
         #endif
-        if (!val->isNamed) delete val;
+        if (val->refCount == 0) delete val;
       }
     }
   }
 
   // api
   typedef internal::Scope State;
-  #define NIL new internal::Value("nil", nullptr, false)
+  #define NIL new internal::Value("nil", nullptr)
 
   void script(State& state, const std::string& source)
   {
@@ -62,7 +62,8 @@ namespace oca
 
   void def(State& state, const std::string& name, internal::NativeMethod native)
   {
-    internal::Value* val = new internal::Value("native", nullptr, true);
+    internal::Value* val = new internal::Value("native", nullptr);
+    val->refCount++;
     val->native = native;
     state.set(name, val);
   }

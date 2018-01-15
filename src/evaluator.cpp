@@ -6,20 +6,20 @@ namespace oca::internal
 
   Value* evaluate(Scope* scope, Expression* expr)
   {
-    if (expr->type == "integer") return new Value("integer", expr, false);
-    else if (expr->type == "float") return new Value("float", expr, false);
-    else if (expr->type == "string") return new Value("string", expr, false);
-    else if (expr->type == "boolean") return new Value("boolean", expr, false);
-    else if (expr->type == "block") return new Value("block", expr, false);
+    if (expr->type == "integer") return new Value("integer", expr);
+    else if (expr->type == "float") return new Value("float", expr);
+    else if (expr->type == "string") return new Value("string", expr);
+    else if (expr->type == "boolean") return new Value("boolean", expr);
+    else if (expr->type == "block") return new Value("block", expr);
     else if (expr->type == "def") return define(scope, expr);
     else if (expr->type == "call") return call(scope, expr);
-    else return new Value("nil", nullptr, false);
+    else return new Value("nil", nullptr);
   }
 
   Value* define(Scope* scope, Expression* expr)
   {
     Value* val = evaluate(scope, expr->right);
-    val->isNamed = true;
+    val->refCount++;
     scope->set(expr->value, val);
     return val;
   }
@@ -36,25 +36,47 @@ namespace oca::internal
       arg = arg->right;
     }
 
-    if (!method) errors::evalError("UNDEFINED", "Name " + expr->value + " is undefined");
+    if (!method) errors::evalError("UNDEFINED", "Name '" + expr->value + "' is undefined");
 
     if (method->type == "native")
     {
       return method->native(args);
     }
-    else
+    else if (method->type == "block")
     {
-      Expression* body = method->expr->left;
+      Expression* block = method->expr;
+      Expression* mainBody = block->left;
+      Expression* elseBody = block->right;
       Value* ret = nullptr;
       Scope methodScope(scope);
-      while (body)
+
+      // add parameters to scope
+      Expression* params = mainBody->left;
+      unsigned int index = 0;
+      while (params)
       {
-        ret = evaluate(&methodScope, body->right);
-        body = body->left;
+        methodScope.set(params->value, args[index++]);
+        params = params->right;
       }
+
+      // eval main body
+      Expression* expr = mainBody->right;
+      while (expr && expr->left)
+      {
+        ret = evaluate(&methodScope, expr->left);
+        expr = expr->right;
+      }
+      ret->refCount++;
+      methodScope.clean();
+      ret->refCount--;
       return ret;
     }
-    return new Value("nil", nullptr, false);
+    else
+    {
+      // it is not callable
+      return method;
+    }
+    return new Value("nil", nullptr);
   }
 
 } // namespace oca::internal
