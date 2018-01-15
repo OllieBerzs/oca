@@ -1,5 +1,0 @@
-def pow do |a|
-  a
-end
-
-5.pow

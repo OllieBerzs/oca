@@ -1,2 +1,0 @@
-# oca
-Oca Scripting Language
