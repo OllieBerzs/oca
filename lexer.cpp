@@ -25,6 +25,7 @@ namespace oca::internal
             else if (string(script, index, tokens)) continue;
             else if (boolean(script, index, tokens)) continue;
             else if (keyword(script, index, tokens)) continue;
+            else if (dotless(script, index, tokens)) continue;
             else if (name(script, index, tokens)) continue;
             else
             {
@@ -163,53 +164,35 @@ namespace oca::internal
     }
     bool keyword(const std::string& script, unsigned int& index, std::vector<Token>& tokens)
     {
-        // TODO: auto lex from list of strings
-        if (match("def", script, index))
+        std::vector<std::string> names = {"def", "do", "else", "end"};
+        for (std::string& name : names)
         {
-            tokens.emplace_back("def", "", lexLine, lexColumn - 3, 3);
-            return true;
+            if (match(name, script, index))
+            {
+                unsigned int length = (unsigned int)name.length();
+                tokens.emplace_back(name, "", lexLine, lexColumn - length, length);
+                return true;
+            }
         }
-        if (match("ext", script, index))
+        return false;
+    }
+    bool dotless(const std::string& script, unsigned int& index, std::vector<Token>& tokens)
+    {
+        std::vector<std::string> names = {"+", "-", "/", "*", "^", "%", "==", "or", "and"};
+        for (std::string& name : names)
         {
-            tokens.emplace_back("ext", "", lexLine, lexColumn - 3, 3);
-            return true;
-        }
-        if (match("return", script, index))
-        {
-            tokens.emplace_back("return", "", lexLine, lexColumn - 6, 6);
-            return true;
-        }
-        if (match("do", script, index))
-        {
-            tokens.emplace_back("do", "", lexLine, lexColumn - 2, 2);
-            return true;
-        }
-        if (match("end", script, index))
-        {
-            tokens.emplace_back("end", "", lexLine, lexColumn - 3, 3);
-            return true;
-        }
-        if (match("else", script, index))
-        {
-            tokens.emplace_back("else", "", lexLine, lexColumn - 4, 4);
-            return true;
+            if (match(name, script, index))
+            {
+                unsigned int length = (unsigned int)name.length();
+                tokens.emplace_back("dotless", name, lexLine, lexColumn - length, length);
+                return true;
+            }
         }
         return false;
     }
     bool name(const std::string& script, unsigned int& index, std::vector<Token>& tokens)
     {
         char c = script[index];
-        // TODO: point-less methods
-        std::vector<std::string> pointless = {"+", "-", "/", "*", "%", "^", "="};
-        if (isIn(c, "+-/*%^="))
-        {
-            std::string chr = "";
-            chr += c;
-            tokens.emplace_back("name", chr, lexLine, lexColumn - 1, 1);
-            index++;
-            lexColumn++;
-            return true;
-        }
         std::string nam = "";
         while (isIn(c, LETTERS "_"))
         {
@@ -225,6 +208,5 @@ namespace oca::internal
         }
         return false;
     }
-
 
 } // namespace oca::internal

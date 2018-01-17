@@ -22,11 +22,6 @@ namespace oca::internal
         i++;
     }
 
-    bool isOper(const std::string& name)
-    {
-        return name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || name == "^";
-    }
-
     void parse(const std::vector<Token>& tokens, std::vector<Expression*>& expressions)
     {
         unsigned int i = 0;
@@ -88,7 +83,7 @@ namespace oca::internal
     {
         unsigned int orig = i;
 
-        if (tokenAt(i, tokens).type != "name") return back(i, orig);
+        if (tokenAt(i, tokens).type != "name" && tokenAt(i, tokens).type != "dotless") return back(i, orig);
         std::string name = tokens[i].value;
         unsigned int line = tokens[i].line;
         next(i);
@@ -141,7 +136,7 @@ namespace oca::internal
             if (call(out, i, tokens)) return true;
         }
         // Check for arithmetic methods
-        if (tokenAt(i, tokens).type == "name" && isOper(tokens[i].value) && call(out, i, tokens))
+        if (tokenAt(i, tokens).type == "dotless" && call(out, i, tokens))
         {
             return true;
         }
@@ -238,10 +233,8 @@ namespace oca::internal
 
     bool args(Expression*& out, unsigned int& i, const std::vector<Token>& tokens, unsigned int line)
     {
-        //unsigned int orig = i
-
         Expression* arg = new Expression("arg", "");
-        if (tokenAt(i, tokens).line == line && !isOper(tokens[i].value) 
+        if (tokenAt(i, tokens).line == line && tokens[i].type != "dotless" 
             && tokens[i].type != "do" && expr(arg->left, i, tokens))
         {
             // check for more arguments if followed by comma
@@ -265,7 +258,7 @@ namespace oca::internal
         unsigned int orig = i;
 
         Expression* param = nullptr;
-        if (tokenAt(i, tokens).line == line && !isOper(tokens[i].value) && tokens[i].type == "name")
+        if (tokenAt(i, tokens).line == line && tokens[i].type != "dotless" && tokens[i].type == "name")
         {
             param = new Expression("param", tokens[i].value);
             next(i);

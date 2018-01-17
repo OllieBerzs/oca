@@ -1,5 +1,5 @@
 //#define OUT_TOKENS
-//define OUT_TREE
+#define OUT_TREE
 //#define OUT_VALUES
 
 #include <iostream>

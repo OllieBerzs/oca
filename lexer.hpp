@@ -19,6 +19,7 @@ namespace oca::internal
     bool string(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
     bool boolean(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
     bool keyword(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
+    bool dotless(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
     bool name(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
 
 } // namespace oca::internal
