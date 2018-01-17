@@ -1,14 +1,11 @@
 #pragma once
 
-#include "token.hpp"
 #include <string>
 #include <vector>
+#include "interpret.hpp"
 
 namespace oca::internal
 {
-
-    void lex(const std::string& script, std::vector<Token>& tokens);
-
     bool isIn(char c, const std::string& str);
     bool match(const std::string& to, const std::string& script, unsigned int& index);
 
@@ -21,5 +18,4 @@ namespace oca::internal
     bool keyword(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
     bool dotless(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
     bool name(const std::string& script, unsigned int& index, std::vector<Token>& tokens);
-
 } // namespace oca::internal

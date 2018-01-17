@@ -2,61 +2,55 @@
 
 #include <iostream>
 #include <windows.h>
-
-#include "lexer.hpp"
-#include "parser.hpp"
-#include "evaluator.hpp"
-
+#include <fstream>
+#include "interpret.hpp"
 #include "errors.hpp"
-#include "utils.hpp"
 #include "api.hpp"
 
 namespace oca
 {
-    namespace internal
+    void script(State& state, const std::string& source, const std::string& filename)
     {
-        void runScript(Scope& scope, const std::string& source, const std::string& filename)
-        {
-            errors::Script::data = source;
-            errors::Script::file = filename;
+        internal::errors::Script::data = source;
+        internal::errors::Script::file = filename;
 
-            // Lexing
-            std::vector<Token> tokens;
-            lex(source, tokens);
-#ifdef OUT_TOKENS
+        // Lexing
+        std::vector<internal::Token> tokens;
+        internal::lex(source, tokens);
+        #ifdef OUT_TOKENS
             std::cout << "----------- TOKENS -----------\n";
             for (const Token& token : tokens) std::cout << token << "\n";
-#endif
+        #endif
 
-            // Parsing
-            std::vector<Expression*> exprs;
-            parse(tokens, exprs);
-#ifdef OUT_TREE
+        // Parsing
+        std::vector<internal::Expression*> exprs;
+        internal::parse(tokens, exprs);
+        #ifdef OUT_TREE
             std::cout << "------------ TREE ------------\n";
-            for (const Expression* e : exprs) std::cout << *e << "\n";
-#endif
+            for (const internal::Expression* e : exprs) std::cout << *e << "\n";
+        #endif
 
-            // Evaluating
-            std::cout << "Running ------------ " << filename << "\n";
-            for (auto e : exprs)
-            {
-                Value* val = evaluate(&scope, e);
-#ifdef OUT_VALUES
+        // Evaluating
+        std::cout << "Running ------------ " << filename << "\n";
+        for (auto e : exprs)
+        {
+            internal::Value* val = internal::evaluate(&state, e);
+            #ifdef OUT_VALUES
                 if (val->type == "nil") std::cout << "->nil\n";
                 else std::cout << "->" << val->expr->value << "\n";
-#endif
-                if (val->refCount == 0) delete val;
-            }
+            #endif
+            if (val->refCount == 0) delete val;
         }
-    } // namespace internal
-
-    void script(State& state, const std::string& source)
-    {
-        internal::runScript(state, source, "");
     }
+
     void scriptFile(State& state, const std::string& path)
     {
-        internal::runScript(state, internal::readFile(path), path);
+        std::ifstream file(path);
+        if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
+        std::string scriptPath((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+        file.close();
+
+        script(state, scriptPath, path);
     }
 
     typedef void(*DLLfunc)(State&);

@@ -15,16 +15,10 @@ extern "C"
         //arithmetics
         def(state, "+", [](auto args) -> auto
         {
-            if (args.size() < 2) 
+            if (checkArgs("ii", args))
             {
-                std::cout << "method '+' requires 2 arguments";
-                exit(0);
-            }
-            if (args[0]->type == "integer" && args[1]->type == "integer")
-            {
-                int result = integer(args[0]) + integer(args[1]);
-                internal::Expression* e = new internal::Expression("integer", std::to_string(result));
-                return new internal::Value("integer", e);
+                int ret = toi(args[0]) + toi(args[1]);
+                return tov(ret);
             }
             return NIL;
         });
