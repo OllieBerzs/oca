@@ -43,7 +43,7 @@ namespace oca
                 Value* val = evaluate(&scope, e);
 #ifdef OUT_VALUES
                 if (val->type == "nil") std::cout << "->nil\n";
-                else std::cout << "->" << val->type << " " << val->expr->value << "\n";
+                else std::cout << "->" << val->expr->value << "\n";
 #endif
                 if (val->refCount == 0) delete val;
             }

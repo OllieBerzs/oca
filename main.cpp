@@ -1,6 +1,6 @@
 //#define OUT_TOKENS
-#define OUT_TREE
-//#define OUT_VALUES
+//#define OUT_TREE
+#define OUT_VALUES
 
 #include <iostream>
 #include "oca.hpp"
