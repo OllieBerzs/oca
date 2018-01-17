@@ -1,4 +1,6 @@
-.gitignore
-.vscode
+.vscode/
 bin/
 tests/
+*.exe
+*.o
+*.ocalib

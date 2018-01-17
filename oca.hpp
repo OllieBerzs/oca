@@ -2,11 +2,14 @@
 
 #include <iostream>
 #include <windows.h>
+
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "evaluator.hpp"
+
 #include "errors.hpp"
 #include "utils.hpp"
+#include "api.hpp"
 
 namespace oca
 {
@@ -45,11 +48,7 @@ namespace oca
                 if (val->refCount == 0) delete val;
             }
         }
-    }
-
-    // api
-    typedef internal::Scope State;
-    #define NIL new internal::Value("nil", nullptr)
+    } // namespace internal
 
     void script(State& state, const std::string& source)
     {
@@ -60,41 +59,33 @@ namespace oca
         internal::runScript(state, internal::readFile(path), path);
     }
 
-    void def(State& state, const std::string& name, internal::NativeMethod native)
+    typedef void(*DLLfunc)(State&);
+    void loadLib(State& state, const std::string& lib)
     {
-        internal::Value* val = new internal::Value("native", nullptr);
-        val->refCount++;
-        val->native = native;
-        state.set(name, val);
-    }
-
-    typedef void(*DLLfunc)();
-    void loadLib(State& state)
-    {
-        HINSTANCE DLL = LoadLibrary("lib/lib.ocalib");
+        char path[MAX_PATH];
+        GetFullPathNameA((lib + ".ocalib").c_str(), MAX_PATH, path, nullptr);
+        HINSTANCE DLL = LoadLibraryA(path);
 
         if (!DLL)
         {
-            std::cout << "could not load the dynamic library\n";
+            std::cout << "could not load " << path << "\n";
             std::cin.get();
             exit(1);
         }
 
         // resolve function address here
-        DLLfunc function = (DLLfunc)GetProcAddress(DLL, "function");
+        DLLfunc function = (DLLfunc)GetProcAddress(DLL, "load");
 
         // call function
-        if (function) function();
+        if (!function) 
+        {
+            std::cout << "load function not found\n";
+            std::cin.get();
+            exit(1);
+        }
+        function(state);
 
         // free DLL
-        FreeLibrary(DLL);
-
-        // print
-        /*def(state, "print", [](auto args) -> auto
-        {
-            std::cout << args[0]->expr->value << "\n";
-            return NIL;
-        });*/
-        
+        //FreeLibrary(DLL);
     }
 } // namespace oca

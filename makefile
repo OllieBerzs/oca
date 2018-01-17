@@ -2,38 +2,39 @@
 
 # ----- Change settings below to suit your environment -----
 
-# testing
-TESTSCRIPT = tests/script.oca
-
-# compilation
 CXX = g++
 CPPFLAGS = -Wall -std=c++17
-
-BINDIR = 
-OBJDIR = temp
 
 # ----- End of user settings -------------------------------
 
 BIN = oca
 OBJ = main.o lexer.o parser.o evaluator.o errors.o
-#OBJ = main.o
 
-all: $(BIN)
+all: $(BIN).exe std
+std: std.ocalib
 
+# object files
 %.o: %.cpp
-	$(CXX) $(CPPFLAGS) -c $<
+	@echo [Compile] $<
+	@$(CXX) $(CPPFLAGS) -c $<
 
-# binary executable
-$(BIN): $(OBJ)
-	$(CXX) $(CPPFLAGS) -o $(BIN).exe $^
+# binaries
+$(BIN).exe: $(OBJ)
+	@echo [Link] $(BIN).exe
+	@$(CXX) $(CPPFLAGS) -o $(BIN).exe $^
 
-# run tests
-run: $(BIN)
-	$(BIN) $(TESTSCRIPT)
+std.ocalib: lib/std.cpp
+	@echo [Compile] std.cpp
+	@$(CXX) $(CPPFLAGS) -c -o lib/std.o lib/std.cpp
+	@echo [Link] std.ocalib
+	@$(CXX) $(CPPFLAGS) -o std.ocalib -shared lib/std.o -Wl,--subsystem,windows #add -s in release
 
 clean:
-	$(RM) $(BIN)
-	$(RM) $(OBJ)
+	@echo [Clean] $(BIN)
+	@$(RM) $(BIN).exe
+	@$(RM) $(OBJ)
+	@$(RM) std.ocalib
+	@$(RM) lib/*.o
 
 # dependencies
 main.o: oca.hpp
