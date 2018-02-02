@@ -1,27 +1,48 @@
+/* ollieberzs 2018
+** value.hpp
+** value for all oca types
+*/ 
+
 #pragma once
 
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 #include <functional>
-#include "expression.hpp"
 
-namespace oca::internal
+#include "common.hpp"
+#include "scope.hpp"
+
+OCA_BEGIN
+
+struct Value;
+struct Expression;
+
+typedef std::shared_ptr<Value> ValuePtr;
+typedef std::shared_ptr<Expression> ExprPtr;
+typedef std::function<ValuePtr(std::vector<ValuePtr>)> NativeMethod;
+
+struct Value
 {
-    struct Value;
-    typedef std::function<Value*(std::vector<Value*>)> NativeMethod;
-    struct Value
-    {
-        std::string type;
-        Expression* expr;
-        unsigned int refCount;
-        NativeMethod native;
+    std::string type;
+    ExprPtr val;
+    NativeMethod native;
+    Scope table;
 
-        Value(const std::string& type, Expression* expr) 
-            : type(type), expr(expr), refCount(0) {}
-        ~Value()
-        {
-            if (expr) delete expr;
-        }
-    };
+    Value();
 
-} // namespace oca::internal
+    static ValuePtr makeStr(ExprPtr v);
+    static ValuePtr makeInt(ExprPtr v);
+    static ValuePtr makeFloat(ExprPtr v);
+    static ValuePtr makeBool(ExprPtr v);
+    static ValuePtr makeBlock(ExprPtr v);
+    static ValuePtr makeMeth(NativeMethod v);
+
+    std::string tos();
+    int toi();
+    float tof();
+    bool tob();
+};
+
+OCA_END

@@ -1,57 +1,35 @@
+/* ollieberzs 2018
+** scope.hpp
+** scope to hold named stuff
+*/ 
+
 #pragma once
 
 #include <map>
 #include <string>
-#include "value.hpp"
+#include <memory>
 
-namespace oca::internal
+#include "common.hpp"
+
+OCA_BEGIN
+
+struct Scope;
+struct Value;
+
+typedef std::shared_ptr<Scope> ScopePtr;
+typedef std::shared_ptr<Value> ValuePtr;
+
+class Scope
 {
+    std::map<std::string, ValuePtr> names;
+    ScopePtr parent;
+    
+public:
+    Scope(ScopePtr parent);
 
-    class Scope
-    {
-        std::map<std::string, Value*> names;
-        Scope* parent;
+    void clean();
+    void set(const std::string& name, ValuePtr value);
+    ValuePtr get(const std::string& name);
+};
 
-    public:
-        Scope() : parent(nullptr) {}
-        Scope(Scope* parent) : parent(parent) {}
-
-        void clean()
-        {
-            for (auto n : names)
-            {
-                if (n.second->refCount == 0) delete n.second;
-            }
-            names.clear();
-        }
-
-        ~Scope()
-        {
-            clean();
-        }
-
-        void set(const std::string& name, Value* value)
-        {
-            names.emplace(name, value);
-        }
-
-        Value* get(const std::string& name)
-        {
-            auto val = names.find(name);
-            if (val == names.end())
-            {
-                if (parent) return parent->get(name);
-                else return nullptr;
-            }
-            return val->second;
-        }
-
-        Value* operator[](const std::string& name)
-        {
-            Value* val = get(name);
-            if (!val) names.emplace(name, val);
-            return val;
-        }
-    };
-
-} // namespace oca::internal
+OCA_END

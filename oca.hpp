@@ -1,85 +1,125 @@
+/* ollieberzs 2018
+** oca.hpp
+** oca api
+*/ 
+
 #pragma once
 
 #include <iostream>
 #include <windows.h>
 #include <fstream>
-#include "interpret.hpp"
-#include "errors.hpp"
-#include "api.hpp"
 
-namespace oca
+#include "common.hpp"
+#include "lex.hpp"
+#include "parse.hpp"
+#include "scope.hpp"
+#include "value.hpp"
+#include "eval.hpp"
+
+OCA_BEGIN
+
+#define DLLEXPORT __declspec(dllexport) void
+
+typedef void(*DLLfunc)(Scope&);
+typedef std::vector<ValuePtr> Args;
+typedef ValuePtr Ret;
+
+void script(Scope& s, const std::string& source, const std::string& filename)
 {
-    void script(State& state, const std::string& source, const std::string& filename)
-    {
-        internal::errors::Script::data = source;
-        internal::errors::Script::file = filename;
+    // Lexing
+    LexState ls;
+    ls.source = source;
+    ls.sourceName = filename;
 
-        // Lexing
-        std::vector<internal::Token> tokens;
-        internal::lex(source, tokens);
-        #ifdef OUT_TOKENS
-            std::cout << "----------- TOKENS -----------\n";
-            for (const Token& token : tokens) std::cout << token << "\n";
+    lex(ls);
+    #ifdef OUT_TOKENS
+    std::cout << "----------- TOKENS -----------\n";
+    for (const Token& token : ls.tokens) printToken(token);
+    #endif
+
+    // Parsing
+    ParseState ps;
+    ps.ls = &ls;
+
+    parse(ps);
+    #ifdef OUT_AST
+    std::cout << "------------ AST -------------\n";
+    for (ExprPtr e : ps.exprs) printExpr(*e);
+    #endif
+
+    // Evaluating
+    std::cout << "Running ------------ " << filename << "\n";
+    for (ExprPtr e : ps.exprs)
+    {
+        ValuePtr val = eval(s, e);
+        #ifdef OUT_VALUES
+        if (val == nullptr) std::cout << "->nil\n";
+        else std::cout << "->" << val->val->val << "\n";
         #endif
-
-        // Parsing
-        std::vector<internal::Expression*> exprs;
-        internal::parse(tokens, exprs);
-        #ifdef OUT_TREE
-            std::cout << "------------ TREE ------------\n";
-            for (const internal::Expression* e : exprs) std::cout << *e << "\n";
-        #endif
-
-        // Evaluating
-        std::cout << "Running ------------ " << filename << "\n";
-        for (auto e : exprs)
-        {
-            internal::Value* val = internal::evaluate(&state, e);
-            #ifdef OUT_VALUES
-                if (val->type == "nil") std::cout << "->nil\n";
-                else std::cout << "->" << val->expr->value << "\n";
-            #endif
-            if (val->refCount == 0) delete val;
-        }
     }
+}
 
-    void scriptFile(State& state, const std::string& path)
+void scriptFile(Scope& s, const std::string& path)
+{
+    std::ifstream file(path);
+    if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
+    std::string scriptPath((std::istreambuf_iterator<char>(file)),(std::istreambuf_iterator<char>()));
+    file.close();
+
+    script(s, scriptPath, path);
+}
+
+
+void loadLib(Scope& s, const std::string& lib)
+{
+    char path[MAX_PATH];
+    GetFullPathNameA((lib + ".ocalib").c_str(), MAX_PATH, path, nullptr);
+    HINSTANCE DLL = LoadLibraryA(path);
+
+    if (!DLL)
     {
-        std::ifstream file(path);
-        if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
-        std::string scriptPath((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
-        file.close();
-
-        script(state, scriptPath, path);
+        std::cout << "could not load " << path << "\n";
+        std::cin.get();
+        exit(1);
     }
 
-    typedef void(*DLLfunc)(State&);
-    void loadLib(State& state, const std::string& lib)
+    // resolve function address here
+    DLLfunc function = (DLLfunc)GetProcAddress(DLL, "load");
+
+    // call function
+    if (!function) 
     {
-        char path[MAX_PATH];
-        GetFullPathNameA((lib + ".ocalib").c_str(), MAX_PATH, path, nullptr);
-        HINSTANCE DLL = LoadLibraryA(path);
-
-        if (!DLL)
-        {
-            std::cout << "could not load " << path << "\n";
-            std::cin.get();
-            exit(1);
-        }
-
-        // resolve function address here
-        DLLfunc function = (DLLfunc)GetProcAddress(DLL, "load");
-
-        // call function
-        if (!function) 
-        {
-            std::cout << "load function not found\n";
-            std::cin.get();
-            exit(1);
-        }
-        function(state);
-
-        // free DLL
-        //FreeLibrary(DLL);
+        std::cout << "load function not found\n";
+        std::cin.get();
+        exit(1);
     }
-} // namespace oca
+    function(s);
+
+    // free DLL
+    //FreeLibrary(DLL);
+}
+
+void def(Scope& scope, const std::string& name, NativeMethod native)
+{
+    ValuePtr val = Value::makeMeth(native);
+    scope.set(name, val);
+}
+
+bool checkArgs(const std::string& pattern, const std::vector<ValuePtr>& args)
+{
+    if (pattern.size() > args.size() || args.size() > pattern.size())
+    {
+        std::cout << "method expected " << pattern.size() << " arguments " << args.size() << " were given\n";
+        exit(0);
+    }
+    for (unsigned int i = 0; i < pattern.size(); i++)
+    {
+        if (pattern[i] == 'i' && args[i]->type != "int") return false;
+        else if (pattern[i] == 'f' && args[i]->type != "float") return false;
+        else if (pattern[i] == 'b' && args[i]->type != "bool") return false;
+        else if (pattern[i] == 's' && args[i]->type != "str") return false;
+    }
+    return true;
+}
+
+OCA_END
