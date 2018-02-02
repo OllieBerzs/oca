@@ -60,10 +60,9 @@ ValuePtr Value::makeMeth(NativeMethod v)
 }
 // ----------------------------
 
-std::string Value::tos()
+std::string& Value::tos()
 {
-    if (type == "str") return val->val;
-    else return "";
+    return val->val;
 }
 
 int Value::toi()

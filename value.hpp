@@ -39,7 +39,7 @@ struct Value
     static ValuePtr makeBlock(ExprPtr v);
     static ValuePtr makeMeth(NativeMethod v);
 
-    std::string tos();
+    std::string& tos();
     int toi();
     float tof();
     bool tob();

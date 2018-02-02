@@ -7,7 +7,7 @@
 
 oca::Ret print(oca::Args args)
 {
-    std::cout << args[0]->val->val << "\n";
+    std::cout << args[0]->tos() << "\n";
     return nullptr;
 }
 
@@ -15,15 +15,12 @@ int main(int argc, char** argv)
 {
     if (argc < 2) std::cout << "No file provided\n";
 
-    // each type should have it's own scope with methods and variables
-    // state is a collection of named scopes for each type which is copied over to types unique scope at instantiation
-    oca::Scope s(nullptr);
+    oca::Scope scope(nullptr);
 
     //print
-    def(s, "print", print);
+    def(scope, "print", print);
 
-    //oca::loadLib(state, "std");
-    oca::scriptFile(s, argv[1]);
+    oca::scriptFile(scope, argv[1]);
 
     std::cin.get();
     return 0;

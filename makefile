@@ -10,8 +10,7 @@ CPPFLAGS = -Wall -std=c++17 -g
 BIN = oca
 OBJ = main.o lex.o parse.o value.o scope.o eval.o
 
-all: $(BIN).exe std
-std: std.ocalib
+all: $(BIN).exe
 
 # object files
 %.o: %.cpp
@@ -23,18 +22,10 @@ $(BIN).exe: $(OBJ)
 	@echo [Link] $(BIN).exe
 	@$(CXX) $(CPPFLAGS) -o $(BIN).exe $^
 
-std.ocalib: lib/std.cpp
-	@echo [Compile] std.cpp
-	@$(CXX) $(CPPFLAGS) -c -o lib/std.o lib/std.cpp
-	@echo [Link] std.ocalib
-	@$(CXX) $(CPPFLAGS) -o std.ocalib -shared lib/std.o -Wl,--subsystem,windows #add -s in release
-
 clean:
 	@echo [Clean] $(BIN)
 	@$(RM) $(BIN).exe
 	@$(RM) $(OBJ)
-	@$(RM) std.ocalib
-	@$(RM) lib/*.o
 
 # dependencies
 OCA_H = oca.hpp common.hpp lex.hpp parse.hpp scope.hpp
