@@ -48,7 +48,9 @@ void script(Scope& s, const std::string& source, const std::string& filename)
     #endif
 
     // Evaluating
-    std::cout << "Running ------------ " << filename << "\n";
+    #ifdef OUT_VALUES
+    std::cout << "------------ EVAL ------------\n";
+    #endif
     for (ExprPtr e : ps.exprs)
     {
         ValuePtr val = eval(s, e);

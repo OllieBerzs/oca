@@ -25,9 +25,8 @@ struct Expression
     std::string val;
     ExprPtr left;
     ExprPtr right;
-    Token* token;
 
-    Expression(const std::string& type, const std::string& val, Token* token);
+    Expression(const std::string& type, const std::string& val);
 };
 
 struct ParseState

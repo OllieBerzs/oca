@@ -39,9 +39,10 @@ bool matchKeyword(LexState& state);
 bool matchOper(LexState& state);
 bool matchName(LexState& state);
 
-void skipSpace(LexState& state);
+bool skipSpace(LexState& state);
+bool skipComment(LexState& state);
 bool charIsIn(char c, const std::string& str);
-bool match(const std::string& to, LexState& state);
+bool match(const std::string& to, LexState& state, bool word);
 
 void lexError(const LexState& state, const std::string& message);
 void printToken(const Token& token);

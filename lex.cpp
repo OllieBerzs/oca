@@ -19,7 +19,7 @@ void lex(LexState& state)
 
     while (state.current < state.source.size())
     {
-        skipSpace(state);
+        while (skipSpace(state) || skipComment(state)) {}
         if (state.current >= state.source.size()) break;
 
         if (matchPunct(state)) continue;
@@ -38,7 +38,7 @@ void lex(LexState& state)
 bool matchPunct(LexState& state)
 {
     char c = state.source[state.current];
-    if (charIsIn(c, ".,|()"))
+    if (charIsIn(c, ".:()"))
     {
         std::string chr = "";
         chr += c;
@@ -110,12 +110,12 @@ bool matchStr(LexState& state)
 
 bool matchBool(LexState& state)
 {
-    if (match("true", state))
+    if (match("true", state, true))
     {
         state.tokens.push_back(Token {"bool", "true", state.lineNum, state.colNum});
         return true;
     }
-    else if (match("false", state))
+    else if (match("false", state, true))
     { 
         state.tokens.push_back(Token {"bool", "false", state.lineNum, state.colNum});
         return true;
@@ -128,7 +128,7 @@ bool matchKeyword(LexState& state)
     std::vector<std::string> names = {"def", "do", "else", "end", "break", "yield"};
     for (std::string& name : names)
     {
-        if (match(name, state))
+        if (match(name, state, true))
         {
             state.tokens.push_back(Token {name, "", state.lineNum, state.colNum});
             return true;
@@ -142,7 +142,7 @@ bool matchOper(LexState& state)
     std::vector<std::string> names = {"+", "-", "/", "*", "^", "%", "==", "|", "&"};
     for (std::string& name : names)
     {
-        if (match(name, state))
+        if (match(name, state, false))
         {
             state.tokens.push_back(Token {"oper", name, state.lineNum, state.colNum});
             return true;
@@ -170,17 +170,39 @@ bool matchName(LexState& state)
 }
 // ----------------------------
 
-void skipSpace(LexState& state)
+bool skipComment(LexState& state)
 {
-    while (match("\n\r", state) || match("\r\n", state) 
-        || match("\n", state) || match("\r", state) || match(" ", state))
+    if (state.source[state.current] == ';')
     {
+        state.current++;
+        state.colNum++;
+        while (state.source[state.current] != ';')
+        {
+            state.current++;
+            state.colNum++;
+        }
+        state.current++;
+        state.colNum++;
+        return true;
+    }
+    return false;
+}
+
+bool skipSpace(LexState& state)
+{
+    bool had = false;
+    while (match("\n\r", state, false) || match("\r\n", state, false) 
+        || match("\n", state, false) || match("\r", state, false) || match(" ", state, false))
+    {
+        had = true;
         if (state.source[state.current - 1] != ' ')
         {
             state.lineNum++;
             state.colNum = 1;
         }
     }
+    if (had) return true;
+    return false;
 }
 
 bool charIsIn(char c, const std::string& str)
@@ -189,7 +211,7 @@ bool charIsIn(char c, const std::string& str)
     return false;
 }
 
-bool match(const std::string& to, LexState& state)
+bool match(const std::string& to, LexState& state, bool word)
 {
     uint orig = state.current;
     uint origcol = state.colNum;
@@ -204,6 +226,13 @@ bool match(const std::string& to, LexState& state)
         }
         state.current++;
         state.colNum++;
+    }
+
+    if (word && !charIsIn(state.source[state.current], "\r\n ") && state.current < state.source.size())
+    {
+        state.current = orig;
+        state.colNum = origcol;
+        return false;
     }
     return true;
 }

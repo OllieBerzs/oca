@@ -9,8 +9,8 @@
 
 OCA_BEGIN
 
-Expression::Expression(const std::string& type, const std::string& val, Token* token)
-    : type(type), val(val), token(token) {}
+Expression::Expression(const std::string& type, const std::string& val)
+    : type(type), val(val) {}
 // ----------------------------
 
 void parse(ParseState& state)
@@ -38,7 +38,7 @@ bool parseExpr(ExprPtr& out, ParseState& state)
         if (getToken(state).type != ")") parseError(state, "Missing ')' before token");
         state.current++; 
         state.errorToken++;
-        out = std::make_shared<Expression>("outer", "", &state.ls->tokens[orig]);
+        out = std::make_shared<Expression>("outer", "");
         out->left = intern;
     }
     else if (!parseBlock(out, state)
@@ -58,7 +58,7 @@ bool parseExpr(ExprPtr& out, ParseState& state)
     while (parseAttach(attach, state))
     {
         ExprPtr args = attach->right;
-        ExprPtr newArgs = std::make_shared<Expression>("arg", "", &state.ls->tokens[orig]);
+        ExprPtr newArgs = std::make_shared<Expression>("arg", "");
         // put expression as first argument
         newArgs->left = out;
         newArgs->right = args;
@@ -116,7 +116,7 @@ bool parseCall(ExprPtr& out, ParseState& state)
     ExprPtr blck = nullptr;
     parseBlock(blck, state);
 
-    out = std::make_shared<Expression>("call", name, &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("call", name);
     out->right = arg;
     out->left = blck;
 
@@ -151,9 +151,9 @@ bool parseBlock(ExprPtr& out, ParseState& state)
     state.current++; 
     state.errorToken++;
 
-    out = std::make_shared<Expression>("block", "", &state.ls->tokens[orig]);
-    ExprPtr mainBody = std::make_shared<Expression>("main", "", &state.ls->tokens[orig]);
-    ExprPtr elseBody = std::make_shared<Expression>("else", "", &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("block", "");
+    ExprPtr mainBody = std::make_shared<Expression>("main", "");
+    ExprPtr elseBody = std::make_shared<Expression>("else", "");
 
     // get parameters
     ExprPtr pars = nullptr;
@@ -175,17 +175,17 @@ bool parseBlock(ExprPtr& out, ParseState& state)
     }
 
     // get main body
-    ExprPtr mainExprs = std::make_shared<Expression>("expr", "", &state.ls->tokens[orig]);
+    ExprPtr mainExprs = std::make_shared<Expression>("expr", "");
     ExprPtr e = mainExprs;
     while (getToken(state).type != "end" && getToken(state).type != "else")
     {
         if (!parseExpr(e->left, state)) parseError(state, "Expected an expression");
-        e->right = std::make_shared<Expression>("expr", "", &state.ls->tokens[orig]);
+        e->right = std::make_shared<Expression>("expr", "");
         e = e->right;
     }
 
     // get else body
-    ExprPtr elseExprs = std::make_shared<Expression>("expr", "", &state.ls->tokens[orig]);
+    ExprPtr elseExprs = std::make_shared<Expression>("expr", "");
     e = elseExprs;
     if (getToken(state).type == "else")
     {
@@ -194,7 +194,7 @@ bool parseBlock(ExprPtr& out, ParseState& state)
         while (getToken(state).type != "end")
         {
             if (!parseExpr(e->left, state)) parseError(state, "Expected an expression");
-            e->right = std::make_shared<Expression>("expr", "", &state.ls->tokens[orig]);
+            e->right = std::make_shared<Expression>("expr", "");
             e = e->right;
         }
     }
@@ -222,7 +222,7 @@ bool parseDef(ExprPtr& out, ParseState& state)
     std::string name = getToken(state).val;
     state.current++; 
     state.errorToken++;
-    out = std::make_shared<Expression>("def", "", &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("def", "");
     if (!parseExpr(out->right, state))
     {
         parseError(state, "No expression provided to definition");
@@ -234,7 +234,7 @@ bool parseDef(ExprPtr& out, ParseState& state)
 
 bool parseArgs(ExprPtr& out, ParseState& state, uint line)
 {
-    ExprPtr arg = std::make_shared<Expression>("arg", "", &state.ls->tokens[state.current]);
+    ExprPtr arg = std::make_shared<Expression>("arg", "");
     if (getToken(state).line == line && getToken(state).type != "oper"
         && getToken(state).type != "do" && parseExpr(arg->left, state))
     {
@@ -264,7 +264,7 @@ bool parseParams(ExprPtr& out, ParseState& state, uint line)
     if (getToken(state).line == line && getToken(state).type != "oper" 
         && getToken(state).type == "name")
     {
-        param = std::make_shared<Expression>("param", getToken(state).val, &state.ls->tokens[orig]);
+        param = std::make_shared<Expression>("param", getToken(state).val);
         state.current++; 
         state.errorToken++;
         // check for more parameters if followed by comma
@@ -293,7 +293,7 @@ bool parseStr(ExprPtr& out, ParseState& state)
 
     if (getToken(state).type != "str") return unparse(orig, state);
 
-    out = std::make_shared<Expression>("str", getToken(state).val, &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("str", getToken(state).val);
     state.current++; 
     state.errorToken++;
     
@@ -306,7 +306,7 @@ bool parseInt(ExprPtr& out, ParseState& state)
 
     if (getToken(state).type != "int") return unparse(orig, state);
 
-    out = std::make_shared<Expression>("int", getToken(state).val, &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("int", getToken(state).val);
     state.current++; 
     state.errorToken++;
 
@@ -319,7 +319,7 @@ bool parseFloat(ExprPtr& out, ParseState& state)
 
     if (getToken(state).type != "float") return unparse(orig, state);
 
-    out = std::make_shared<Expression>("float", getToken(state).val, &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("float", getToken(state).val);
     state.current++; 
     state.errorToken++;
 
@@ -332,7 +332,7 @@ bool parseBool(ExprPtr& out, ParseState& state)
 
     if (getToken(state).type != "bool") return unparse(orig, state);
 
-    out = std::make_shared<Expression>("bool", getToken(state).val, &state.ls->tokens[orig]);
+    out = std::make_shared<Expression>("bool", getToken(state).val);
     state.current++; 
     state.errorToken++;
     
