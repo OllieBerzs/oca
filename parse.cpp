@@ -61,22 +61,6 @@ bool parseExpr(ExprPtr& out, ParseState& state)
         return state.unparse(orig);
     }
 
-    // check for attachables
-    ExprPtr attach = nullptr;
-    // out = expression, first arg
-    while (parseAttach(attach, state))
-    {
-        ExprPtr args = attach->right;
-        ExprPtr newArgs = std::make_shared<Expression>("arg", "");
-        // put expression as first argument
-        newArgs->left = out;
-        newArgs->right = args;
-        // apply new arguments
-        attach->right = newArgs;
-        // make attached call new expression
-        out = attach;
-    }
-
     return true;
 }
 
@@ -98,10 +82,21 @@ bool parseCall(ExprPtr& out, ParseState& state)
     }
 
     out = std::make_shared<Expression>("call", name);
+
     if (state.get().type != "do" && state.get().line == line) 
         parseVal(out->right, state); // argument
     if (state.get().line == line)
         parseBlock(out->left, state);
+
+    // check for attachables
+    ExprPtr attach = nullptr;
+    if (parseAttach(attach, state))
+    {
+        ExprPtr call = out;
+        out = std::make_shared<Expression>("attach", "");
+        out->left = call;
+        out->right = attach;
+    }
 
     return true;
 }
@@ -113,7 +108,6 @@ bool parseAttach(ExprPtr& out, ParseState& state)
     if (state.get().type == ".")
     {
         state.next(); 
-        
         if (parseCall(out, state)) return true;
     }
     // Check for operators
@@ -252,6 +246,17 @@ bool parseVal(ExprPtr& out, ParseState& state)
             return state.unparse(orig);
         }
     }
+
+    // check for attachables
+    ExprPtr attach = nullptr;
+    if (parseAttach(attach, state))
+    {
+        ExprPtr call = out;
+        out = std::make_shared<Expression>("attach", "");
+        out->left = call;
+        out->right = attach;
+    }
+
     return true;
 }
 
