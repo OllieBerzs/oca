@@ -35,6 +35,10 @@ struct ParseState
     uint errorToken;                // token to blame for error
     LexState* ls;                   // info from lexer
     std::vector<ExprPtr> exprs;     // parsed ASTs so far
+
+    const Token& get();
+    void next();
+    bool unparse(uint orig);
 };
 
 void parse(ParseState& state);
@@ -45,16 +49,13 @@ bool parseAttach(ExprPtr& out, ParseState& state);
 bool parseBlock(ExprPtr& out, ParseState& state);
 bool parseDef(ExprPtr& out, ParseState& state);
 
-bool parseArgs(ExprPtr& out, ParseState& state, uint line);
-bool parseParams(ExprPtr& out, ParseState& state, uint line);
+bool parseVal(ExprPtr& out, ParseState& state);
+bool parseName(ExprPtr& out, ParseState& state);
 
 bool parseStr(ExprPtr& out, ParseState& state);
 bool parseInt(ExprPtr& out, ParseState& state);
 bool parseFloat(ExprPtr& out, ParseState& state);
 bool parseBool(ExprPtr& out, ParseState& state);
-
-const Token& getToken(ParseState& state);
-bool unparse(uint orig, ParseState& state);
 
 void parseError(const ParseState& state, const std::string& message);
 void printExpr(const Expression& e, uint indent = 0);

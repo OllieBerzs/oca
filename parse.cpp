@@ -11,6 +11,28 @@ OCA_BEGIN
 
 Expression::Expression(const std::string& type, const std::string& val)
     : type(type), val(val) {}
+
+// ----------------------------
+
+const Token& ParseState::get()
+{
+    if (current < ls->tokens.size() - 1) return ls->tokens[current];
+    else return ls->tokens[ls->tokens.size() - 1];
+}
+
+void ParseState::next()
+{
+    current++;
+    errorToken++;
+}
+
+bool ParseState::unparse(uint orig)
+{
+    errorToken = current;
+    current = orig;
+    return false;
+}
+
 // ----------------------------
 
 void parse(ParseState& state)
@@ -24,32 +46,19 @@ void parse(ParseState& state)
         else parseError(state, "Invalid syntax token");
     }
 }
+
 // ----------------------------
 
 bool parseExpr(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
-    if (getToken(state).type == "(")
+    
+    if (!parseBlock(out, state)
+     && !parseCall(out, state)
+     && !parseDef(out, state)
+     && !parseVal(out, state))
     {
-        ExprPtr intern = nullptr;
-        state.current++; 
-        state.errorToken++;
-        if (!parseExpr(intern, state)) return unparse(orig, state);
-        if (getToken(state).type != ")") parseError(state, "Missing ')' before token");
-        state.current++; 
-        state.errorToken++;
-        out = std::make_shared<Expression>("outer", "");
-        out->left = intern;
-    }
-    else if (!parseBlock(out, state)
-        && !parseCall(out, state)
-        && !parseDef(out, state)
-        && !parseStr(out, state)
-        && !parseInt(out, state)
-        && !parseFloat(out, state) 
-        && !parseBool(out, state))
-    {
-        return unparse(orig, state);
+        return state.unparse(orig);
     }
 
     // check for attachables
@@ -75,50 +84,24 @@ bool parseCall(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "name" && getToken(state).type != "oper") 
-        return unparse(orig, state);
+    if (state.get().type != "name") return state.unparse(orig);
 
-    std::string name = getToken(state).val;
-    uint line = getToken(state).line;
-    state.current++; 
-    state.errorToken++;
-
-    // check for assignment
-    if (getToken(state).val == "=")
+    std::string name = state.get().val;
+    uint line = state.get().line;
+    state.next(); 
+    
+    // assignment sugar
+    if (state.get().val == "=")
     {
         name += "=";
-        state.current++; 
-        state.errorToken++;
+        state.next();
     }
-
-    bool hasParen = false;
-    if (getToken(state).type == "(")
-    {
-        state.current++; 
-        state.errorToken++;
-        hasParen = true;
-    }
-
-    ExprPtr arg = nullptr;
-    if (!parseArgs(arg, state, line)) return unparse(orig, state);
-
-    if (getToken(state).type != ")" && hasParen)
-    {
-        parseError(state, "Missing ')' before token");
-    }
-    else if (hasParen) 
-    {
-        state.current++; 
-        state.errorToken++;
-    }
-
-    // check for block
-    ExprPtr blck = nullptr;
-    parseBlock(blck, state);
 
     out = std::make_shared<Expression>("call", name);
-    out->right = arg;
-    out->left = blck;
+    if (state.get().type != "do" && state.get().line == line) 
+        parseVal(out->right, state); // argument
+    if (state.get().line == line)
+        parseBlock(out->left, state);
 
     return true;
 }
@@ -127,19 +110,19 @@ bool parseAttach(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type == ".")
+    if (state.get().type == ".")
     {
-        state.current++; 
-        state.errorToken++;
+        state.next(); 
+        
         if (parseCall(out, state)) return true;
     }
     // Check for operators
-    if (getToken(state).type == "oper" && parseCall(out, state))
+    if (state.get().type == "oper" && parseCall(out, state))
     {
         return true;
     }
 
-    return unparse(orig, state);
+    return state.unparse(orig);
 }
 
 bool parseBlock(ExprPtr& out, ParseState& state)
@@ -147,37 +130,30 @@ bool parseBlock(ExprPtr& out, ParseState& state)
     uint orig = state.current;
 
     // check if is block
-    if (getToken(state).type != "do") return unparse(orig, state);
-    state.current++; 
-    state.errorToken++;
+    if (state.get().type != "do") return state.unparse(orig);
+    state.next(); 
+    
 
     out = std::make_shared<Expression>("block", "");
     ExprPtr mainBody = std::make_shared<Expression>("main", "");
     ExprPtr elseBody = std::make_shared<Expression>("else", "");
 
     // get parameters
-    ExprPtr pars = nullptr;
-    if (getToken(state).type == "|")
+    ExprPtr param = nullptr;
+    if (state.get().type == ":")
     {
-        state.current++; 
-        state.errorToken++;
-        if (!parseParams(pars, state, getToken(state).line))
+        state.next();
+        if (!parseName(param, state))
         {
-            parseError(state, "No parameters for block with '||'");
+            parseError(state, "No parameters for block starting with ':'");
         }
-        if (getToken(state).type != "|")
-        {
-            state.current--;
-            parseError(state, "Expected '|' after token");
-        }
-        state.current++; 
-        state.errorToken++;
+        
     }
 
     // get main body
     ExprPtr mainExprs = std::make_shared<Expression>("expr", "");
     ExprPtr e = mainExprs;
-    while (getToken(state).type != "end" && getToken(state).type != "else")
+    while (state.get().type != "end" && state.get().type != "else")
     {
         if (!parseExpr(e->left, state)) parseError(state, "Expected an expression");
         e->right = std::make_shared<Expression>("expr", "");
@@ -187,22 +163,22 @@ bool parseBlock(ExprPtr& out, ParseState& state)
     // get else body
     ExprPtr elseExprs = std::make_shared<Expression>("expr", "");
     e = elseExprs;
-    if (getToken(state).type == "else")
+    if (state.get().type == "else")
     {
-        state.current++; 
-        state.errorToken++;
-        while (getToken(state).type != "end")
+        state.next(); 
+        
+        while (state.get().type != "end")
         {
             if (!parseExpr(e->left, state)) parseError(state, "Expected an expression");
             e->right = std::make_shared<Expression>("expr", "");
             e = e->right;
         }
     }
-    state.current++; 
-    state.errorToken++;
+    state.next(); 
+    
 
     // build block
-    mainBody->left = pars;
+    mainBody->left = param;
     mainBody->right = mainExprs;
     elseBody->right = elseExprs;
     out->left = mainBody;
@@ -214,88 +190,111 @@ bool parseDef(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "def") return unparse(orig, state);
-    state.current++; 
-    state.errorToken++;
-    if (getToken(state).type != "name") parseError(state, "Definition must have a name");
-
-    std::string name = getToken(state).val;
-    state.current++; 
-    state.errorToken++;
+    if (state.get().type != "def") return state.unparse(orig);
+    state.next(); 
+    
     out = std::make_shared<Expression>("def", "");
+    if (!parseName(out->left, state)) 
+        parseError(state, "Definition must have a name");
     if (!parseExpr(out->right, state))
-    {
         parseError(state, "No expression provided to definition");
-    }
 
     return true;
 }
+
 // ----------------------------
 
-bool parseArgs(ExprPtr& out, ParseState& state, uint line)
-{
-    ExprPtr arg = std::make_shared<Expression>("arg", "");
-    if (getToken(state).line == line && getToken(state).type != "oper"
-        && getToken(state).type != "do" && parseExpr(arg->left, state))
-    {
-        // check for more arguments if followed by comma
-        ExprPtr anotherArg = nullptr;
-        if (getToken(state).type == ",")
-        {
-            state.current++; 
-            state.errorToken++;
-            if (!parseArgs(anotherArg, state, line))
-            {
-                parseError(state, "Expected an argument after ','");
-            }
-        }
-        arg->right = anotherArg;
-    }
-
-    out = arg;
-    return true;
-}
-
-bool parseParams(ExprPtr& out, ParseState& state, uint line)
+bool parseVal(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    ExprPtr param = nullptr;
-    if (getToken(state).line == line && getToken(state).type != "oper" 
-        && getToken(state).type == "name")
+    if (state.get().type == "(") // if is a tuple
     {
-        param = std::make_shared<Expression>("param", getToken(state).val);
-        state.current++; 
-        state.errorToken++;
-        // check for more parameters if followed by comma
-        ExprPtr anotherParam = nullptr;
-        if (getToken(state).type == ",")
-        {
-            state.current++; 
-            state.errorToken++;
-            if (!parseParams(anotherParam, state, line))
-            {
-                parseError(state, "Expected a parameter after ','");
-            }
-        }
-        param->right = anotherParam;
-    }
+        state.next();
+        out = std::make_shared<Expression>("tup", "");
+        ExprPtr curr = out;
 
-    if (!param) return unparse(orig, state);
-    out = param;
+        bool more = true;
+        while (more)
+        {
+            std::string name = "";
+            if (state.get().type == "name")
+            {
+                name = state.get().val;
+                state.next();
+                if (state.get().type == ":")
+                {
+                    state.next();
+                }
+                else
+                {
+                    state.current--;
+                    state.errorToken--;
+                    name = "";
+                }
+            }
+            more = parseExpr(curr->left, state);
+            if (!more) break;
+            curr->val = name;
+            curr->right = std::make_shared<Expression>("tup", "");
+            curr = curr->right;
+        }
+        if (state.get().type != ")") parseError(state, "Missing ')' before token");
+        state.next();
+    }
+    else // if is a single value
+    {
+        if (!parseStr(out, state)
+         && !parseInt(out, state)
+         && !parseFloat(out, state)
+         && !parseBool(out, state))
+        {
+            return state.unparse(orig);
+        }
+    }
     return true;
 }
+
+bool parseName(ExprPtr& out, ParseState& state)
+{
+    uint orig = state.current;
+
+    if (state.get().type == "(") // if is a tuple
+    {
+        state.next();
+        out = std::make_shared<Expression>("name", "");
+        ExprPtr curr = out;
+        while (state.get().type == "name")
+        {
+            curr->val = state.get().val;
+            curr->right = std::make_shared<Expression>("name", "");
+            curr = curr->right;
+            state.next();
+        }
+        if (state.get().type != ")") parseError(state, "Missing ')' before token");
+        state.next();
+
+        return true;
+    }
+    else // if is a single value
+    {
+        if (state.get().type != "name") return state.unparse(orig);
+        out = std::make_shared<Expression>("name", state.get().val);
+        state.next();
+        return true;
+    }
+}
+
 // ----------------------------
 
 bool parseStr(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "str") return unparse(orig, state);
+    if (state.get().type != "str") return state.unparse(orig);
 
-    out = std::make_shared<Expression>("str", getToken(state).val);
-    state.current++; 
-    state.errorToken++;
+    out = std::make_shared<Expression>("str", state.get().val);
+    state.next(); 
     
     return true;
 }
@@ -304,11 +303,10 @@ bool parseInt(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "int") return unparse(orig, state);
+    if (state.get().type != "int") return state.unparse(orig);
 
-    out = std::make_shared<Expression>("int", getToken(state).val);
-    state.current++; 
-    state.errorToken++;
+    out = std::make_shared<Expression>("int", state.get().val);
+    state.next(); 
 
     return true;
 }
@@ -317,11 +315,10 @@ bool parseFloat(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "float") return unparse(orig, state);
+    if (state.get().type != "float") return state.unparse(orig);
 
-    out = std::make_shared<Expression>("float", getToken(state).val);
-    state.current++; 
-    state.errorToken++;
+    out = std::make_shared<Expression>("float", state.get().val);
+    state.next(); 
 
     return true;
 }
@@ -330,28 +327,14 @@ bool parseBool(ExprPtr& out, ParseState& state)
 {
     uint orig = state.current;
 
-    if (getToken(state).type != "bool") return unparse(orig, state);
+    if (state.get().type != "bool") return state.unparse(orig);
 
-    out = std::make_shared<Expression>("bool", getToken(state).val);
-    state.current++; 
-    state.errorToken++;
+    out = std::make_shared<Expression>("bool", state.get().val);
+    state.next(); 
     
     return true;
 }
-// ----------------------------
 
-const Token& getToken(ParseState& state)
-{
-    if (state.current < state.ls->tokens.size() - 1) return state.ls->tokens[state.current];
-    else return state.ls->tokens[state.ls->tokens.size() - 1];
-}
-
-bool unparse(uint orig, ParseState& state)
-{
-    state.errorToken = state.current;
-    state.current = orig;
-    return false;
-}
 // ----------------------------
 
 void parseError(const ParseState& state, const std::string& message)
