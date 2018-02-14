@@ -44,7 +44,7 @@ void script(Scope& s, const std::string& source, const std::string& filename)
     parse(ps);
     #ifdef OUT_AST
     std::cout << "------------ AST -------------\n";
-    for (ExprPtr e : ps.exprs) printExpr(*e);
+    for (ExprPtr e : ps.exprs) e->print();
     #endif
 
     // Evaluating
@@ -56,7 +56,12 @@ void script(Scope& s, const std::string& source, const std::string& filename)
         ValuePtr val = eval(s, e);
         #ifdef OUT_VALUES
         if (val == nullptr) std::cout << "->nil\n";
-        else std::cout << "->" << val->val->val << "\n";
+        else 
+        {
+            std::cout << "->";
+            val->print(true);
+            std::cout << "\n";
+        }
         #endif
     }
 }
@@ -103,7 +108,9 @@ void loadLib(Scope& s, const std::string& lib)
 
 void def(Scope& scope, const std::string& name, NativeMethod native)
 {
-    ValuePtr val = Value::makeMeth(native);
+    ValuePtr val = std::make_shared<Value>();
+    val->type = "native";
+    val->native = native;
     scope.set(name, val);
 }
 

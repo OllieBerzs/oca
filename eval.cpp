@@ -11,29 +11,62 @@
 
 OCA_BEGIN
 
+#define ARRAY_BEGIN_INDEX 1
+
 ValuePtr eval(Scope& scope, ExprPtr expr)
 {
-    if (expr->type == "int") return Value::makeInt(expr);
-    else if (expr->type == "float") return Value::makeFloat(expr);
-    else if (expr->type == "str") return Value::makeStr(expr);
-    else if (expr->type == "bool") return Value::makeBool(expr);
-    else if (expr->type == "block") return Value::makeBlock(expr);
-    else if (expr->type == "def") return define(scope, expr);
-    else if (expr->type == "call") return call(scope, expr);
-    else return nullptr;
+    if (expr->type == "def") return evalDef(scope, expr);
+    else if (expr->type == "block") return evalBlock(scope, expr);
+    else if (expr->type == "call") return evalCall(scope, expr, nullptr);
+    else if (expr->type == "attach") return evalAttach(scope, expr);
+    else return evalValue(scope, expr);
 }
+
 // ----------------------------
 
-ValuePtr define(Scope& scope, ExprPtr expr)
+ValuePtr evalDef(Scope& scope, ExprPtr expr)
 {
-    ValuePtr val = eval(scope, expr->right);
+    ValuePtr val = nullptr;
+    if (expr->right->type == "block")
+    {
+        val = evalValue(scope, expr->right);
+    }
+    else
+    {
+        val = eval(scope, expr->right);
+    }
     scope.set(expr->val, val);
     return val;
 }
 
-ValuePtr call(Scope& scope, ExprPtr expr)
+ValuePtr evalBlock(Scope& scope, ExprPtr expr)
 {
-    // for functions and operators check if argument count and type/scope are the same
+    ExprPtr mainBody = expr->left;
+    ExprPtr elseBody = expr->right;
+
+    ValuePtr ret = nullptr;
+    Scope blockScope(scope);
+
+    ExprPtr curr = mainBody->right;
+    while (curr && curr->left)
+    {
+        if (curr->left->val == "break")
+        {
+            if (!elseBody->right) return ret;
+            curr = elseBody->right;
+        }
+        if (curr->left->val == "return")
+        {
+            return eval(blockScope, curr->left->right);
+        }
+        ret = eval(blockScope, curr->left);
+        curr = curr->right;
+    }
+    return ret;
+}
+
+ValuePtr evalCall(Scope& scope, ExprPtr expr, ValuePtr caller)
+{
     ValuePtr method = scope.get(expr->val);
 
     // get arguments
@@ -53,9 +86,10 @@ ValuePtr call(Scope& scope, ExprPtr expr)
     }
     else if (method->type == "block")
     {
-        ExprPtr block = method->val;
+        ExprPtr block = method->block;
         ExprPtr mainBody = block->left;
-        //Expression* elseBody = block->right;
+        ExprPtr elseBody = block->right;
+
         ValuePtr ret = nullptr;
         Scope methodScope(scope);
 
@@ -72,10 +106,18 @@ ValuePtr call(Scope& scope, ExprPtr expr)
         ExprPtr expr = mainBody->right;
         while (expr && expr->left)
         {
-            ret = eval(methodScope, expr->left);
-            expr = expr->right;
+            if (expr->left->val == "break")
+        {
+            if (!elseBody->right) return ret;
+            expr = elseBody->right;
         }
-        methodScope.clean();
+        if (expr->left->val == "return")
+        {
+            return eval(methodScope, expr->left->right);
+        }
+        ret = eval(methodScope, expr->left);
+        expr = expr->right;
+        }
         return ret;
     }
     else
@@ -85,6 +127,53 @@ ValuePtr call(Scope& scope, ExprPtr expr)
     }
     return nullptr;
 }
+
+ValuePtr evalAttach(Scope& scope, ExprPtr expr)
+{
+    //ValuePtr prev = eval(scope, expr->left);
+    //ExprPtr arg = prev->val;
+
+    // add argument
+    //ExprPtr call = expr->right->left;
+    //ExprPtr args = call->right;
+    //ExprPtr temp = std::make_shared<Expression>("tup", "");
+    //temp->left = arg;
+    //temp->right = args;
+    //args = temp;
+
+    // eval attachment
+    //return eval(prev->table, call);
+    return nullptr;
+}
+
+ValuePtr evalValue(Scope& scope, ExprPtr expr)
+{
+    ValuePtr value = std::make_shared<Value>();
+    value->type = expr->type;
+    if (expr->type == "tup")
+    {
+        value->table = std::make_shared<std::map<std::string, ValuePtr>>();
+        ExprPtr curr = expr;
+        uint counter = ARRAY_BEGIN_INDEX;
+        while (curr && curr->left)
+        {
+            if (curr->val == "")
+            {
+                curr->val = std::to_string(counter);
+                counter++;
+            }
+            value->table->emplace(curr->val, eval(scope, curr->left));
+            curr = curr->right;
+        }
+    }
+    else
+    {
+        // pull in the table of variables and methods for type
+        value->val = expr->val;
+    }
+    return value;
+}
+
 // ----------------------------
 
 void evalError(ExprPtr expr, const std::string& message)

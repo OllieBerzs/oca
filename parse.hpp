@@ -27,6 +27,7 @@ struct Expression
     ExprPtr right;
 
     Expression(const std::string& type, const std::string& val);
+    void print(uint indent = 0);
 };
 
 struct ParseState
@@ -58,6 +59,5 @@ bool parseFloat(ExprPtr& out, ParseState& state);
 bool parseBool(ExprPtr& out, ParseState& state);
 
 void parseError(const ParseState& state, const std::string& message);
-void printExpr(const Expression& e, uint indent = 0);
 
 OCA_END

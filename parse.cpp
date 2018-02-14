@@ -12,6 +12,16 @@ OCA_BEGIN
 Expression::Expression(const std::string& type, const std::string& val)
     : type(type), val(val) {}
 
+void Expression::print(uint indent)
+{
+    for (uint i = 0; i < indent; i++) std::cout << "|   ";
+
+    std::cout << "<" + type << ">" << val << "\n";
+
+    if (left) left->print(indent + 1);
+    if (right) right->print(indent + 1);
+}
+
 // ----------------------------
 
 const Token& ParseState::get()
@@ -381,16 +391,6 @@ void parseError(const ParseState& state, const std::string& message)
 
     std::cin.get();
     exit(1);
-}
-
-void printExpr(const Expression& e, uint indent)
-{
-    for (uint i = 0; i < indent; i++) std::cout << "|   ";
-
-    std::cout << "<" + e.type << ">" << e.val << "\n";
-
-    if (e.left) printExpr(*e.left, indent + 1);
-    if (e.right) printExpr(*e.right, indent + 1);
 }
 
 OCA_END

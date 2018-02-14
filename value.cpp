@@ -3,84 +3,66 @@
 ** value for all oca types
 */ 
 
+#include <iostream>
 #include "value.hpp"
 #include "parse.hpp"
 
 OCA_BEGIN
 
-Value::Value() : table(nullptr) {}
-// ----------------------------
-
-ValuePtr Value::makeStr(ExprPtr v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "str";
-    vp->val = v;
-    return vp;
-}
-
-ValuePtr Value::makeInt(ExprPtr v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "int";
-    vp->val = v;
-    return vp;
-}
-
-ValuePtr Value::makeFloat(ExprPtr v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "float";
-    vp->val = v;
-    return vp;
-}
-
-ValuePtr Value::makeBool(ExprPtr v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "bool";
-    vp->val = v;
-    return vp;
-}
-
-ValuePtr Value::makeBlock(ExprPtr v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "block";
-    vp->val = v;
-    return vp;
-}
-
-ValuePtr Value::makeMeth(NativeMethod v)
-{
-    ValuePtr vp = std::make_shared<Value>();
-    vp->type = "native";
-    vp->native = v;
-    return vp;
-}
-// ----------------------------
-
 std::string& Value::tos()
 {
-    return val->val;
+    return val;
 }
 
 int Value::toi()
 {
-    if (type == "int") return std::stoi(val->val);
+    if (type == "int") return std::stoi(val);
     else return 0;
 }
 
 float Value::tof()
 {
-    if (type == "float") return std::stof(val->val);
+    if (type == "float") return std::stof(val);
     else return 0.0f;
 }
 
 bool Value::tob()
 {
-    if (type == "bool") return val->val == "true";
+    if (type == "bool") return val == "true";
     else return false;
+}
+
+// ----------------------------
+
+void Value::print(bool debug)
+{
+    if (debug)
+    {
+        std::cout << "<" << type << ">" << val;
+        if (!table) return;
+        std::cout << "(";
+        for (const auto& pair : *table)
+        {
+            std::cout << pair.first << ":";
+            pair.second->print(debug);
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+    else
+    {
+        if (type == "tup")
+        {
+            std::cout << "(";
+            for (const auto& pair : *table)
+            {
+                std::cout << pair.first << ":";
+                pair.second->print(debug);
+                std::cout << " ";
+            }
+            std::cout << ")";
+        }
+    }
 }
 
 OCA_END

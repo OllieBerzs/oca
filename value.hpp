@@ -26,23 +26,19 @@ typedef std::function<ValuePtr(std::vector<ValuePtr>)> NativeMethod;
 struct Value
 {
     std::string type;
-    ExprPtr val;
+    std::string val;
+
+    std::shared_ptr<std::map<std::string, ValuePtr>> table;
+
     NativeMethod native;
-    Scope table;
-
-    Value();
-
-    static ValuePtr makeStr(ExprPtr v);
-    static ValuePtr makeInt(ExprPtr v);
-    static ValuePtr makeFloat(ExprPtr v);
-    static ValuePtr makeBool(ExprPtr v);
-    static ValuePtr makeBlock(ExprPtr v);
-    static ValuePtr makeMeth(NativeMethod v);
+    ExprPtr block;
 
     std::string& tos();
     int toi();
     float tof();
     bool tob();
+
+    void print(bool debug);
 };
 
 OCA_END
