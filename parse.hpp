@@ -14,7 +14,7 @@
 OCA_BEGIN
 
 struct Token;
-struct LexState;
+struct Lexer;
 struct Expression;
 
 typedef std::shared_ptr<Expression> ExprPtr;
@@ -30,34 +30,39 @@ struct Expression
     void print(uint indent = 0);
 };
 
-struct ParseState
+struct Parser
 {
-    uint current;                   // current token in script
-    uint errorToken;                // token to blame for error
-    LexState* ls;                   // info from lexer
-    std::vector<ExprPtr> exprs;     // parsed ASTs so far
+    std::string path;
+    std::vector<Token> tokens;
+    std::vector<ExprPtr> cache;
+    std::vector<ExprPtr> result;
+    uint index;
+    uint errorToken;
+
+    Parser(std::vector<Token>& ts);
 
     const Token& get();
     void next();
     bool unparse(uint orig);
+
+    std::vector<ExprPtr> parse();
+
+    bool expr();
+    bool call();
+    bool attach();
+    bool block();
+    bool def();
+
+    bool string();
+    bool integer();
+    bool floatnum();
+    bool boolean();
+
+    bool value();
+    bool name();
+    bool lit(const std::string& t);
+
+    void error(const std::string& message);
 };
-
-void parse(ParseState& state);
-
-bool parseExpr(ExprPtr& out, ParseState& state);
-bool parseCall(ExprPtr& out, ParseState& state);
-bool parseAttach(ExprPtr& out, ParseState& state);
-bool parseBlock(ExprPtr& out, ParseState& state);
-bool parseDef(ExprPtr& out, ParseState& state);
-
-bool parseVal(ExprPtr& out, ParseState& state);
-bool parseName(ExprPtr& out, ParseState& state);
-
-bool parseStr(ExprPtr& out, ParseState& state);
-bool parseInt(ExprPtr& out, ParseState& state);
-bool parseFloat(ExprPtr& out, ParseState& state);
-bool parseBool(ExprPtr& out, ParseState& state);
-
-void parseError(const ParseState& state, const std::string& message);
 
 OCA_END

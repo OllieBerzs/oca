@@ -4,270 +4,102 @@
 */ 
 
 #include <iostream>
+#include <regex>
 #include "lex.hpp"
 
 OCA_BEGIN
 
-#define NUMBERS "0123456789"
-#define LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-void lex(LexState& state)
+std::vector<std::pair<std::string, std::string>> syntax
 {
-    state.current = 0;
-    state.lineNum = 1;
-    state.colNum = 1;
+    {"\\b(def|do|end)\\b",      "KEYWORD"},
+    {"'(.)*'",                  "STRING"},
+    {"([0-9]+\\.[0-9]+)",       "FLOAT"},
+    {"([0-9]+)",                "INTEGER"},
+    {"\\b(true|false)\\b",      "BOOLEAN"},
+    {"([A-z]+)",                "NAME"},
+    {"(\\+|-|\\*|\\/)+",        "OPERATOR"},
+    {"(\\.|:|\\(|\\)|\\[|\\])", "PUNCTUATION"},
+    {"#(.| |\\t)*\\n",          "COMMENT"},
+    {"(\\s)+",                  "WHITESPACE"},
+    {"(.)+",                    "INVALID"}
+};
 
-    while (state.current < state.source.size())
-    {
-        while (skipSpace(state) || skipComment(state)) {}
-        if (state.current >= state.source.size()) break;
-
-        if (matchPunct(state)) continue;
-        else if (matchNum(state)) continue;
-        else if (matchStr(state)) continue;
-        else if (matchBool(state)) continue;
-        else if (matchKeyword(state)) continue;
-        else if (matchOper(state)) continue;
-        else if (matchName(state)) continue;
-        else lexError(state, "Unknown symbol");
-    }
-    state.tokens.push_back(Token {"last", "", state.lineNum, state.colNum});
-}
-// ----------------------------
-
-bool matchPunct(LexState& state)
+void Token::print()
 {
-    char c = state.source[state.current];
-    if (charIsIn(c, ".:()"))
-    {
-        std::string chr = "";
-        chr += c;
-        state.tokens.push_back(Token {chr, "", state.lineNum, state.colNum});
-        state.current++;
-        state.colNum++;
-        return true;
-    }
-    return false;
+    std::cout << "<" << type << "(" << pos << ")" << ">" << val << "\n";
 }
 
-bool matchNum(LexState& state)
+//-----------------------------
+
+std::vector<Token> Lexer::lex()
 {
-    char c = state.source[state.current];
-    std::string num = "";
-    bool isInt = true;
+    std::vector<Token> result;
 
-    // check if is number
-    if (!charIsIn(c, NUMBERS)) return false;
+    std::string reg;
+    for (const auto& r : syntax) reg += r.first + "|";
+    reg.pop_back();
 
-    while (charIsIn(c, NUMBERS"."))
+    std::regex regex(reg);
+    auto matches = std::sregex_iterator(source.begin(), source.end(), regex);
+
+    for (auto it = matches; it != std::sregex_iterator(); it++)
     {
-        if (c == '.')
+        for (uint i = 0; i < it->size(); i++)
         {
-            if (isInt && state.current + 1 < state.source.size()
-                && charIsIn(state.source[state.current + 1], NUMBERS))
-            {
-                isInt = false;
-            }
-            else break;
-        }
-        num += c;
-        state.colNum++;
-        c = state.source[++state.current];
-    }
-
-    if (isInt) state.tokens.push_back(Token {"int", num, state.lineNum, state.colNum});
-    else state.tokens.push_back(Token {"float", num, state.lineNum, state.colNum});
-    return true;
-}
-
-bool matchStr(LexState& state)
-{
-    char c = state.source[state.current];
-    std::string str = "";
-
-    if (c != '\'') return false;
-    state.current++;
-    state.colNum++;
-
-    c = state.source[state.current];
-    while (c != '\'')
-    {
-        if (c == '\n') lexError(state, "Missing end quote");
-
-        str += c;
-        state.current++;
-        state.colNum++;
-        
-        if (state.current >= state.source.size()) lexError(state, "Missing end quote");
-
-        c = state.source[state.current];
-    }
-    state.current++;
-    state.colNum++;
-    state.tokens.push_back(Token {"str", str, state.lineNum, state.colNum});
-    return true;
-}
-
-bool matchBool(LexState& state)
-{
-    if (match("true", state, true))
-    {
-        state.tokens.push_back(Token {"bool", "true", state.lineNum, state.colNum});
-        return true;
-    }
-    else if (match("false", state, true))
-    { 
-        state.tokens.push_back(Token {"bool", "false", state.lineNum, state.colNum});
-        return true;
-    }
-    return false;
-}
-
-bool matchKeyword(LexState& state)
-{
-    std::vector<std::string> names = {"def", "do", "else", "end", "break", "yield"};
-    for (std::string& name : names)
-    {
-        if (match(name, state, true))
-        {
-            state.tokens.push_back(Token {name, "", state.lineNum, state.colNum});
-            return true;
+            if (it->str(i + 1).empty()) continue;
+            if (syntax[i].second == "WHITESPACE") continue;
+            if (syntax[i].second == "COMMENT") continue;
+            if (syntax[i].second == "INVALID") error("Unknown symbol", 
+                {syntax[i].second, it->str(), (uint)it->position()});
+            result.push_back({syntax[i].second, it->str(), (uint)it->position()});
+            break;
         }
     }
-    return false;
+
+    return std::move(result);
 }
 
-bool matchOper(LexState& state)
-{
-    std::vector<std::string> names = {"+", "-", "/", "*", "^", "%", "==", "|", "&"};
-    for (std::string& name : names)
-    {
-        if (match(name, state, false))
-        {
-            state.tokens.push_back(Token {"oper", name, state.lineNum, state.colNum});
-            return true;
-        }
-    }
-    return false;
-}
-
-bool matchName(LexState& state)
-{
-    char c = state.source[state.current];
-    std::string nam = "";
-
-    if (!charIsIn(c, LETTERS"_")) return false;
-
-    while (charIsIn(c, LETTERS"_"))
-    {
-        nam += c;
-        c = state.source[++state.current];
-        state.colNum++;
-    }
-
-    state.tokens.push_back(Token {"name", nam, state.lineNum, state.colNum});
-    return true;
-}
-// ----------------------------
-
-bool skipComment(LexState& state)
-{
-    if (state.source[state.current] == ';')
-    {
-        state.current++;
-        state.colNum++;
-        while (state.source[state.current] != ';')
-        {
-            state.current++;
-            state.colNum++;
-        }
-        state.current++;
-        state.colNum++;
-        return true;
-    }
-    return false;
-}
-
-bool skipSpace(LexState& state)
-{
-    bool had = false;
-    while (match("\n\r", state, false) || match("\r\n", state, false) 
-        || match("\n", state, false) || match("\r", state, false) || match(" ", state, false))
-    {
-        had = true;
-        if (state.source[state.current - 1] != ' ')
-        {
-            state.lineNum++;
-            state.colNum = 1;
-        }
-    }
-    if (had) return true;
-    return false;
-}
-
-bool charIsIn(char c, const std::string& str)
-{
-    for (char ch : str) if (c == ch) return true;
-    return false;
-}
-
-bool match(const std::string& to, LexState& state, bool word)
-{
-    uint orig = state.current;
-    uint origcol = state.colNum;
-
-    for (uint i = 0; i < to.size(); i++)
-    {
-        if (to[i] != state.source[state.current])
-        {
-            state.current = orig;
-            state.colNum = origcol;
-            return false;
-        }
-        state.current++;
-        state.colNum++;
-    }
-
-    if (word && !charIsIn(state.source[state.current], "\r\n ") && state.current < state.source.size())
-    {
-        state.current = orig;
-        state.colNum = origcol;
-        return false;
-    }
-    return true;
-}
-// ----------------------------
-
-void lexError(const LexState& state, const std::string& message)
+void Lexer::error(const std::string& message, const Token t)
 {
     // get error line
-    std::string line = "";
-    uint count = 1;
-    for (char c : state.source)
+    std::string errline = "";
+    uint lineNum = 1;
+    uint colNum = 1;
+    uint index = 0;
+
+    char c = 'a';
+    bool found = false;
+
+    while (c != '\n' || !found)
     {
+        c = source[index];
         if (c == '\n')
         {
-            if (count == state.lineNum) break;
-            count++;
-            line = "";
+            lineNum++;
+            errline = "";
         }
-        else line += c;
+        else errline += c;
+        if (index == t.pos) 
+        {
+            found = true;
+            colNum = errline.size() - 1;
+        }
+        index++;
     }
 
-    char current = state.source[state.current];
-    std::string lineStart = line.substr(0, state.colNum - 1);
-    std::string lineEnd = state.colNum < line.size() 
-        ? line.substr(state.colNum, line.size()) : "";
+    std::string lineStart = errline.substr(0, colNum - 1);
+    std::string lineEnd = colNum < errline.size() 
+        ? errline.substr(colNum, errline.size()) : "";
 
     system("printf '\033[1A'");
     std::cout << "\033[38;5;14m";
-    std::cout << "-- ERROR -------------------- " << state.sourceName << "\n";
+    std::cout << "-- ERROR -------------------- " << path << "\n";
     std::cout << "\033[0m";    
-    std::cout << state.lineNum << "| ";
+    std::cout << lineNum << "| ";
     std::cout << "\033[38;5;15m";
     std::cout << lineStart;
     std::cout << "\033[48;5;9m";
-    std::cout << (current == '\n' ? ' ' : current);
+    std::cout << (t.val == "\n" ? " " : t.val);
     std::cout << "\033[0m";
     std::cout << "\033[38;5;15m";
     std::cout << lineEnd << "\n";
@@ -276,11 +108,6 @@ void lexError(const LexState& state, const std::string& message)
     
     std::cin.get();
     exit(1);
-}
-
-void printToken(const Token& token)
-{
-    std::cout << "<" << token.type << ">" << token.val << "\n";
 }
 
 OCA_END

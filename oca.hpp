@@ -24,34 +24,31 @@ typedef void(*DLLfunc)(Scope&);
 typedef std::vector<ValuePtr> Args;
 typedef ValuePtr Ret;
 
-void script(Scope& s, const std::string& source, const std::string& filename)
+void script(Scope& s, const std::string& source, const std::string& path)
 {
     // Lexing
-    LexState ls;
-    ls.source = source;
-    ls.sourceName = filename;
+    Lexer ls {source, path};
+    auto tokens = ls.lex();
 
-    lex(ls);
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
-    for (const Token& token : ls.tokens) printToken(token);
+    for (Token& t : tokens) t.print();
     #endif
 
     // Parsing
-    ParseState ps;
-    ps.ls = &ls;
+    Parser ps(tokens);
+    auto ast = ps.parse();
 
-    parse(ps);
     #ifdef OUT_AST
     std::cout << "------------ AST -------------\n";
-    for (ExprPtr e : ps.exprs) e->print();
+    for (ExprPtr e : ast) e->print();
     #endif
 
     // Evaluating
     #ifdef OUT_VALUES
     std::cout << "------------ EVAL ------------\n";
     #endif
-    for (ExprPtr e : ps.exprs)
+    for (ExprPtr e : ast)
     {
         ValuePtr val = eval(s, e);
         #ifdef OUT_VALUES
@@ -70,10 +67,11 @@ void scriptFile(Scope& s, const std::string& path)
 {
     std::ifstream file(path);
     if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
-    std::string scriptPath((std::istreambuf_iterator<char>(file)),(std::istreambuf_iterator<char>()));
+    std::string source((std::istreambuf_iterator<char>(file)),
+        (std::istreambuf_iterator<char>()));
     file.close();
 
-    script(s, scriptPath, path);
+    script(s, source, path);
 }
 
 

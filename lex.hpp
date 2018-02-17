@@ -15,36 +15,18 @@ struct Token
 {
     std::string type;
     std::string val;
-    uint line;
-    uint col;
+    uint pos;
+
+    void print();
 };
 
-struct LexState
+struct Lexer
 {
-    std::string source;        // oca source code
-    std::string sourceName;    // source file name
-    uint current;              // current char in script
-    uint lineNum;              // source line counter
-    uint colNum;               // source column counter
-    std::vector<Token> tokens; // lexed tokens so far
+    std::string source;
+    std::string path;
+
+    std::vector<Token> lex();
+    void error(const std::string& message, const Token t);
 };
-
-void lex(LexState& state);
-
-bool matchPunct(LexState& state);
-bool matchNum(LexState& state);
-bool matchStr(LexState& state);
-bool matchBool(LexState& state);
-bool matchKeyword(LexState& state);
-bool matchOper(LexState& state);
-bool matchName(LexState& state);
-
-bool skipSpace(LexState& state);
-bool skipComment(LexState& state);
-bool charIsIn(char c, const std::string& str);
-bool match(const std::string& to, LexState& state, bool word);
-
-void lexError(const LexState& state, const std::string& message);
-void printToken(const Token& token);
 
 OCA_END

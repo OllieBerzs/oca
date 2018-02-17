@@ -29,5 +29,7 @@ int main(int argc, char** argv)
 
     oca::scriptFile(scope, argv[1]);
 
+    std::cin.get();
+
     return 0;
 }
