@@ -44,14 +44,14 @@ std::vector<Token> Lexer::lex()
 
     for (auto it = matches; it != std::sregex_iterator(); it++)
     {
+        uint pos = static_cast<uint>(it->position());
         for (uint i = 0; i < it->size(); i++)
         {
             if (it->str(i + 1).empty()) continue;
             if (syntax[i].second == "WHITESPACE") continue;
             if (syntax[i].second == "COMMENT") continue;
-            if (syntax[i].second == "INVALID") error("Unknown symbol", 
-                {syntax[i].second, it->str(), (uint)it->position()});
-            result.push_back({syntax[i].second, it->str(), (uint)it->position()});
+            if (syntax[i].second == "INVALID") error("Unknown symbol", {syntax[i].second, it->str(), pos});
+            result.push_back({syntax[i].second, it->str(), pos});
             break;
         }
     }
