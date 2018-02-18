@@ -25,7 +25,8 @@ void Expression::print(uint indent)
 
 // ----------------------------
 
-Parser::Parser(std::vector<Token>& ts) : index(0), errorToken(0)
+Parser::Parser(std::vector<Token>& ts, const std::string& path) 
+    : path(path), index(0), errorToken(0) 
 {
     tokens = std::move(ts);
 }
@@ -36,19 +37,6 @@ const Token& Parser::get()
 {
     if (index < tokens.size() - 1) return tokens.at(index);
     else return tokens.back();
-}
-
-void Parser::next()
-{
-    index++;
-    errorToken++;
-}
-
-bool Parser::unparse(uint orig)
-{
-    errorToken = index;
-    index = orig;
-    return false;
 }
 
 // ----------------------------
@@ -79,7 +67,12 @@ bool Parser::call()
 {
     if (!name()) return false;
 
-    bool hasArg = lit(":") && expr(); 
+    bool hasArg = false;
+    if (lit(":"))
+    {
+        if (!expr()) error("No argument provided for function call with ':'");
+        hasArg = true;
+    }
     bool hasBlock = block();
 
     // assemble call
@@ -99,8 +92,10 @@ bool Parser::call()
     }
 
     ExprPtr c = std::make_shared<Expression>("call", cache.back()->val);
+    cache.pop_back();
     c->left = bl;
     c->right = arg;
+    cache.push_back(c);
 
     attach();
     return true;
@@ -108,7 +103,11 @@ bool Parser::call()
 
 bool Parser::attach()
 {
-    if (!lit(".") || !call()) return false;
+    if (lit("."))
+    {
+        if (!call()) error("No function call after '.'");
+    }
+    else return false;
 
     // assemble attachment
     ExprPtr next = cache.back();
@@ -126,7 +125,12 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
-    bool hasParam = lit(":") && name();
+    bool hasParam = false;
+    if (lit(":"))
+    {
+        if (!name()) error("No name provided for parameter after ':'");
+        hasParam = true;
+    }
 
     uint cached = cache.size();
 
@@ -147,14 +151,22 @@ bool Parser::block()
 
     if (els > 0)
     {
-        for (uint i = cached + els; i < cache.size() - 1; i++)
-            cache[i]->right = cache[i + 1];
-        elseBody->right = cache[cached + els];
+        ExprPtr curr = elseBody;
+        for (uint i = cached + els; i < cache.size(); i++)
+        {
+            curr->left = cache[i];
+            curr->right = std::make_shared<Expression>("next", "");
+            curr = curr->right;
+        }
         cache.resize(cached + els);
     }
-    for (uint i = cached; i < cache.size() - 1; i++)
-        cache[i]->right = cache[i + 1];
-    mainBody->right = cache[cached];
+    ExprPtr curr = mainBody;
+    for (uint i = cached; i < cache.size(); i++)
+    {
+        curr->left = cache[i];
+        curr->right = std::make_shared<Expression>("next", "");
+        curr = curr->right;
+    }
     cache.resize(cached);
 
     if (hasParam)
@@ -165,13 +177,19 @@ bool Parser::block()
 
     bl->left = mainBody;
     bl->right = elseBody;
+    cache.push_back(bl);
 
     return true;
 }
 
 bool Parser::def()
 {
-    if (!lit("def") || !name() || !expr()) return false;
+    if (lit("def"))
+    {
+        if (!name()) error("No name provided for definition");
+        if (!expr()) error("No expression provided for definition");
+    }
+    else return false;
 
     // assemble definition
     ExprPtr d = std::make_shared<Expression>("def", "");
@@ -191,8 +209,8 @@ bool Parser::string()
     if (get().type != "STRING") return false;
 
     cache.push_back(std::make_shared<Expression>("str", get().val));
-    next(); 
-    
+    index++;
+    errorToken++; 
     return true;
 }
 
@@ -201,8 +219,8 @@ bool Parser::integer()
     if (get().type != "INTEGER") return false;
 
     cache.push_back(std::make_shared<Expression>("int", get().val));
-    next(); 
-
+    index++;
+    errorToken++;
     return true;
 }
 
@@ -211,8 +229,8 @@ bool Parser::floatnum()
     if (get().type != "FLOAT") return false;
 
     cache.push_back(std::make_shared<Expression>("float", get().val));
-    next(); 
-
+    index++;
+    errorToken++;
     return true;
 }
 
@@ -221,8 +239,8 @@ bool Parser::boolean()
     if (get().type != "BOOLEAN") return false;
 
     cache.push_back(std::make_shared<Expression>("bool", get().val));
-    next(); 
-    
+    index++;
+    errorToken++;
     return true;
 }
 
@@ -262,34 +280,20 @@ bool Parser::value()
 
 bool Parser::name()
 {
-    //uint cached = cache.size() - 1;
-
-    if (get().type == "name") // single name
-    {
-        cache.push_back(std::make_shared<Expression>("name", get().val));
-        next();
-        return true;
-    }
-    /*else if (lit("(")) // tupled name
-    {
-        while (name()){}
-        if (!lit(")")) error("Missing closing brace");
-
-        // assemble tupled name
-        ExprPtr tup = cache[cached];
-        for (uint i = cached; i < cache.size() - 1; i++)
-            cache[i]->right = cache[i + 1];
-        cache.resize(cached + 1);
-        cache.push_back(tup);
-        return true;
-    }*/
-    return false;
+    if (get().type != "NAME") return false;
+    
+    cache.push_back(std::make_shared<Expression>("name", get().val));
+    index++;
+    errorToken++;
+    return true;
 }
 
 bool Parser::lit(const std::string& t)
 {
     if (get().val != t) return false;
-    next();
+
+    index++;
+    errorToken++;
     return true;
 }
 
@@ -306,7 +310,6 @@ void Parser::error(const std::string& message)
     file.close();
 
     // get error line
-    // get error line
     std::string errline = "";
     uint lineNum = 1;
     uint colNum = 1;
@@ -315,9 +318,8 @@ void Parser::error(const std::string& message)
     char c = 'a';
     bool found = false;
 
-    while (c != '\n' || !found)
+    while ((c = source[index]) != '\n' || !found)
     {
-        c = source[index];
         if (c == '\n')
         {
             lineNum++;
@@ -332,9 +334,9 @@ void Parser::error(const std::string& message)
         index++;
     }
 
-    std::string lineStart = errline.substr(0, colNum - 1);
-    std::string lineEnd = colNum < errline.size() 
-        ? errline.substr(colNum, errline.size()) : "";
+    std::string lineStart = errline.substr(0, colNum);
+    std::string lineEnd = colNum + t.val.size() < errline.size() 
+        ? errline.substr(colNum + t.val.size(), errline.size()) : "";
 
     system("printf '\033[1A'");
     std::cout << "\033[38;5;14m";

@@ -36,7 +36,7 @@ void script(Scope& s, const std::string& source, const std::string& path)
     #endif
 
     // Parsing
-    Parser ps(tokens);
+    Parser ps(tokens, path);
     auto ast = ps.parse();
 
     #ifdef OUT_AST
@@ -45,7 +45,7 @@ void script(Scope& s, const std::string& source, const std::string& path)
     #endif
 
     // Evaluating
-    #ifdef OUT_VALUES
+    /*#ifdef OUT_VALUES
     std::cout << "------------ EVAL ------------\n";
     #endif
     for (ExprPtr e : ast)
@@ -60,7 +60,7 @@ void script(Scope& s, const std::string& source, const std::string& path)
             std::cout << "\n";
         }
         #endif
-    }
+    }*/
 }
 
 void scriptFile(Scope& s, const std::string& path)

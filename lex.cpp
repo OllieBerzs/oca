@@ -56,6 +56,7 @@ std::vector<Token> Lexer::lex()
         }
     }
 
+    result.push_back({"LAST", "", 0});
     return std::move(result);
 }
 

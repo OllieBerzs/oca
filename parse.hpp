@@ -39,11 +39,9 @@ struct Parser
     uint index;
     uint errorToken;
 
-    Parser(std::vector<Token>& ts);
+    Parser(std::vector<Token>& ts, const std::string& path);
 
     const Token& get();
-    void next();
-    bool unparse(uint orig);
 
     std::vector<ExprPtr> parse();
 
