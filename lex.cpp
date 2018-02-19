@@ -12,6 +12,7 @@ OCA_BEGIN
 std::vector<std::pair<std::string, std::string>> syntax
 {
     {"\\b(def|do|end|return|break)\\b",    "KEYWORD"},
+    {"\\$(.)+",                            "FILEPATH"},
     {"'(.)*'",                             "STRING"},
     {"([0-9]+\\.[0-9]+)",                  "FLOAT"},
     {"([0-9]+)",                           "INTEGER"},
@@ -19,7 +20,7 @@ std::vector<std::pair<std::string, std::string>> syntax
     {"([A-Za-z]+)",                        "NAME"},
     {"(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+", "OPERATOR"},
     {"(\\.|:|\\(|\\)|\\[|\\])",            "PUNCTUATION"},
-    {"#(.| |\\t)*\\n",                     "COMMENT"},
+    {"#(.| |\\t)*",                        "COMMENT"},
     {"(\\s)+",                             "WHITESPACE"},
     {"(.)+",                               "INVALID"}
 };

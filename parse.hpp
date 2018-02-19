@@ -50,6 +50,7 @@ struct Parser
     bool block();
     bool def();
     bool keyword();
+    bool file();
 
     bool string();
     bool integer();

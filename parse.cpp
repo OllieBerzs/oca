@@ -60,7 +60,7 @@ std::vector<ExprPtr> Parser::parse()
 
 bool Parser::expr()
 {
-    if (block() || call() || def() || value() || keyword()) return true;
+    if (block() || call() || def() || value() || keyword() || file()) return true;
     return false;
 }
 
@@ -274,6 +274,15 @@ bool Parser::keyword()
         return true;
     }
     return false;
+}
+
+bool Parser::file()
+{
+    if (get().type != "FILEPATH") return false;
+
+    cache.push_back(std::make_shared<Expression>("file", get().val.substr(1)));
+    index++;
+    return true;
 }
 
 // ----------------------------
