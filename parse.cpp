@@ -97,16 +97,16 @@ bool Parser::call()
     c->right = arg;
     cache.push_back(c);
 
-    attach();
+    access();
     oper();
     return true;
 }
 
-bool Parser::attach()
+bool Parser::access()
 {
     if (lit("."))
     {
-        if (!call()) error("No function call after '.'");
+        if (!integer() && !call()) error("No function call after '.'");
     }
     else return false;
 
@@ -115,7 +115,7 @@ bool Parser::attach()
     cache.pop_back();
     ExprPtr prev = cache.back();
     cache.pop_back();
-    ExprPtr a = std::make_shared<Expression>("attach", "");
+    ExprPtr a = std::make_shared<Expression>("access", "");
     a->left = prev;
     a->right = next;
     cache.push_back(a);
@@ -295,7 +295,7 @@ bool Parser::value()
 
     if (string() || integer() || floatnum() || boolean()) // single value
     {
-        attach();
+        access();
         oper();
         return true;
     }
@@ -326,7 +326,7 @@ bool Parser::value()
         cache.resize(cached);
         cache.push_back(tup);
 
-        attach();
+        access();
         oper();
         return true;
     }
