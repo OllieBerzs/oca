@@ -11,7 +11,7 @@ OCA_BEGIN
 
 std::vector<std::pair<std::string, std::string>> syntax
 {
-    {"\\b(def|do|end)\\b",                 "KEYWORD"},
+    {"\\b(def|do|end|return|break)\\b",    "KEYWORD"},
     {"'(.)*'",                             "STRING"},
     {"([0-9]+\\.[0-9]+)",                  "FLOAT"},
     {"([0-9]+)",                           "INTEGER"},

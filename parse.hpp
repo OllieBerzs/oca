@@ -49,6 +49,7 @@ struct Parser
     bool oper();
     bool block();
     bool def();
+    bool keyword();
 
     bool string();
     bool integer();

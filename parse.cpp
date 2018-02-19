@@ -60,7 +60,7 @@ std::vector<ExprPtr> Parser::parse()
 
 bool Parser::expr()
 {
-    if (block() || call() || def() || value()) return true;
+    if (block() || call() || def() || value() || keyword()) return true;
     return false;
 }
 
@@ -214,7 +214,7 @@ bool Parser::block()
 
     if (hasParam)
     {
-        mainBody->left = cache.back();
+        mainBody->val = cache.back()->val;
         cache.pop_back();
     }
 
@@ -251,6 +251,29 @@ bool Parser::def()
     cache.push_back(d);
     
     return true;
+}
+
+bool Parser::keyword()
+{
+    if (get().val == "return")
+    {
+        index++;
+        ExprPtr r = std::make_shared<Expression>("return", "");
+        if (expr())
+        {
+            r->right = cache.back();
+            cache.pop_back();
+        }
+        cache.push_back(r);
+        return true;
+    }
+    else if (get().val == "break")
+    {
+        index++;
+        cache.push_back(std::make_shared<Expression>("break", ""));
+        return true;
+    }
+    return false;
 }
 
 // ----------------------------
