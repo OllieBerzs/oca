@@ -26,7 +26,7 @@ void Expression::print(uint indent)
 // ----------------------------
 
 Parser::Parser(std::vector<Token>& ts, const std::string& path) 
-    : path(path), index(0), errorToken(0) 
+    : path(path), index(0)
 {
     tokens = std::move(ts);
 }
@@ -43,6 +43,7 @@ const Token& Parser::get()
 
 std::vector<ExprPtr> Parser::parse()
 {
+    std::vector<ExprPtr> result;
     while (index < tokens.size() - 1)
     {
         if (expr()) 
@@ -131,7 +132,6 @@ bool Parser::oper()
     
     cache.push_back(std::make_shared<Expression>("operator", get().val));
     index++;
-    errorToken++;
     if (!expr()) error("Missing expression after operator");
     oper();
     
@@ -229,7 +229,15 @@ bool Parser::def()
 {
     if (lit("def"))
     {
-        if (!name()) error("No name provided for definition");
+        if (get().type != "OPERATOR")
+        {
+            if (!name()) error("No name provided for definition");
+        }
+        else
+        {
+            cache.push_back(std::make_shared<Expression>("name", get().val));
+            index++;
+        }
         if (!expr()) error("No expression provided for definition");
     }
     else return false;
@@ -238,7 +246,7 @@ bool Parser::def()
     ExprPtr d = std::make_shared<Expression>("def", "");
     d->right = cache.back();
     cache.pop_back();
-    d->left = cache.back();
+    d->val = cache.back()->val;
     cache.pop_back();
     cache.push_back(d);
     
@@ -253,7 +261,6 @@ bool Parser::string()
 
     cache.push_back(std::make_shared<Expression>("str", get().val));
     index++;
-    errorToken++; 
     return true;
 }
 
@@ -263,7 +270,6 @@ bool Parser::integer()
 
     cache.push_back(std::make_shared<Expression>("int", get().val));
     index++;
-    errorToken++;
     return true;
 }
 
@@ -273,7 +279,6 @@ bool Parser::floatnum()
 
     cache.push_back(std::make_shared<Expression>("float", get().val));
     index++;
-    errorToken++;
     return true;
 }
 
@@ -283,7 +288,6 @@ bool Parser::boolean()
 
     cache.push_back(std::make_shared<Expression>("bool", get().val));
     index++;
-    errorToken++;
     return true;
 }
 
@@ -339,7 +343,6 @@ bool Parser::name()
     
     cache.push_back(std::make_shared<Expression>("name", get().val));
     index++;
-    errorToken++;
     return true;
 }
 
@@ -348,7 +351,6 @@ bool Parser::lit(const std::string& t)
     if (get().val != t) return false;
 
     index++;
-    errorToken++;
     return true;
 }
 
@@ -356,7 +358,7 @@ bool Parser::lit(const std::string& t)
 
 void Parser::error(const std::string& message)
 {
-    const Token& t = tokens[errorToken];
+    const Token& t = tokens[index];
 
     std::ifstream file(path);
     if (!file.is_open()) std::cout << "Could not open file " << path << "\n";

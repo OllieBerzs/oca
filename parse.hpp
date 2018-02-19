@@ -35,9 +35,7 @@ struct Parser
     std::string path;
     std::vector<Token> tokens;
     std::vector<ExprPtr> cache;
-    std::vector<ExprPtr> result;
     uint index;
-    uint errorToken;
 
     Parser(std::vector<Token>& ts, const std::string& path);
 
