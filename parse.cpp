@@ -15,7 +15,7 @@ Expression::Expression(const std::string& type, const std::string& val)
 
 void Expression::print(uint indent)
 {
-    for (uint i = 0; i < indent; i++) std::cout << "|   ";
+    for (uint i = 0; i < indent; i++) std::cout << "  ";
 
     std::cout << "<" + type << ">" << val << "\n";
 
@@ -190,16 +190,20 @@ bool Parser::block()
     // assemble block
     ExprPtr bl = std::make_shared<Expression>("block", "");
     ExprPtr mainBody = std::make_shared<Expression>("main", "");
-    ExprPtr elseBody = std::make_shared<Expression>("else", "");
+    ExprPtr elseBody = nullptr;
 
     if (els > 0)
     {
+        elseBody = std::make_shared<Expression>("else", "");
         ExprPtr curr = elseBody;
         for (uint i = cached + els; i < cache.size(); i++)
         {
             curr->left = cache[i];
-            curr->right = std::make_shared<Expression>("next", "");
-            curr = curr->right;
+            if (i < cache.size() - 1)
+            {
+                curr->right = std::make_shared<Expression>("next", "");
+                curr = curr->right;
+            }
         }
         cache.resize(cached + els);
     }
@@ -207,8 +211,11 @@ bool Parser::block()
     for (uint i = cached; i < cache.size(); i++)
     {
         curr->left = cache[i];
-        curr->right = std::make_shared<Expression>("next", "");
-        curr = curr->right;
+        if (i < cache.size() - 1)
+        {
+            curr->right = std::make_shared<Expression>("next", "");
+            curr = curr->right;
+        }
     }
     cache.resize(cached);
 
