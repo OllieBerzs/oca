@@ -11,17 +11,17 @@ OCA_BEGIN
 
 std::vector<std::pair<std::string, std::string>> syntax
 {
-    {"\\b(def|do|end)\\b",      "KEYWORD"},
-    {"'(.)*'",                  "STRING"},
-    {"([0-9]+\\.[0-9]+)",       "FLOAT"},
-    {"([0-9]+)",                "INTEGER"},
-    {"\\b(true|false)\\b",      "BOOLEAN"},
-    {"([A-z]+)",                "NAME"},
-    {"(\\+|-|\\*|\\/)+",        "OPERATOR"},
-    {"(\\.|:|\\(|\\)|\\[|\\])", "PUNCTUATION"},
-    {"#(.| |\\t)*\\n",          "COMMENT"},
-    {"(\\s)+",                  "WHITESPACE"},
-    {"(.)+",                    "INVALID"}
+    {"\\b(def|do|end)\\b",                 "KEYWORD"},
+    {"'(.)*'",                             "STRING"},
+    {"([0-9]+\\.[0-9]+)",                  "FLOAT"},
+    {"([0-9]+)",                           "INTEGER"},
+    {"\\b(true|false)\\b",                 "BOOLEAN"},
+    {"([A-Za-z]+)",                        "NAME"},
+    {"(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+", "OPERATOR"},
+    {"(\\.|:|\\(|\\)|\\[|\\])",            "PUNCTUATION"},
+    {"#(.| |\\t)*\\n",                     "COMMENT"},
+    {"(\\s)+",                             "WHITESPACE"},
+    {"(.)+",                               "INVALID"}
 };
 
 void Token::print()

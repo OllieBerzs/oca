@@ -48,6 +48,7 @@ struct Parser
     bool expr();
     bool call();
     bool attach();
+    bool oper();
     bool block();
     bool def();
 

@@ -98,6 +98,7 @@ bool Parser::call()
     cache.push_back(c);
 
     attach();
+    oper();
     return true;
 }
 
@@ -118,6 +119,48 @@ bool Parser::attach()
     a->left = prev;
     a->right = next;
     cache.push_back(a);
+    return true;
+}
+
+bool Parser::oper()
+{
+    uint cached = cache.size();
+
+    if (get().type != "OPERATOR") return false;
+    bool first = (cached < 2) || (cache[cached - 2]->type != "operator"); 
+    
+    cache.push_back(std::make_shared<Expression>("operator", get().val));
+    index++;
+    errorToken++;
+    if (!expr()) error("Missing expression after operator");
+    oper();
+    
+    if (!first) return true;
+
+    // assemble operator
+    for (int p = 3; p >= 0; p--)
+    {
+        for (auto it = cache.begin() + cached - 1; it != cache.end(); it++)
+        {
+            if ((*it)->type != "operator") continue;
+
+            // set priority
+            int priority = 1;
+            char op = (*it)->val[0];
+            if (op == '=' || op == '<' || op == '>') priority = 0;
+            else if (op == '*' || op == '/' || op == '%') priority = 2;
+            else if (op == '^') priority = 3;
+
+            if (priority != p) continue;
+
+            ExprPtr o = std::make_shared<Expression>("oper", (*it)->val);
+            o->left = *(it - 1);
+            o->right = *(it + 1);
+            cache.erase(it - 1, it + 2);
+            cache.insert(it - 1, o);
+            it--;
+        }
+    }
     return true;
 }
 
@@ -252,13 +295,24 @@ bool Parser::value()
 
     if (string() || integer() || floatnum() || boolean()) // single value
     {
+        attach();
+        oper();
         return true;
     }
     else if (lit("(")) // tuple
     {
-        while (expr())
+        while (true)
         {
-            ExprPtr tup = std::make_shared<Expression>("tup", "");
+            std::string nam = "";
+            if (lit("[") && name())
+            {
+                if (!lit("]")) error("Missing closing brace");
+                nam = cache.back()->val;
+                cache.pop_back();
+            }
+            if (!expr()) break;
+
+            ExprPtr tup = std::make_shared<Expression>("tup", nam);
             tup->left = cache.back();
             cache.pop_back();
             cache.push_back(tup);
@@ -271,10 +325,11 @@ bool Parser::value()
             cache[i]->right = cache[i + 1];
         cache.resize(cached);
         cache.push_back(tup);
+
+        attach();
+        oper();
         return true;
     }
-
-    attach();
     return false;   
 }
 
