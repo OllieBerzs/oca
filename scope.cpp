@@ -16,12 +16,12 @@ void Scope::clean()
     names.clear();
 }
 
-void Scope::set(const std::string& name, ValuePtr value)
+void Scope::set(const std::string& name, ObjectPtr value)
 {
     names.emplace(name, value);
 }
 
-ValuePtr Scope::get(const std::string& name)
+ObjectPtr Scope::get(const std::string& name)
 {
     auto val = names.find(name);
     if (val == names.end())

@@ -11,22 +11,20 @@
 
 OCA_BEGIN
 
-struct Expression;
-struct Value;
-struct Scope;
+struct Evaluator
+{
+    Scope& scope;
 
-typedef std::shared_ptr<Expression> ExprPtr;
-typedef std::shared_ptr<Value> ValuePtr;
+    ObjectPtr eval(ExprPtr expr);
 
-ValuePtr eval(Scope& scope, ExprPtr expr);
+    ObjectPtr def(ExprPtr expr);
+    ObjectPtr block(ExprPtr expr);
+    ObjectPtr call(ExprPtr expr, ObjectPtr caller);
+    ObjectPtr access(ExprPtr expr);
+    ObjectPtr file(ExprPtr expr);
+    ObjectPtr value(ExprPtr expr);
 
-ValuePtr evalDef(Scope& scope, ExprPtr expr);
-ValuePtr evalBlock(Scope& scope, ExprPtr expr);
-ValuePtr evalCall(Scope& scope, ExprPtr expr, ValuePtr caller);
-ValuePtr evalAttach(Scope& scope, ExprPtr expr);
-ValuePtr evalFile(Scope& scope, ExprPtr expr);
-ValuePtr evalValue(Scope& scope, ExprPtr expr);
-
-void evalError(ExprPtr expr, const std::string& message);
+    void error(const std::string& message);
+};
 
 OCA_END

@@ -13,12 +13,6 @@
 
 OCA_BEGIN
 
-struct Token;
-struct Lexer;
-struct Expression;
-
-typedef std::shared_ptr<Expression> ExprPtr;
-
 struct Expression
 {
     std::string type;
