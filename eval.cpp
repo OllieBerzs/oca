@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** eval.cpp
 ** evaluate AST to value
-*/ 
+*/
 
 #include <iostream>
 
@@ -14,7 +14,6 @@ OCA_BEGIN
 ObjectPtr Evaluator::eval(ExprPtr expr)
 {
     if (expr->type == "def") return def(expr);
-    else if (expr->type == "block") return block(expr);
     else if (expr->type == "call") return call(expr, nullptr);
     else if (expr->type == "access") return access(expr);
     else return value(expr);
@@ -23,11 +22,6 @@ ObjectPtr Evaluator::eval(ExprPtr expr)
 // ----------------------------
 
 ObjectPtr Evaluator::def(ExprPtr expr)
-{
-    return nullptr;
-}
-
-ObjectPtr Evaluator::block(ExprPtr expr)
 {
     return nullptr;
 }
@@ -61,32 +55,6 @@ ObjectPtr Evaluator::file(ExprPtr expr)
     }
     scope.set(expr->val, val);
     return val;
-}
-
-ValuePtr evalBlock(Scope& scope, ExprPtr expr)
-{
-    ExprPtr mainBody = expr->left;
-    ExprPtr elseBody = expr->right;
-
-    ValuePtr ret = nullptr;
-    Scope blockScope(scope);
-
-    ExprPtr curr = mainBody->right;
-    while (curr && curr->left)
-    {
-        if (curr->left->val == "break")
-        {
-            if (!elseBody->right) return ret;
-            curr = elseBody->right;
-        }
-        if (curr->left->val == "return")
-        {
-            return eval(blockScope, curr->left->right);
-        }
-        ret = eval(blockScope, curr->left);
-        curr = curr->right;
-    }
-    return ret;
 }
 
 ValuePtr evalCall(Scope& scope, ExprPtr expr, ValuePtr caller)
@@ -168,68 +136,32 @@ ValuePtr evalAttach(Scope& scope, ExprPtr expr)
     // eval attachment
     //return eval(prev->table, call);
     return nullptr;
-}
-
-ValuePtr evalValue(Scope& scope, ExprPtr expr)
-{
-    ValuePtr value = std::make_shared<Value>();
-    value->type = expr->type;
-    if (expr->type == "tup")
-    {
-        value->table = std::make_shared<std::map<std::string, ValuePtr>>();
-        ExprPtr curr = expr;
-        uint counter = ARRAY_BEGIN_INDEX;
-        while (curr && curr->left)
-        {
-            if (curr->val == "")
-            {
-                curr->val = std::to_string(counter);
-                counter++;
-            }
-            value->table->emplace(curr->val, eval(scope, curr->left));
-            curr = curr->right;
-        }
-    }
-    else
-    {
-        // pull in the table of variables and methods for type
-        value->val = expr->val;
-    }
-    return value;
 }*/
 
 ObjectPtr Evaluator::value(ExprPtr expr)
 {
     ObjectPtr result = std::make_shared<Object>();
+    result->type = expr->type;
     if (expr->type == "tup")
     {
-        ExprPtr curr = expr;
         uint counter = ARRAY_BEGIN_INDEX;
-        while(curr && curr->left)
+        while(expr && expr->left)
         {
-            if (curr->val == "") // unnamed
-            {
-                curr->val = std::to_string(counter);
-                ++counter;
-            }
+            // unnamed value
+            if (expr->val == "") expr->val = std::to_string(counter++);
 
-            ExprPtr value = curr->left;
-            Value v;
-            v.type = value->type;
-            if (value->type == "block") v.block = value;
-            else v.val = value->val;
-            result->table.emplace(curr->val, v);
-
-            curr = curr->right;
+            // add tuple value to object table
+            result->table.emplace(expr->val, value(expr->left));
+            expr = expr->right;
         }
+    }
+    else if (result->type == "block")
+    {
+        result->block = expr;
     }
     else
     {
-        Value v;
-        v.type = expr->type;
-        v.val = expr->val;
-        result->table.emplace("self", v);
-
+        result->val = expr->val;
         // add type specific native methods
     }
     return result;

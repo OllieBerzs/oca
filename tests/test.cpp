@@ -24,4 +24,8 @@ TEST_CASE("Evaluation of basic types", "[types]")
     // bool
     REQUIRE((obj = state.eval("true")) != nullptr);
     REQUIRE(obj->tos() == "<bool>true");
+
+    // tuple
+    REQUIRE((obj = state.eval("(2 3 (true false))")) != nullptr);
+    REQUIRE(obj->tos() == "<tup>([1]<int>2 [2]<int>3 [3]<tup>([1]<bool>true [2]<bool>false))");
 }

@@ -43,7 +43,7 @@ clean:
 	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
 
 run: $(BIN)
-	@./$(BIN)
+	@./$(BIN) tests/script.oca
 
 test: $(TEST)
 	@./$(TEST)
