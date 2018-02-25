@@ -42,11 +42,11 @@ clean:
 	@$(RM) $(BIN) $(TEST)
 	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
 
-run: oca.exe
-	@oca
+run: $(BIN)
+	@$(BIN)
 
-test: tester.exe
-	@tester
+test: $(TEST)
+	@$(TEST)
 
 # dependencies
 OCA_H = oca.hpp common.hpp scope.hpp
