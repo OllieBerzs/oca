@@ -1,5 +1,2 @@
-.vscode/
-tests/
 *.exe
 *.o
-*.ocalib

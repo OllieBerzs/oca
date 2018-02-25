@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** oca.cpp
 ** oca api
-*/ 
+*/
 
 #include <iostream>
 #include <windows.h>
@@ -15,7 +15,7 @@
 
 //#define OUT_TOKENS
 //#define OUT_AST
-#define OUT_VALUES
+//#define OUT_VALUES
 
 OCA_BEGIN
 
@@ -55,12 +55,13 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
 
     Evaluator ev{scope};
 
+    ObjectPtr obj = nullptr;
     for (ExprPtr e : ast)
     {
-        ObjectPtr obj = ev.eval(e);
+        obj = ev.eval(e);
         #ifdef OUT_VALUES
         if (obj == nullptr) std::cout << "->nil\n";
-        else 
+        else
         {
             std::cout << "->";
             obj->print(true);
@@ -69,7 +70,7 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
         #endif
     }
 
-    return nullptr;
+    return obj;
 }
 
 // ---------------------------------------
@@ -91,7 +92,7 @@ void State::load(const std::string& lib)
     DLLfunc function = (DLLfunc)GetProcAddress(DLL, "load");
 
     // call function
-    if (!function) 
+    if (!function)
     {
         std::cout << "load function not found\n";
         std::cin.get();

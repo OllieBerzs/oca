@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** object.cpp
 ** object for all oca types
-*/ 
+*/
 
 #include <iostream>
 #include "object.hpp"
@@ -53,7 +53,8 @@ Object::Object(NativeMethod v)
 
 std::string Object::tos()
 {
-    return "";
+    Value self = (*table.find("self")).second;
+    return "<" + self.type + ">" + self.val;
 }
 
 int Object::toi()
@@ -80,7 +81,7 @@ void Object::print(bool debug)
         std::cout << "(";
         for (auto pair : table)
         {
-            if (debug) std::cout << "<" << pair.second.type 
+            if (debug) std::cout << "<" << pair.second.type
                 << ":" << pair.first << ">";
             if (pair.second.type == "native") std::cout << &pair.second.nat;
             else if (pair.second.type == "block") std::cout << pair.second.block;

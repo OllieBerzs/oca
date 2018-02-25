@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** parse.cpp
 ** parsing oca tokens into AST
-*/ 
+*/
 
 #include <iostream>
 #include <fstream>
@@ -25,7 +25,7 @@ void Expression::print(uint indent)
 
 // ----------------------------
 
-Parser::Parser(std::vector<Token>& ts, const std::string& path) 
+Parser::Parser(std::vector<Token>& ts, const std::string& path)
     : path(path), index(0)
 {
     tokens = std::move(ts);
@@ -46,7 +46,7 @@ std::vector<ExprPtr> Parser::parse()
     std::vector<ExprPtr> result;
     while (index < tokens.size() - 1)
     {
-        if (expr()) 
+        if (expr())
         {
             result.push_back(cache.back());
             cache.pop_back();
@@ -128,13 +128,13 @@ bool Parser::oper()
     uint cached = cache.size();
 
     if (get().type != "OPERATOR") return false;
-    bool first = (cached < 2) || (cache[cached - 2]->type != "operator"); 
-    
+    bool first = (cached < 2) || (cache[cached - 2]->type != "operator");
+
     cache.push_back(std::make_shared<Expression>("operator", get().val));
     index++;
     if (!expr()) error("Missing expression after operator");
     oper();
-    
+
     if (!first) return true;
 
     // assemble operator
@@ -256,7 +256,7 @@ bool Parser::def()
     d->val = cache.back()->val;
     cache.pop_back();
     cache.push_back(d);
-    
+
     return true;
 }
 
@@ -298,7 +298,8 @@ bool Parser::string()
 {
     if (get().type != "STRING") return false;
 
-    cache.push_back(std::make_shared<Expression>("str", get().val));
+    std::string val = get().val;
+    cache.push_back(std::make_shared<Expression>("str", val.substr(1, val.size() - 2)));
     index++;
     return true;
 }
@@ -373,13 +374,13 @@ bool Parser::value()
         oper();
         return true;
     }
-    return false;   
+    return false;
 }
 
 bool Parser::name()
 {
     if (get().type != "NAME") return false;
-    
+
     cache.push_back(std::make_shared<Expression>("name", get().val));
     index++;
     return true;
@@ -422,7 +423,7 @@ void Parser::error(const std::string& message)
             errline = "";
         }
         else errline += c;
-        if (index == t.pos) 
+        if (index == t.pos)
         {
             found = true;
             colNum = errline.size() - 1;
@@ -431,7 +432,7 @@ void Parser::error(const std::string& message)
     }
 
     std::string lineStart = errline.substr(0, colNum);
-    std::string lineEnd = colNum + t.val.size() < errline.size() 
+    std::string lineEnd = colNum + t.val.size() < errline.size()
         ? errline.substr(colNum + t.val.size(), errline.size()) : "";
 
     system("printf '\033[1A'");
