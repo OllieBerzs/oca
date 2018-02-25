@@ -4,6 +4,7 @@
 */
 
 #include <iostream>
+#include <sstream>
 #include "object.hpp"
 #include "parse.hpp"
 
@@ -11,50 +12,71 @@ OCA_BEGIN
 
 Object::Object(const std::string& v)
 {
-    Value str;
-    str.type = "str";
-    str.val = v;
-    table.emplace("self", str);
+    type = "str";
+    val = v;
 }
 
 Object::Object(int v)
 {
-    Value i;
-    i.type = "int";
-    i.val = v;
-    table.emplace("self", i);
+    type = "int";
+    val = std::to_string(v);
 }
 
 Object::Object(float v)
 {
-    Value f;
-    f.type = "float";
-    f.val = v;
-    table.emplace("self",f);
+    type = "float";
+    val = std::to_string(v);
 }
 
 Object::Object(bool v)
 {
-    Value b;
-    b.type = "bool";
-    b.val = v;
-    table.emplace("self", b);
+    type = "bool";
+    val = v ? "true" : "false";
 }
 
 Object::Object(NativeMethod v)
 {
-    Value n;
-    n.type = "native";
-    n.nat = v;
-    table.emplace("self", n);
+    type = "native";
+    nat = v;
 }
 
 // -----------------------------
 
-std::string Object::tos()
+std::string Object::tos(bool debug)
 {
-    Value self = (*table.find("self")).second;
-    return "<" + self.type + ">" + self.val;
+    std::string result = "";
+    if (type == "tup") // is tuple
+    {
+        if (debug) result += "<tup>";
+        result += "(";
+        for (auto& pair : table)
+        {
+            if (debug) result += "[" + pair.first + "]";
+            result += pair.second->tos(debug) + " ";
+        }
+        if (table.size() > 0) result.pop_back();
+        result += ")";
+    }
+    else
+    {
+        if (debug) result += "<" + type + ">";
+        if (type == "native")
+        {
+            const void* address = static_cast<const void*>(&nat);
+            std::stringstream ss;
+            ss << address;
+            result += ss.str();
+        }
+        else if (type == "block")
+        {
+            const void* address = static_cast<const void*>(block.get());
+            std::stringstream ss;
+            ss << address;
+            result += ss.str();
+        }
+        else result += val;
+    }
+    return result;
 }
 
 int Object::toi()
@@ -70,34 +92,6 @@ float Object::tof()
 bool Object::tob()
 {
     return false;
-}
-
-// ----------------------------
-
-void Object::print(bool debug)
-{
-    if (table.find("self") == table.end()) // is tuple
-    {
-        std::cout << "(";
-        for (auto pair : table)
-        {
-            if (debug) std::cout << "<" << pair.second.type
-                << ":" << pair.first << ">";
-            if (pair.second.type == "native") std::cout << &pair.second.nat;
-            else if (pair.second.type == "block") std::cout << pair.second.block;
-            else std::cout << pair.second.val;
-            std::cout << " ";
-        }
-        std::cout << ")";
-    }
-    else
-    {
-        Value self = (*table.find("self")).second;
-        if (debug) std::cout << "<" <<  self.type << ">";
-        if (self.type == "native") std::cout << &self.nat;
-        else if (self.type == "block") std::cout << self.block;
-        else std::cout << self.val;
-    }
 }
 
 OCA_END

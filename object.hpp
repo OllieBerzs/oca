@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** object.hpp
 ** object for all oca types
-*/ 
+*/
 
 #pragma once
 
@@ -13,17 +13,13 @@
 
 OCA_BEGIN
 
-struct Value
+struct Object
 {
     std::string type;
     std::string val;
     NativeMethod nat;
     ExprPtr block;
-};
-
-struct Object
-{
-    std::map<std::string, Value> table;
+    std::map<std::string, ObjectPtr> table;
 
     Object() = default;
     Object(const std::string& v);
@@ -32,12 +28,10 @@ struct Object
     Object(bool v);
     Object(NativeMethod v);
 
-    std::string tos();
+    std::string tos(bool debug);
     int toi();
     float tof();
     bool tob();
-
-    void print(bool debug);
 };
 
 OCA_END

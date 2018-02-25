@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** eval.hpp
 ** evaluate AST to value
-*/ 
+*/
 
 #pragma once
 
@@ -18,7 +18,6 @@ struct Evaluator
     ObjectPtr eval(ExprPtr expr);
 
     ObjectPtr def(ExprPtr expr);
-    ObjectPtr block(ExprPtr expr);
     ObjectPtr call(ExprPtr expr, ObjectPtr caller);
     ObjectPtr access(ExprPtr expr);
     ObjectPtr file(ExprPtr expr);

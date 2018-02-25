@@ -15,7 +15,7 @@
 
 //#define OUT_TOKENS
 //#define OUT_AST
-//#define OUT_VALUES
+#define OUT_VALUES
 
 OCA_BEGIN
 
@@ -61,12 +61,7 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
         obj = ev.eval(e);
         #ifdef OUT_VALUES
         if (obj == nullptr) std::cout << "->nil\n";
-        else
-        {
-            std::cout << "->";
-            obj->print(true);
-            std::cout << "\n";
-        }
+        else std::cout << "->" << obj->tos(true) << "\n";
         #endif
     }
 
