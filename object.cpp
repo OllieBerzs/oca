@@ -47,10 +47,11 @@ std::string Object::tos(bool debug)
     std::string result = "";
     if (type == "tup") // is tuple
     {
-        result += "<tup>(";
+        if (debug) result += "<tup>";
+        result += "(";
         for (auto& pair : table)
         {
-            result += "[" + pair.first + "]";
+            if (debug) result += "[" + pair.first + "]";
             result += pair.second->tos(debug) + " ";
         }
         if (table.size() > 0) result.pop_back();
