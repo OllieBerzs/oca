@@ -4,7 +4,7 @@
 */
 
 #include <iostream>
-#include <windows.h>
+//#include <windows.h>
 #include <fstream>
 
 #include "oca.hpp"
@@ -75,7 +75,7 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
 
 // ---------------------------------------
 
-void State::load(const std::string& lib)
+/*void State::load(const std::string& lib)
 {
     char path[MAX_PATH];
     GetFullPathNameA((lib + ".ocalib").c_str(), MAX_PATH, path, nullptr);
@@ -102,7 +102,7 @@ void State::load(const std::string& lib)
 
     // free DLL
     //FreeLibrary(DLL);
-}
+}*/
 
 void State::def(const std::string& name, NativeMethod nat)
 {

@@ -7,12 +7,22 @@ CPPFLAGS = -Wall -std=c++17 -g
 
 # ----- End of user settings -------------------------------
 
+# Binaries
+ifeq ($(OS),Windows_NT)
+BIN = oca.exe
+TEST = tester.exe
+else
 BIN = oca
+TEST = tester
+endif
+
+
+# Objects
 BIN_OBJ = main.o
 TEST_OBJ = tests/test.o
 OBJ = oca.o lex.o parse.o object.o scope.o eval.o
 
-all: $(BIN).exe
+all: $(BIN)
 
 # object files
 %.o: %.cpp
@@ -20,18 +30,17 @@ all: $(BIN).exe
 	@$(CXX) $(CPPFLAGS) -c -o $@ $<
 
 # binaries
-$(BIN).exe: $(BIN_OBJ) $(OBJ)
-	@echo [Link] $(BIN).exe
-	@$(CXX) $(CPPFLAGS) -o $(BIN).exe $^
+$(BIN): $(BIN_OBJ) $(OBJ)
+	@echo [Link] $(BIN)
+	@$(CXX) $(CPPFLAGS) -o $(BIN) $^
 
-tester.exe: $(TEST_OBJ) $(OBJ)
-	@echo [Link] tester.exe
-	@$(CXX) $(CPPFLAGS) -o tester.exe $^
+$(TEST): $(TEST_OBJ) $(OBJ)
+	@echo [Link] $(TEST)
+	@$(CXX) $(CPPFLAGS) -o $(TEST) $^
 
 clean:
-	@echo [Clean] $(BIN)
-	@$(RM) $(BIN).exe tester.exe
-	@$(RM) $(OBJ)
+	@$(RM) $(BIN) $(TEST)
+	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
 
 run: oca.exe
 	@oca
