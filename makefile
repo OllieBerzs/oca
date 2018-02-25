@@ -43,10 +43,10 @@ clean:
 	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
 
 run: $(BIN)
-	@$(BIN)
+	@./$(BIN)
 
 test: $(TEST)
-	@$(TEST)
+	@./$(TEST)
 
 # dependencies
 OCA_H = oca.hpp common.hpp scope.hpp
