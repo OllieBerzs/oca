@@ -49,7 +49,7 @@ bool Parser::checkIndent(Indent ind)
     if (ind == Indent::LESS) if (size >= indent) return false;
     if (ind == Indent::SAME) if (size > indent || size < indent) return false;
     if (ind == Indent::MORE) if (size <= indent) return false;
-    
+
     indent = size;
     ++index;
     return true;
@@ -69,7 +69,7 @@ std::vector<ExprPtr> Parser::parse()
         }
         else error("Not an expression");
         if (checkIndent(Indent::MORE)) error("Unexpected indent");
-        if (!checkIndent(Indent::SAME)) error("Expected a newline at end of expression");
+        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) error("Expected a newline at end of expression");
     }
     return result;
 }
@@ -78,7 +78,7 @@ std::vector<ExprPtr> Parser::parse()
 
 bool Parser::expr()
 {
-    if (set() || block() || call() || value() || keyword() || file()) return true;
+    if (set() || call() || value() || keyword() || file()) return true;
     return false;
 }
 
@@ -92,7 +92,7 @@ bool Parser::set()
         --index;
         return false;
     }
-    if (!expr()) error("Expected an expression after '=' in assignment");
+    if (!set() && !block() && !call() && !value() && !file()) error("Expected value after '='");
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>("set", "");
@@ -109,12 +109,7 @@ bool Parser::call()
 {
     if (!name()) return false;
 
-    bool hasArg = false;
-    if (lit(":"))
-    {
-        if (!expr()) error("No argument provided for function call with ':'");
-        hasArg = true;
-    }
+    bool hasArg = value() || call();
     bool hasBlock = block();
 
     // assemble call
@@ -148,7 +143,7 @@ bool Parser::access()
 {
     if (lit("."))
     {
-        if (!integer() && !call()) error("No function call after '.'");
+        if (!integer() && !call()) error("No accessor call after '.'");
     }
     else return false;
 
@@ -173,7 +168,7 @@ bool Parser::oper()
 
     cache.push_back(std::make_shared<Expression>("operator", get().val));
     index++;
-    if (!expr()) error("Missing expression after operator");
+    if (!value() && !call()) error("Missing value after operator");
     oper();
 
     if (!first) return true;
@@ -209,21 +204,27 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
+    uint cached =  cache.size();
+
     bool hasParam = false;
     if (lit(":"))
     {
         if (!name()) error("No name provided for parameter after ':'");
         hasParam = true;
-    }
+        if (!checkIndent(Indent::MORE)) error("Expected indentation at the start of a block");
 
-    uint cached = cache.size();
-
-    if (checkIndent(Indent::MORE))
-    {
+        cached = cache.size();
         while (expr())
         {
             if (!checkIndent(Indent::SAME)) break;
         }
+    }
+    else
+    {
+        if (checkIndent(Indent::SAME)) error("Expected indented block");
+        checkIndent(Indent::MORE);
+        cached = cache.size();
+        if (!expr()) error("Expected expression for block");
     }
 
     // assemble block
@@ -246,7 +247,6 @@ bool Parser::block()
         bl->val = cache.back()->val;
         cache.pop_back();
     }
-
     cache.push_back(bl);
 
     return true;
