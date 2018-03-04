@@ -1,21 +1,28 @@
 # makefile for building oca
 
-# ----- Change settings below to suit your environment -----
+CXX = clang++
+ARCH = x86_64
+DEBUG = true
 
-CXX = g++
-CPPFLAGS = -Wall -std=c++17 -g
+# End of user config -------------------------------------
 
-# ----- End of user settings -------------------------------
-
-# Binaries
 ifeq ($(OS),Windows_NT)
 BIN = oca.exe
 TEST = tester.exe
+TARGET = $(ARCH)-windows-gnu
 else
 BIN = oca
 TEST = tester
+TARGET = $(ARCH)-linux-gnu
 endif
 
+CPPFLAGS = -target $(TARGET) -Wall -std=c++17
+
+ifeq ($(DEBUG), true)
+CPPFLAGS += -g -O0
+else
+CPPFLAGS += -O2
+endif
 
 # Objects
 BIN_OBJ = main.o
@@ -41,6 +48,7 @@ $(TEST): $(TEST_OBJ) $(OBJ)
 clean:
 	@$(RM) $(BIN) $(TEST)
 	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
+	@$(RM) *.ilk *.pdb
 
 run: $(BIN)
 	@./$(BIN) tests/script.oca

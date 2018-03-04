@@ -1,7 +1,7 @@
 /* ollieberzs 2018
-** common.hpp 
+** common.hpp
 ** defines and typedefs that should be included in every file
-*/ 
+*/
 
 #pragma once
 
@@ -20,7 +20,7 @@ struct Token;
 struct Lexer;
 struct Expression;
 struct Object;
-struct Scope;
+class Scope;
 
 typedef unsigned int uint;
 
