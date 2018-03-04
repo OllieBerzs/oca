@@ -68,6 +68,7 @@ std::vector<ExprPtr> Parser::parse()
             cache.pop_back();
         }
         else error("Not an expression");
+        if (get().type == "LAST") break;
         if (checkIndent(Indent::MORE)) error("Unexpected indent");
         if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) error("Expected a newline at end of expression");
     }
