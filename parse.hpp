@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** parse.hpp
 ** parsing oca tokens into AST
-*/ 
+*/
 
 #pragma once
 
@@ -12,6 +12,8 @@
 #include "common.hpp"
 
 OCA_BEGIN
+
+enum class Indent { SAME, MORE, LESS };
 
 struct Expression
 {
@@ -30,19 +32,21 @@ struct Parser
     std::vector<Token> tokens;
     std::vector<ExprPtr> cache;
     uint index;
+    uint indent;
 
     Parser(std::vector<Token>& ts, const std::string& path);
 
     const Token& get();
+    bool checkIndent(Indent ind);
 
     std::vector<ExprPtr> parse();
 
     bool expr();
+    bool set();
     bool call();
     bool access();
     bool oper();
     bool block();
-    bool def();
     bool keyword();
     bool file();
 

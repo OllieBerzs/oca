@@ -26,7 +26,7 @@ void Expression::print(uint indent)
 // ----------------------------
 
 Parser::Parser(std::vector<Token>& ts, const std::string& path)
-    : path(path), index(0)
+    : path(path), index(0), indent(0)
 {
     tokens = std::move(ts);
 }
@@ -37,6 +37,22 @@ const Token& Parser::get()
 {
     if (index < tokens.size() - 1) return tokens.at(index);
     else return tokens.back();
+}
+
+bool Parser::checkIndent(Indent ind)
+{
+    if (get().type != "INDENT") return false;
+
+    uint size = get().val.size();
+    if (get().val[0] == '\n') --size;
+
+    if (ind == Indent::LESS) if (size >= indent) return false;
+    if (ind == Indent::SAME) if (size > indent || size < indent) return false;
+    if (ind == Indent::MORE) if (size <= indent) return false;
+
+    indent = size;
+    ++index;
+    return true;
 }
 
 // ----------------------------
@@ -52,28 +68,49 @@ std::vector<ExprPtr> Parser::parse()
             cache.pop_back();
         }
         else error("Not an expression");
+        if (get().type == "LAST") break;
+        if (checkIndent(Indent::MORE)) error("Unexpected indent");
+        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) error("Expected a newline at end of expression");
     }
-    return std::move(result);
+    return result;
 }
 
 // ----------------------------
 
 bool Parser::expr()
 {
-    if (block() || call() || def() || value() || keyword() || file()) return true;
+    if (set() || call() || value() || keyword() || file()) return true;
     return false;
+}
+
+bool Parser::set()
+{
+    if (!name()) return false;
+
+    if (!lit("="))
+    {
+        cache.pop_back();
+        --index;
+        return false;
+    }
+    if (!set() && !block() && !call() && !value() && !file()) error("Expected value after '='");
+
+    // assemble assignment
+    ExprPtr s = std::make_shared<Expression>("set", "");
+    s->right = cache.back();
+    cache.pop_back();
+    s->val = cache.back()->val;
+    cache.pop_back();
+    cache.push_back(s);
+
+    return true;
 }
 
 bool Parser::call()
 {
     if (!name()) return false;
 
-    bool hasArg = false;
-    if (lit(":"))
-    {
-        if (!expr()) error("No argument provided for function call with ':'");
-        hasArg = true;
-    }
+    bool hasArg = value() || call();
     bool hasBlock = block();
 
     // assemble call
@@ -107,7 +144,7 @@ bool Parser::access()
 {
     if (lit("."))
     {
-        if (!integer() && !call()) error("No function call after '.'");
+        if (!integer() && !call()) error("No accessor call after '.'");
     }
     else return false;
 
@@ -132,7 +169,7 @@ bool Parser::oper()
 
     cache.push_back(std::make_shared<Expression>("operator", get().val));
     index++;
-    if (!expr()) error("Missing expression after operator");
+    if (!value() && !call()) error("Missing value after operator");
     oper();
 
     if (!first) return true;
@@ -168,47 +205,34 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
+    uint cached =  cache.size();
+
     bool hasParam = false;
     if (lit(":"))
     {
         if (!name()) error("No name provided for parameter after ':'");
         hasParam = true;
+        if (!checkIndent(Indent::MORE)) error("Expected indentation at the start of a block");
+
+        cached = cache.size();
+        while (expr())
+        {
+            if (!checkIndent(Indent::SAME)) break;
+        }
     }
-
-    uint cached = cache.size();
-
-    uint els = 0;
-    uint counter = 0;
-
-    while (!lit("end"))
+    else
     {
-        if (lit("else")) els = counter;
-        if (!expr()) error("Not an expression");
-        counter++;
+        if (checkIndent(Indent::SAME)) error("Expected indented block");
+        checkIndent(Indent::MORE);
+        cached = cache.size();
+        if (!expr()) error("Expected expression for block");
     }
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>("block", "");
-    ExprPtr mainBody = std::make_shared<Expression>("main", "");
-    ExprPtr elseBody = nullptr;
 
-    if (els > 0)
-    {
-        elseBody = std::make_shared<Expression>("else", "");
-        ExprPtr curr = elseBody;
-        for (uint i = cached + els; i < cache.size(); i++)
-        {
-            curr->left = cache[i];
-            if (i < cache.size() - 1)
-            {
-                curr->right = std::make_shared<Expression>("next", "");
-                curr = curr->right;
-            }
-        }
-        cache.resize(cached + els);
-    }
-    ExprPtr curr = mainBody;
-    for (uint i = cached; i < cache.size(); i++)
+    ExprPtr curr = bl;
+    for (uint i = cached; i < cache.size(); ++i)
     {
         curr->left = cache[i];
         if (i < cache.size() - 1)
@@ -221,41 +245,10 @@ bool Parser::block()
 
     if (hasParam)
     {
-        mainBody->val = cache.back()->val;
+        bl->val = cache.back()->val;
         cache.pop_back();
     }
-
-    bl->left = mainBody;
-    bl->right = elseBody;
     cache.push_back(bl);
-
-    return true;
-}
-
-bool Parser::def()
-{
-    if (lit("def"))
-    {
-        if (get().type != "OPERATOR")
-        {
-            if (!name()) error("No name provided for definition");
-        }
-        else
-        {
-            cache.push_back(std::make_shared<Expression>("name", get().val));
-            index++;
-        }
-        if (!expr()) error("No expression provided for definition");
-    }
-    else return false;
-
-    // assemble definition
-    ExprPtr d = std::make_shared<Expression>("def", "");
-    d->right = cache.back();
-    cache.pop_back();
-    d->val = cache.back()->val;
-    cache.pop_back();
-    cache.push_back(d);
 
     return true;
 }
@@ -345,14 +338,25 @@ bool Parser::value()
     }
     else if (lit("(")) // tuple
     {
+        checkIndent(Indent::MORE);
         while (true)
         {
+            if (checkIndent(Indent::MORE)) error("Unexpected indent as part of a tuple");
+            checkIndent(Indent::SAME);
             std::string nam = "";
-            if (lit("[") && name())
+            if (name())
             {
-                if (!lit("]")) error("Missing closing brace");
-                nam = cache.back()->val;
-                cache.pop_back();
+                if (lit(":"))
+                {
+                    nam = cache.back()->val;
+                    cache.pop_back();
+                }
+                else
+                {
+                    cache.pop_back();
+                    --index;
+                }
+
             }
             if (!expr()) break;
 
@@ -360,7 +364,10 @@ bool Parser::value()
             tup->left = cache.back();
             cache.pop_back();
             cache.push_back(tup);
+
+            if (!lit(",")) break;
         }
+        checkIndent(Indent::LESS);
         if (!lit(")")) error("Missing closing brace");
 
         // assemble tuple
@@ -380,9 +387,16 @@ bool Parser::value()
 bool Parser::name()
 {
     if (get().type != "NAME") return false;
+    std::string nam = "";
 
-    cache.push_back(std::make_shared<Expression>("name", get().val));
-    index++;
+    while (get().type == "NAME")
+    {
+        nam += get().val + " ";
+        ++index;
+        if (!lit(",")) break;
+    }
+
+    cache.push_back(std::make_shared<Expression>("name", nam));
     return true;
 }
 
