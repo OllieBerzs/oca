@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: clang:5.0.0
+      - image: gcc:7.0.1
     steps:
       - checkout
-      - run: make test
+      - run: make test CXX=g++ DEBUG=false
