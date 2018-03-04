@@ -13,7 +13,7 @@
 
 OCA_BEGIN
 
-enum class Indent { SAME, MORE, LESS };
+enum class Indent { SAME, MORE, LESS, ANY };
 
 struct Expression
 {
@@ -36,7 +36,7 @@ struct Parser
 
     Parser(std::vector<Token>& ts, const std::string& path);
 
-    const Token& get();
+    Token& get();
     bool checkIndent(Indent ind);
 
     std::vector<ExprPtr> parse();

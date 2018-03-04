@@ -13,22 +13,22 @@ OCA_BEGIN
 std::vector<std::pair<std::string, std::string>> syntax
 {
 
-    {"STRING",          "'(.)*'"},
-    {"FLOAT",           "([0-9]+\\.[0-9]+)"},
-    {"INTEGER",         "([0-9]+)"},
-    {"BOOLEAN",         "\\b(true|false)\\b"},
-    {"FILEPATH",        "\\$(.)+"},
+    {"STRING",          "()'(.)*'"},
+    {"FLOAT",           "()([0-9]+\\.[0-9]+)"},
+    {"INTEGER",         "()([0-9]+)"},
+    {"BOOLEAN",         "()\\b(true|false)\\b"},
+    {"FILEPATH",        "()\\$(.)+"},
 
-    {"KEYWORD",         "\\b(do|if|then|else|return|break)\\b"},
-    {"NAME",            "([A-Za-z]+)"},
-    {"OPERATOR",        "(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
+    {"KEYWORD",         "()\\b(do|if|then|else|return|break)\\b"},
+    {"NAME",            "()([A-Za-z]+)"},
+    {"OPERATOR",        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
 
-    {"PUNCTUATION",     "(\\.|:|\\(|\\)|,)"},
+    {"PUNCTUATION",     "()(\\.|:|\\(|\\)|,)"},
 
-    {"COMMENT",         "#(.)*"},
-    {"INDENT",          "(^ +|\\n *)"},
-    {"WHITESPACE",      "(\\n| )+"},
-    {"INVALID",         "(.)+"}
+    {"COMMENT",         "()#(.)*"},
+    {"INDENT",          "(^ +|\\n *)(?=\\S)"},
+    {"WHITESPACE",      "()(\\n *| +)"},
+    {"INVALID",         "()(.)+"}
 };
 
 void Token::print()
@@ -57,10 +57,11 @@ std::vector<Token> Lexer::lex()
         for (uint i = 0; i < it->size(); i++)
         {
             if (it->str(i + 1).empty()) continue;
-            if (syntax[i].first == "WHITESPACE") continue;
-            if (syntax[i].first == "COMMENT") continue;
-            if (syntax[i].first == "INVALID") error("Unknown symbol", {syntax[i].first, it->str(), pos});
-            result.push_back({syntax[i].first, it->str(), pos});
+            uint index = i / 2;
+            if (syntax[index].first == "WHITESPACE") continue;
+            if (syntax[index].first == "COMMENT") continue;
+            if (syntax[index].first == "INVALID") error("Unknown symbol", {syntax[index].first, it->str(), pos});
+            result.push_back({syntax[index].first, it->str(), pos});
             break;
         }
     }
