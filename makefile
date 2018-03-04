@@ -16,6 +16,7 @@ TEST = tester
 TARGET = $(ARCH)-linux-gnu
 endif
 
+CPPFLAGS = -target $(TARGET) -Wall -std=c++17
 ifeq ($(CXX), g++)
 CPPFLAGS = -Wall -std=c++17
 endif
