@@ -33,7 +33,7 @@ Parser::Parser(std::vector<Token>& ts, const std::string& path)
 
 // ----------------------------
 
-const Token& Parser::get()
+Token& Parser::get()
 {
     if (index < tokens.size() - 1) return tokens.at(index);
     else return tokens.back();
@@ -62,6 +62,7 @@ std::vector<ExprPtr> Parser::parse()
     std::vector<ExprPtr> result;
     while (index < tokens.size() - 1)
     {
+        //while (checkIndent(Indent::ANY)) {}
         if (expr())
         {
             result.push_back(cache.back());
@@ -109,6 +110,7 @@ bool Parser::set()
 bool Parser::call()
 {
     if (!name()) return false;
+
 
     bool hasArg = value() || call();
     bool hasBlock = block();
@@ -226,6 +228,7 @@ bool Parser::block()
         checkIndent(Indent::MORE);
         cached = cache.size();
         if (!expr()) error("Expected expression for block");
+        //checkIndent(Indent::LESS);
     }
 
     // assemble block
@@ -358,7 +361,7 @@ bool Parser::value()
                 }
 
             }
-            if (!expr()) break;
+            if (!expr()) error("Expected expression as value");
 
             ExprPtr tup = std::make_shared<Expression>("tup", nam);
             tup->left = cache.back();
@@ -389,13 +392,16 @@ bool Parser::name()
     if (get().type != "NAME") return false;
     std::string nam = "";
 
+    bool trailComma = false;
     while (get().type == "NAME")
     {
+        trailComma = false;
         nam += get().val + " ";
         ++index;
         if (!lit(",")) break;
+        trailComma = true;
     }
-
+    if (trailComma) --index;
     cache.push_back(std::make_shared<Expression>("name", nam));
     return true;
 }
