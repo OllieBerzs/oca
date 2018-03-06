@@ -27,7 +27,7 @@ typedef unsigned int uint;
 typedef std::shared_ptr<Expression> ExprPtr;
 typedef std::shared_ptr<Object> ObjectPtr;
 typedef std::shared_ptr<Scope> ScopePtr;
-typedef std::function<ObjectPtr(ObjectPtr)> NativeMethod;
+typedef std::function<ObjectPtr(ObjectPtr, ObjectPtr, ObjectPtr)> NativeMethod;
 
 typedef void(*DLLfunc)(Scope&);
 typedef ObjectPtr Arg;

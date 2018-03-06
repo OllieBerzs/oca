@@ -196,12 +196,10 @@ bool Parser::cond()
             {
                 if (!checkIndent(Indent::SAME)) break;
             }
-            //checkIndent(Indent::LESS);
         }
         else
         {
             if (!expr()) error("Expected expression in 'if' else branch");
-            //checkIndent(Indent::SAME);
         }
     }
 

@@ -8,25 +8,65 @@
 #include "eval.hpp"
 #include "parse.hpp"
 #include "object.hpp"
+#include "oca.hpp"
 
 OCA_BEGIN
 
 ObjectPtr Evaluator::eval(ExprPtr expr)
 {
-    if (expr->type == "def") return def(expr);
+    if (expr->type == "set") return set(expr);
     else if (expr->type == "call") return call(expr, nullptr);
+    else if (expr->type == "if") return cond(expr);
     else if (expr->type == "access") return access(expr);
     else return value(expr);
 }
 
 // ----------------------------
 
-ObjectPtr Evaluator::def(ExprPtr expr)
+ObjectPtr Evaluator::set(ExprPtr expr)
 {
-    return nullptr;
+    ObjectPtr obj = eval(expr->right);
+    state->scope.set(expr->val, obj);
+    return obj;
 }
 
 ObjectPtr Evaluator::call(ExprPtr expr, ObjectPtr caller)
+{
+    ObjectPtr func = nullptr;
+    std::vector<std::string> names;
+    std::string name = "";
+    for (auto& c : expr->val)
+    {
+        if (c == ' ')
+        {
+            names.push_back(name);
+            continue;
+        }
+        name += c;
+    }
+
+    if (caller) func = caller->table.find(names[0])->second;
+    else func = state->scope.get(names[0]);
+
+    if (!func) error("Undefined name '" + names[0] + "'");
+
+    if (func->type == "native")
+    {
+        ObjectPtr arg = nullptr;
+        ObjectPtr block = nullptr;
+        if (expr->right) arg = eval(expr->right);
+        if (expr->left) block = eval(expr->left);
+        return func->nat(arg, caller, block);
+    }
+    if (func->type == "block")
+    {
+
+    }
+
+    return func;
+}
+
+ObjectPtr Evaluator::cond(ExprPtr expr)
 {
     return nullptr;
 }
@@ -40,103 +80,6 @@ ObjectPtr Evaluator::file(ExprPtr expr)
 {
     return nullptr;
 }
-
-
-/*ValuePtr evalDef(Scope& scope, ExprPtr expr)
-{
-    ValuePtr val = nullptr;
-    if (expr->right->type == "block")
-    {
-        val = evalValue(scope, expr->right);
-    }
-    else
-    {
-        val = eval(scope, expr->right);
-    }
-    scope.set(expr->val, val);
-    return val;
-}
-
-ValuePtr evalCall(Scope& scope, ExprPtr expr, ValuePtr caller)
-{
-    ValuePtr method = scope.get(expr->val);
-
-    // get arguments
-    std::vector<ValuePtr> args;
-    ExprPtr arg = expr->right;
-    while (arg && arg->left)
-    {
-        args.push_back(eval(scope, arg->left));
-        arg = arg->right;
-    }
-
-    if (!method) evalError(expr, "Name '" + expr->val + "' is undefined");
-
-    if (method->type == "native")
-    {
-        return method->native(args);
-    }
-    else if (method->type == "block")
-    {
-        ExprPtr block = method->block;
-        ExprPtr mainBody = block->left;
-        ExprPtr elseBody = block->right;
-
-        ValuePtr ret = nullptr;
-        Scope methodScope(scope);
-
-        // add parameters to scope
-        ExprPtr params = mainBody->left;
-        uint index = 0;
-        while (params)
-        {
-            methodScope.set(params->val, args[index++]);
-            params = params->right;
-        }
-
-        // eval main body
-        ExprPtr expr = mainBody->right;
-        while (expr && expr->left)
-        {
-            if (expr->left->val == "break")
-        {
-            if (!elseBody->right) return ret;
-            expr = elseBody->right;
-        }
-        if (expr->left->val == "return")
-        {
-            return eval(methodScope, expr->left->right);
-        }
-        ret = eval(methodScope, expr->left);
-        expr = expr->right;
-        }
-        return ret;
-    }
-    else
-    {
-        // it is not callable
-        return method;
-    }
-    return nullptr;
-}
-
-ValuePtr evalAttach(Scope& scope, ExprPtr expr)
-{
-    //ValuePtr prev = eval(scope, expr->left);
-    //ExprPtr arg = prev->val;
-
-    // add argument
-    //ExprPtr call = expr->right->left;
-    //ExprPtr args = call->right;
-    //ExprPtr temp = std::make_shared<Expression>("tup", "");
-    //temp->left = arg;
-    //temp->right = args;
-    //args = temp;
-
-    // eval attachment
-    //return eval(prev->table, call);
-    return nullptr;
-}*/
 
 ObjectPtr Evaluator::value(ExprPtr expr)
 {
@@ -171,7 +114,8 @@ ObjectPtr Evaluator::value(ExprPtr expr)
 
 void Evaluator::error(const std::string& message)
 {
-
+    std::cout << message << "\n";
+    exit(1);
 }
 
 OCA_END
