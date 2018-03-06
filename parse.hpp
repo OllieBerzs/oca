@@ -45,6 +45,7 @@ struct Parser
     bool set();
     bool call();
     bool access();
+    bool cond();
     bool oper();
     bool block();
     bool keyword();

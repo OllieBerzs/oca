@@ -80,7 +80,7 @@ std::vector<ExprPtr> Parser::parse()
 
 bool Parser::expr()
 {
-    if (set() || call() || value() || keyword() || file()) return true;
+    if (set() || call() || value() || cond() || keyword() || file()) return true;
     return false;
 }
 
@@ -94,7 +94,8 @@ bool Parser::set()
         --index;
         return false;
     }
-    if (!set() && !block() && !call() && !value() && !file()) error("Expected value after '='");
+    if (!set() && !block() && !call() &&
+        !value() && !file() && !cond()) error("Expected value after '='");
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>("set", "");
@@ -162,6 +163,89 @@ bool Parser::access()
     return true;
 }
 
+bool Parser::cond()
+{
+    if (!lit("if")) return false;
+
+    if (!set() && !call() && !value()) error("Expected conditional expression");
+    if (!lit("then")) error("Expected 'then' in an 'if' expression");
+
+    uint cached = cache.size();
+    if (checkIndent(Indent::MORE))
+    {
+        while (expr())
+        {
+            if (!checkIndent(Indent::SAME)) break;
+        }
+        checkIndent(Indent::LESS);
+    }
+    else
+    {
+        if (!expr()) error("Expected expression in 'if' main branch");
+        checkIndent(Indent::SAME);
+    }
+
+    uint elseCached = cache.size();
+    bool hasElse = false;
+    if (lit("else"))
+    {
+        hasElse = true;
+        if (checkIndent(Indent::MORE))
+        {
+            while (expr())
+            {
+                if (!checkIndent(Indent::SAME)) break;
+            }
+            //checkIndent(Indent::LESS);
+        }
+        else
+        {
+            if (!expr()) error("Expected expression in 'if' else branch");
+            //checkIndent(Indent::SAME);
+        }
+    }
+
+    // assemble conditional
+    ExprPtr els = std::make_shared<Expression>("else", "");
+
+    ExprPtr curr = els;
+    for (uint i = elseCached; i < cache.size(); ++i)
+    {
+        curr->left = cache[i];
+        if (i < cache.size() - 1)
+        {
+            curr->right = std::make_shared<Expression>("next", "");
+            curr = curr->right;
+        }
+    }
+    cache.resize(elseCached);
+
+    ExprPtr mn = std::make_shared<Expression>("main", "");
+
+    curr = mn;
+    for (uint i = cached; i < cache.size(); ++i)
+    {
+        curr->left = cache[i];
+        if (i < cache.size() - 1)
+        {
+            curr->right = std::make_shared<Expression>("next", "");
+            curr = curr->right;
+        }
+    }
+    cache.resize(cached);
+
+    ExprPtr ifer = std::make_shared<Expression>("if", "");
+    ifer->left = cache.back(); // condition
+    cache.pop_back();
+    ExprPtr branches = std::make_shared<Expression>("branches", "");
+    branches->left = mn;
+    if (hasElse) branches->right = els;
+    ifer->right = branches;
+    cache.push_back(ifer);
+
+    return true;
+}
+
 bool Parser::oper()
 {
     uint cached = cache.size();
@@ -207,7 +291,7 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
-    uint cached =  cache.size();
+    uint cached = cache.size();
 
     bool hasParam = false;
     if (lit(":"))
@@ -228,7 +312,6 @@ bool Parser::block()
         checkIndent(Indent::MORE);
         cached = cache.size();
         if (!expr()) error("Expected expression for block");
-        //checkIndent(Indent::LESS);
     }
 
     // assemble block

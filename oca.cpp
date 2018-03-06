@@ -14,7 +14,7 @@
 #include "eval.hpp"
 
 //#define OUT_TOKENS
-//#define OUT_AST
+#define OUT_AST
 //#define OUT_VALUES
 
 OCA_BEGIN
