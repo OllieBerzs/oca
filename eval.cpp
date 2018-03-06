@@ -44,6 +44,7 @@ ObjectPtr Evaluator::call(ExprPtr expr, ObjectPtr caller)
         }
         name += c;
     }
+    if (names.size() > 1) error("Expected '=' in assignment");
 
     if (caller) func = caller->table.find(names[0])->second;
     else func = state->scope.get(names[0]);

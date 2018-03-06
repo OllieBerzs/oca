@@ -2,7 +2,6 @@
 #include "catch.hpp"
 
 #include "../oca.hpp"
-#include "../object.hpp"
 
 TEST_CASE("Evaluation of basic types", "[types]")
 {
@@ -28,4 +27,19 @@ TEST_CASE("Evaluation of basic types", "[types]")
     // tuple
     REQUIRE((obj = state.eval("(2, 3, (true, false))")) != nullptr);
     REQUIRE(obj->tos(true) == "<tup>([1]<int>2 [2]<int>3 [3]<tup>([1]<bool>true [2]<bool>false))");
+}
+
+TEST_CASE("Evaluation of functions", "[functions]")
+{
+    oca::State state;
+
+    state.set("passback", [](oca::Arg arg, oca::ObjectPtr block, oca::ObjectPtr caller) -> oca::Ret
+    {
+        return arg;
+    });
+
+    oca::ObjectPtr obj = nullptr;
+
+    REQUIRE((obj = state.eval("passback 5")) != nullptr);
+    REQUIRE(obj->tos(true) == "<int>5");
 }
