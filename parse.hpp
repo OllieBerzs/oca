@@ -15,18 +15,26 @@ OCA_BEGIN
 
 enum class Indent { SAME, MORE, LESS, ANY };
 
-struct Expression
+class Expression
 {
-    std::string type;
+public:
+    enum Type
+    {
+        SET, CALL, ACCESS, IF, ELSE, NEXT, MAIN,
+        BRANCHES, PART_OPER, OPER, RETURN, BREAK, FILE, STR,
+        INT, REAL, BOOL, BLOCK, TUP, NAME
+    };
+
+    Type type;
     std::string val;
     ExprPtr left;
     ExprPtr right;
 
-    Expression(const std::string& type, const std::string& val);
+    Expression(Type type, const std::string& val);
     void print(uint indent = 0);
 };
 
-struct Parser
+class Parser
 {
     std::string path;
     std::vector<Token> tokens;
@@ -34,12 +42,14 @@ struct Parser
     uint index;
     uint indent;
 
+public:
     Parser(std::vector<Token>& ts, const std::string& path);
 
+    std::vector<ExprPtr> parse();
+
+private:
     Token& get();
     bool checkIndent(Indent ind);
-
-    std::vector<ExprPtr> parse();
 
     bool expr();
     bool set();
@@ -47,14 +57,14 @@ struct Parser
     bool access();
     bool cond();
     bool oper();
-    bool block();
     bool keyword();
     bool file();
 
     bool string();
     bool integer();
-    bool floatnum();
+    bool real();
     bool boolean();
+    bool block();
 
     bool value();
     bool name();

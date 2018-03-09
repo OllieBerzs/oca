@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** scope.hpp
 ** scope to hold named stuff
-*/ 
+*/
 
 #pragma once
 
@@ -14,15 +14,15 @@ OCA_BEGIN
 
 class Scope
 {
-    std::map<std::string, ObjectPtr> names;
+    std::map<std::string, ValuePtr> names;
     ScopePtr parent;
-    
+
 public:
     Scope(ScopePtr parent);
 
     void clean();
-    void set(const std::string& name, ObjectPtr value);
-    ObjectPtr get(const std::string& name);
+    void set(const std::string& name, ValuePtr value);
+    ValuePtr get(const std::string& name);
 };
 
 OCA_END

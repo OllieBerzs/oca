@@ -13,18 +13,20 @@ OCA_BEGIN
 
 class State;
 
-struct Evaluator
+class Evaluator
 {
+public:
     State* state;
 
-    ObjectPtr eval(ExprPtr expr);
+    ValuePtr eval(ExprPtr expr);
 
-    ObjectPtr set(ExprPtr expr);
-    ObjectPtr call(ExprPtr expr, ObjectPtr caller);
-    ObjectPtr cond(ExprPtr expr);
-    ObjectPtr access(ExprPtr expr);
-    ObjectPtr file(ExprPtr expr);
-    ObjectPtr value(ExprPtr expr);
+private:
+    ValuePtr set(ExprPtr expr);
+    ValuePtr call(ExprPtr expr, ValuePtr caller);
+    ValuePtr cond(ExprPtr expr);
+    ValuePtr access(ExprPtr expr);
+    ValuePtr file(ExprPtr expr);
+    ValuePtr value(ExprPtr expr);
 
     void error(const std::string& message);
 };

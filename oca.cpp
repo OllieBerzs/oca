@@ -12,13 +12,9 @@
 #include "parse.hpp"
 #include "eval.hpp"
 
-//#define OUT_TOKENS
-//#define OUT_AST
-#define OUT_VALUES
-
 OCA_BEGIN
 
-ObjectPtr State::script(const std::string& path)
+ValuePtr State::script(const std::string& path)
 {
     std::ifstream file(path);
     if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
@@ -29,7 +25,7 @@ ObjectPtr State::script(const std::string& path)
     return eval(source, path);
 }
 
-ObjectPtr State::eval(const std::string& source, const std::string& path)
+ValuePtr State::eval(const std::string& source, const std::string& path)
 {
     // Lexing
     auto tokens = Lexer{source, path}.lex();
@@ -54,13 +50,13 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
 
     Evaluator ev{this};
 
-    ObjectPtr obj = nullptr;
+    ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {
         obj = ev.eval(e);
         #ifdef OUT_VALUES
         if (obj == nullptr) std::cout << "->nil\n";
-        else std::cout << "->" << obj->tos(true) << "\n";
+        else std::cout << "->" << obj->toStr(true) << "\n";
         #endif
     }
 
@@ -98,10 +94,9 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
     //FreeLibrary(DLL);
 }*/
 
-void State::set(const std::string& name, NativeMethod nat)
+void State::set(const std::string& name, CPPFunc func)
 {
-    ObjectPtr val = std::make_shared<Object>();
-    *val = nat;
+    ValuePtr val = std::make_shared<Func>(func);
     scope.set(name, val);
 }
 

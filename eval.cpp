@@ -7,32 +7,32 @@
 
 #include "eval.hpp"
 #include "parse.hpp"
-#include "object.hpp"
+#include "value.hpp"
 #include "oca.hpp"
 
 OCA_BEGIN
 
-ObjectPtr Evaluator::eval(ExprPtr expr)
+ValuePtr Evaluator::eval(ExprPtr expr)
 {
-    if (expr->type == "set") return set(expr);
-    else if (expr->type == "call") return call(expr, nullptr);
-    else if (expr->type == "if") return cond(expr);
-    else if (expr->type == "access") return access(expr);
+    if (expr->type == Expression::SET) return set(expr);
+    else if (expr->type == Expression::CALL) return call(expr, nullptr);
+    else if (expr->type == Expression::IF) return cond(expr);
+    else if (expr->type == Expression::ACCESS) return access(expr);
     else return value(expr);
 }
 
 // ----------------------------
 
-ObjectPtr Evaluator::set(ExprPtr expr)
+ValuePtr Evaluator::set(ExprPtr expr)
 {
-    ObjectPtr obj = eval(expr->right);
+    ValuePtr obj = eval(expr->right);
     state->scope.set(expr->val, obj);
     return obj;
 }
 
-ObjectPtr Evaluator::call(ExprPtr expr, ObjectPtr caller)
+ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller)
 {
-    ObjectPtr func = nullptr;
+    ValuePtr func = nullptr;
     std::vector<std::string> names;
     std::string name = "";
     for (auto& c : expr->val)
@@ -51,15 +51,16 @@ ObjectPtr Evaluator::call(ExprPtr expr, ObjectPtr caller)
 
     if (!func) error("Undefined name '" + names[0] + "'");
 
-    if (func->type == "native")
+    Value& funcref = *func;
+    if (TYPE_EQ(funcref, Func))
     {
-        ObjectPtr arg = nullptr;
-        ObjectPtr block = nullptr;
+        ValuePtr arg = nullptr;
+        ValuePtr block = nullptr;
         if (expr->right) arg = eval(expr->right);
         if (expr->left) block = eval(expr->left);
-        return func->nat(arg, caller, block);
+        return static_cast<Func&>(*func).val(arg, caller, block);
     }
-    if (func->type == "block")
+    if (TYPE_EQ(funcref, Block))
     {
 
     }
@@ -67,27 +68,28 @@ ObjectPtr Evaluator::call(ExprPtr expr, ObjectPtr caller)
     return func;
 }
 
-ObjectPtr Evaluator::cond(ExprPtr expr)
+ValuePtr Evaluator::cond(ExprPtr expr)
 {
     return nullptr;
 }
 
-ObjectPtr Evaluator::access(ExprPtr expr)
+ValuePtr Evaluator::access(ExprPtr expr)
 {
     return nullptr;
 }
 
-ObjectPtr Evaluator::file(ExprPtr expr)
+ValuePtr Evaluator::file(ExprPtr expr)
 {
     return nullptr;
 }
 
-ObjectPtr Evaluator::value(ExprPtr expr)
+ValuePtr Evaluator::value(ExprPtr expr)
 {
-    ObjectPtr result = std::make_shared<Object>();
-    result->type = expr->type;
-    if (expr->type == "tup")
+    ValuePtr result = nullptr;
+    //result->type = expr->type;
+    if (expr->type == Expression::TUP)
     {
+        result = std::make_shared<Tuple>();
         uint counter = ARRAY_BEGIN_INDEX;
         while(expr && expr->left)
         {
@@ -99,14 +101,25 @@ ObjectPtr Evaluator::value(ExprPtr expr)
             expr = expr->right;
         }
     }
-    else if (result->type == "block")
+    else if (expr->type == Expression::BLOCK)
     {
-        result->block = expr;
+        result = std::make_shared<Block>(expr);
     }
-    else
+    else if (expr->type == Expression::STR)
     {
-        result->val = expr->val;
-        // add type specific native methods
+        result = std::make_shared<String>(expr);
+    }
+    else if (expr->type == Expression::INT)
+    {
+        result = std::make_shared<Integer>(expr);
+    }
+    else if (expr->type == Expression::REAL)
+    {
+        result = std::make_shared<Real>(expr);
+    }
+    else if (expr->type == Expression::BOOL)
+    {
+        result = std::make_shared<Bool>(expr);
     }
     return result;
 }

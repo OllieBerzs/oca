@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** scope.cpp
 ** scope to hold named stuff
-*/ 
+*/
 
 #include "scope.hpp"
 
@@ -16,12 +16,12 @@ void Scope::clean()
     names.clear();
 }
 
-void Scope::set(const std::string& name, ObjectPtr value)
+void Scope::set(const std::string& name, ValuePtr value)
 {
     names.emplace(name, value);
 }
 
-ObjectPtr Scope::get(const std::string& name)
+ValuePtr Scope::get(const std::string& name)
 {
     auto val = names.find(name);
     if (val == names.end())

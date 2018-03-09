@@ -1,7 +1,7 @@
 /* ollieberzs 2018
 ** lex.hpp
 ** lexing oca source into tokens
-*/ 
+*/
 
 #pragma once
 
@@ -11,21 +11,33 @@
 
 OCA_BEGIN
 
-struct Token
+class Token
 {
-    std::string type;
+public:
+    enum Type
+    {
+        STRING = 0, REAL, INTEGER, BOOLEAN, FILEPATH,
+        KEYWORD, NAME, OPERATOR, PUNCTUATION,
+        COMMENT, INDENT, WHITESPACE, INVALID, LAST
+    };
+
+    Type type;
     std::string val;
     uint pos;
 
     void print();
 };
 
-struct Lexer
+class Lexer
 {
     std::string source;
     std::string path;
 
+public:
+    Lexer(const std::string& s, const std::string& p);
     std::vector<Token> lex();
+
+private:
     void error(const std::string& message, const Token t);
 };
 
