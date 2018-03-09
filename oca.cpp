@@ -10,12 +10,11 @@
 #include "oca.hpp"
 #include "lex.hpp"
 #include "parse.hpp"
-#include "object.hpp"
 #include "eval.hpp"
 
 //#define OUT_TOKENS
 //#define OUT_AST
-//#define OUT_VALUES
+#define OUT_VALUES
 
 OCA_BEGIN
 
@@ -53,7 +52,7 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator ev{scope};
+    Evaluator ev{this};
 
     ObjectPtr obj = nullptr;
     for (ExprPtr e : ast)
@@ -99,7 +98,7 @@ ObjectPtr State::eval(const std::string& source, const std::string& path)
     //FreeLibrary(DLL);
 }*/
 
-void State::def(const std::string& name, NativeMethod nat)
+void State::set(const std::string& name, NativeMethod nat)
 {
     ObjectPtr val = std::make_shared<Object>();
     *val = nat;

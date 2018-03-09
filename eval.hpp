@@ -11,14 +11,17 @@
 
 OCA_BEGIN
 
+class State;
+
 struct Evaluator
 {
-    Scope& scope;
+    State* state;
 
     ObjectPtr eval(ExprPtr expr);
 
-    ObjectPtr def(ExprPtr expr);
+    ObjectPtr set(ExprPtr expr);
     ObjectPtr call(ExprPtr expr, ObjectPtr caller);
+    ObjectPtr cond(ExprPtr expr);
     ObjectPtr access(ExprPtr expr);
     ObjectPtr file(ExprPtr expr);
     ObjectPtr value(ExprPtr expr);

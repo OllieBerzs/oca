@@ -20,7 +20,7 @@ std::vector<std::pair<std::string, std::string>> syntax
     {"FILEPATH",        "()\\$(.)+"},
 
     {"KEYWORD",         "()\\b(do|if|then|else|return|break)\\b"},
-    {"NAME",            "()([A-Za-z]+)"},
+    {"NAME",            "()([A-Za-z_]+)"},
     {"OPERATOR",        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
 
     {"PUNCTUATION",     "()(\\.|:|\\(|\\)|,)"},
