@@ -7,21 +7,21 @@
 
 #include "common.hpp"
 #include "scope.hpp"
-#include "object.hpp"
+#include "value.hpp"
 
 OCA_BEGIN
 
 class State
 {
-    friend struct Evaluator;
+    friend class Evaluator;
     Scope scope = Scope(nullptr);
 
 public:
-    ObjectPtr script(const std::string& path);
-    ObjectPtr eval(const std::string& source, const std::string& path = "");
+    ValuePtr script(const std::string& path);
+    ValuePtr eval(const std::string& source, const std::string& path = "");
 
     void load(const std::string& lib);
-    void set(const std::string& name, NativeMethod nat);
+    void set(const std::string& name, CPPFunc func);
 };
 
 OCA_END

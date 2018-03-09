@@ -8,29 +8,33 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <typeindex>
+
+#include "ocaconf.hpp"
 
 #define OCA_BEGIN namespace oca {
 #define OCA_END }
 #define DLLEXPORT __declspec(dllexport) void
 #define ARRAY_BEGIN_INDEX 1
+#define TYPE_EQ(a, b) std::type_index(typeid(a)).name() == std::type_index(typeid(b)).name()
 
 OCA_BEGIN
 
-struct Token;
-struct Lexer;
-struct Expression;
-struct Object;
+class Token;
+class Lexer;
+class Expression;
+class Value;
 class Scope;
 
 typedef unsigned int uint;
 
 typedef std::shared_ptr<Expression> ExprPtr;
-typedef std::shared_ptr<Object> ObjectPtr;
+typedef std::shared_ptr<Value> ValuePtr;
 typedef std::shared_ptr<Scope> ScopePtr;
-typedef std::function<ObjectPtr(ObjectPtr, ObjectPtr, ObjectPtr)> NativeMethod;
+typedef std::function<ValuePtr(ValuePtr, ValuePtr, ValuePtr)> CPPFunc;
 
 typedef void(*DLLfunc)(Scope&);
-typedef ObjectPtr Arg;
-typedef ObjectPtr Ret;
+typedef ValuePtr Arg;
+typedef ValuePtr Ret;
 
 OCA_END

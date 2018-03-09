@@ -10,35 +10,43 @@
 
 OCA_BEGIN
 
-std::vector<std::pair<std::string, std::string>> syntax
+std::vector<std::pair<Token::Type, std::string>> syntax
 {
 
-    {"STRING",          "()'(.)*'"},
-    {"FLOAT",           "()([0-9]+\\.[0-9]+)"},
-    {"INTEGER",         "()([0-9]+)"},
-    {"BOOLEAN",         "()\\b(true|false)\\b"},
-    {"FILEPATH",        "()\\$(.)+"},
+    {Token::STRING,          "()'(.)*'"},
+    {Token::REAL,           "()([0-9]+\\.[0-9]+)"},
+    {Token::INTEGER,         "()([0-9]+)"},
+    {Token::BOOLEAN,         "()\\b(true|false)\\b"},
+    {Token::FILEPATH,        "()\\$(.)+"},
 
-    {"KEYWORD",         "()\\b(do|if|then|else|return|break)\\b"},
-    {"NAME",            "()([A-Za-z_]+)"},
-    {"OPERATOR",        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
+    {Token::KEYWORD,         "()\\b(do|if|then|else|return|break)\\b"},
+    {Token::NAME,            "()([A-Za-z_]+)"},
+    {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
 
-    {"PUNCTUATION",     "()(\\.|:|\\(|\\)|,)"},
+    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,)"},
 
-    {"COMMENT",         "()#(.)*"},
-    {"INDENT",          "(^ +|\\n *)(?=\\S)"},
-    {"WHITESPACE",      "()(\\n *| +)"},
-    {"INVALID",         "()(.)+"}
+    {Token::COMMENT,         "()#(.)*"},
+    {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},
+    {Token::WHITESPACE,      "()(\\n *| +)"},
+    {Token::INVALID,         "()(.)+"}
 };
 
 void Token::print()
 {
-    std::cout << "<" << type << "(" << pos << ")" << ">";
-    if (type != "INDENT") std::cout << val;
+    std::vector<std::string> types =
+    {
+        "string", "real", "integer", "boolean", "filepath",
+        "keyword", "name", "operator", "punctuation",
+        "comment", "indent", "whitespace", "invalid"
+    };
+    std::cout << "<" << types[type] << " " << pos << ">";
+    if (type != Type::INDENT) std::cout << val;
     std::cout << "\n";
 }
 
 //-----------------------------
+
+Lexer::Lexer(const std::string& s, const std::string& p) : source(s), path(p) {}
 
 std::vector<Token> Lexer::lex()
 {
@@ -58,15 +66,15 @@ std::vector<Token> Lexer::lex()
         {
             if (it->str(i + 1).empty()) continue;
             uint index = i / 2;
-            if (syntax[index].first == "WHITESPACE") continue;
-            if (syntax[index].first == "COMMENT") continue;
-            if (syntax[index].first == "INVALID") error("Unknown symbol", {syntax[index].first, it->str(), pos});
+            if (syntax[index].first == Token::WHITESPACE) continue;
+            if (syntax[index].first == Token::COMMENT) continue;
+            if (syntax[index].first == Token::INVALID) error("Unknown symbol", {syntax[index].first, it->str(), pos});
             result.push_back({syntax[index].first, it->str(), pos});
             break;
         }
     }
 
-    result.push_back({"LAST", "", static_cast<uint>(source.size())});
+    result.push_back({Token::Type::LAST, "", static_cast<uint>(source.size())});
     return result;
 }
 

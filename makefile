@@ -30,11 +30,11 @@ endif
 # Objects
 BIN_OBJ = main.o
 TEST_OBJ = tests/test.o
-OBJ = oca.o lex.o parse.o object.o scope.o eval.o
+OBJ = oca.o lex.o parse.o value.o scope.o eval.o
 
 all: $(BIN)
 
-# object files
+# value files
 %.o: %.cpp
 	@echo [Compile] $<
 	@$(CXX) $(CPPFLAGS) -c -o $@ $<
@@ -60,18 +60,18 @@ test: $(TEST)
 	@./$(TEST)
 
 # dependencies
-OCA_H = oca.hpp common.hpp scope.hpp
-LEX_H = lex.hpp common.hpp
-PARSE_H = parse.hpp common.hpp
-OBJECT_H = object.hpp common.hpp
-SCOPE_H = scope.hpp common.hpp
-EVAL_H = eval.hpp common.hpp
+OCA_H = oca.hpp common.hpp scope.hpp ocaconf.hpp value.hpp
+LEX_H = lex.hpp common.hpp ocaconf.hpp
+PARSE_H = parse.hpp common.hpp ocaconf.hpp
+OBJECT_H = value.hpp common.hpp ocaconf.hpp
+SCOPE_H = scope.hpp common.hpp ocaconf.hpp
+EVAL_H = eval.hpp common.hpp ocaconf.hpp
 
 test.o: $(OCA_H) $(OBJECT_H)
 main.o: $(OCA_H)
 oca.o: $(OCA_H) $(LEX_H) $(PARSE_H) $(OBJECT_H) $(EVAL_H)
 lex.o: $(LEX_H)
 parse.o: $(PARSE_H) $(LEX_H)
-object.o: $(OBJECT_H) $(PARSE_H)
+value.o: $(OBJECT_H) $(PARSE_H)
 scope.o: $(SCOPE_H) $(OBJECT_H)
 eval.o: $(EVAL_H) $(PARSE_H) $(OBJECT_H)
