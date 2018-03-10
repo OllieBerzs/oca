@@ -16,17 +16,17 @@ class State;
 class Evaluator
 {
 public:
-    State* state;
-
-    ValuePtr eval(ExprPtr expr);
+    ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:
-    ValuePtr set(ExprPtr expr);
-    ValuePtr call(ExprPtr expr, ValuePtr caller);
-    ValuePtr cond(ExprPtr expr);
-    ValuePtr access(ExprPtr expr);
-    ValuePtr file(ExprPtr expr);
-    ValuePtr value(ExprPtr expr);
+    ValuePtr set(ExprPtr expr, Scope& scope);
+    ValuePtr call(ExprPtr expr, ValuePtr caller, Scope& scope);
+    ValuePtr cond(ExprPtr expr, Scope& scope);
+    ValuePtr access(ExprPtr expr, Scope& scope);
+    ValuePtr file(ExprPtr expr, Scope& scope);
+    ValuePtr value(ExprPtr expr, Scope& scope);
+
+    std::vector<std::string> words(const std::string& str);
 
     void error(const std::string& message);
 };

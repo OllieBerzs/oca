@@ -25,7 +25,7 @@ std::vector<std::pair<Token::Type, std::string>> syntax
 
     {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,)"},
 
-    {Token::COMMENT,         "()#(.)*"},
+    //{Token::COMMENT,         "#(.)*(\\n|$)"},
     {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},
     {Token::WHITESPACE,      "()(\\n *| +)"},
     {Token::INVALID,         "()(.)+"}
@@ -62,7 +62,7 @@ std::vector<Token> Lexer::lex()
     for (auto it = matches; it != std::sregex_iterator(); it++)
     {
         uint pos = static_cast<uint>(it->position());
-        for (uint i = 0; i < it->size(); i++)
+        for (uint i = 0; i < it->size(); ++i)
         {
             if (it->str(i + 1).empty()) continue;
             uint index = i / 2;

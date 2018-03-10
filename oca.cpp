@@ -48,12 +48,11 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator ev{this};
-
+    Evaluator ev;
     ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {
-        obj = ev.eval(e);
+        obj = ev.eval(e, scope);
         #ifdef OUT_VALUES
         if (obj == nullptr) std::cout << "->nil\n";
         else std::cout << "->" << obj->toStr(true) << "\n";

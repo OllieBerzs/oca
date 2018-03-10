@@ -1,9 +1,15 @@
 #include <iostream>
 #include "oca.hpp"
 
-oca::Ret print(oca::Arg arg, oca::ObjectPtr block, oca::ObjectPtr caller)
+oca::Ret print(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
 {
-    std::cout << arg->tos(false) << "\n";
+    std::cout << arg->toStr(false) << "\n";
+    return nullptr;
+}
+
+oca::Ret pause(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
+{
+    std::cin.get();
     return nullptr;
 }
 
@@ -16,12 +22,9 @@ int main(int argc, char** argv)
     }
 
     oca::State state;
-
     state.set("print", print);
-
+    state.set("pause", pause);
     state.script(argv[1]);
-
-    std::cin.get();
 
     return 0;
 }

@@ -7,7 +7,7 @@
 
 OCA_BEGIN
 
-Scope::Scope(ScopePtr parent) : parent(parent) {}
+Scope::Scope(Scope* parent) : parent(parent) {}
 
 // ----------------------------
 
