@@ -28,22 +28,8 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
     auto names = words(expr->val);
     ValuePtr obj = eval(expr->right, scope);
 
-    if (names.size() == 1) // set value
-    {
-        scope.set(names[0], obj);
-    }
-    else // split values
-    {
-        uint counter = ARRAY_BEGIN_INDEX;
-        for (auto& n : names)
-        {
-            auto item = obj->table.find(n);
-            if (item == obj->table.end()) item = obj->table.find(std::to_string(counter++));
-            if (item == obj->table.end()) error("Cannot split value");
-
-            scope.set(n, item->second);
-        }
-    }
+    if (names.size() == 1) scope.set(names[0], obj);
+    else split(obj, names, scope);
 
 
     return obj;
@@ -73,37 +59,19 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     {
         ExprPtr exprs = static_cast<Block&>(*func).val;
         auto params = words(static_cast<Block&>(*func).val->val);
+
+        // create block temp scope
         Scope blockScope(&scope);
         if (block) blockScope.set("yield", block);
         if (caller) blockScope.set("self", caller);
-        // set parameters
-        if (params.size() == 1)
-        {
-            if (!arg) error("Expected argument");
-            blockScope.set(params[0], arg);
-        }
-        else if (params.size() > 1)
-        {
-            if (!arg) error("Expected argument");
-            uint counter = ARRAY_BEGIN_INDEX;
-            for (auto& par : params)
-            {
-                auto item = arg->table.find(par);
-                if (item == arg->table.end()) item = arg->table.find(std::to_string(counter++));
-                if (item == arg->table.end()) error("Cannot split value");
 
-                blockScope.set(par, item->second);
-            }
-        }
+        // set parameters
+        if (params.size() != 0 && !arg) error("Expected argument");
+        if (params.size() == 1) blockScope.set(params[0], arg);
+        else if (params.size() > 1) split(arg, params, blockScope);
 
         // evaluate block
-        ValuePtr result = nullptr;
-        while (exprs && exprs->left)
-        {
-            result = eval(exprs->left, blockScope);
-            exprs = exprs->right;
-        }
-        return result;
+        return doBlock(exprs, blockScope);
     }
 
     return func;
@@ -164,7 +132,40 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     return result;
 }
 
+// ---------------------------
+
+ValuePtr Evaluator::doBlock(ExprPtr expr, Scope& scope)
+{
+    ValuePtr result = nullptr;
+    while (expr && expr->left)
+    {
+        if (expr->left->type == Expression::RETURN)
+        {
+            result = eval(expr->left->right, scope);
+            std::cout << "return " << result.get() << "\n";
+            return result;
+        }
+        if (expr->left->type == Expression::BREAK) return result;
+        result = eval(expr->left, scope);
+        expr = expr->right;
+    }
+    return result;
+}
+
 // ----------------------------
+
+void Evaluator::split(ValuePtr val, const std::vector<std::string>& names, Scope& scope)
+{
+    uint counter = ARRAY_BEGIN_INDEX;
+    for (auto& name : names)
+    {
+        auto item = val->table.find(name);
+        if (item == val->table.end()) item = val->table.find(std::to_string(counter++));
+        if (item == val->table.end()) error("Cannot split value");
+
+        scope.set(name, item->second);
+    }
+}
 
 std::vector<std::string> Evaluator::words(const std::string& str)
 {

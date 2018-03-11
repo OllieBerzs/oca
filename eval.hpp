@@ -26,6 +26,9 @@ private:
     ValuePtr file(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
 
+    ValuePtr doBlock(ExprPtr expr, Scope& scope);
+
+    void split(ValuePtr val, const std::vector<std::string>& names, Scope& scope);
     std::vector<std::string> words(const std::string& str);
 
     void error(const std::string& message);

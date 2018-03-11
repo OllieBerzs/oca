@@ -365,28 +365,20 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
-    uint cached = cache.size();
-
     bool hasParam = false;
     if (lit(":"))
     {
         if (!name()) error("No name provided for parameter after ':'");
         hasParam = true;
-        if (!checkIndent(Indent::MORE)) error("Expected indentation at the start of a block");
+    }
 
-        cached = cache.size();
-        while (expr())
-        {
-            if (!checkIndent(Indent::SAME)) break;
-        }
-    }
-    else
+    if (checkIndent(Indent::SAME)) error("Expected indented block");
+    uint cached = cache.size();
+    if (checkIndent(Indent::MORE))
     {
-        if (checkIndent(Indent::SAME)) error("Expected indented block");
-        checkIndent(Indent::MORE);
-        cached = cache.size();
-        if (!expr()) error("Expected expression for block");
+        while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
+    else if (!expr()) error("Expected expression for block");    
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, "");
