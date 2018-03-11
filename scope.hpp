@@ -15,10 +15,10 @@ OCA_BEGIN
 class Scope
 {
     std::map<std::string, ValuePtr> names;
-    ScopePtr parent;
+    Scope* parent;
 
 public:
-    Scope(ScopePtr parent);
+    Scope(Scope* parent);
 
     void clean();
     void set(const std::string& name, ValuePtr value);

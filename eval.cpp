@@ -12,81 +12,121 @@
 
 OCA_BEGIN
 
-ValuePtr Evaluator::eval(ExprPtr expr)
+ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
-    if (expr->type == Expression::SET) return set(expr);
-    else if (expr->type == Expression::CALL) return call(expr, nullptr);
-    else if (expr->type == Expression::IF) return cond(expr);
-    else if (expr->type == Expression::ACCESS) return access(expr);
-    else return value(expr);
+    if (expr->type == Expression::SET) return set(expr, scope);
+    else if (expr->type == Expression::CALL) return call(expr, nullptr, scope);
+    else if (expr->type == Expression::IF) return cond(expr, scope);
+    else if (expr->type == Expression::ACCESS) return access(expr, scope);
+    else return value(expr, scope);
 }
 
 // ----------------------------
 
-ValuePtr Evaluator::set(ExprPtr expr)
+ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 {
-    ValuePtr obj = eval(expr->right);
-    state->scope.set(expr->val, obj);
+    auto names = words(expr->val);
+    ValuePtr obj = eval(expr->right, scope);
+
+    if (names.size() == 1) // set value
+    {
+        scope.set(names[0], obj);
+    }
+    else // split values
+    {
+        uint counter = ARRAY_BEGIN_INDEX;
+        for (auto& n : names)
+        {
+            auto item = obj->table.find(n);
+            if (item == obj->table.end()) item = obj->table.find(std::to_string(counter++));
+            if (item == obj->table.end()) error("Cannot split value");
+
+            scope.set(n, item->second);
+        }
+    }
+
+
     return obj;
 }
 
-ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller)
+ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     ValuePtr func = nullptr;
-    std::vector<std::string> names;
-    std::string name = "";
-    for (auto& c : expr->val)
-    {
-        if (c == ' ')
-        {
-            names.push_back(name);
-            continue;
-        }
-        name += c;
-    }
+    auto names = words(expr->val);
     if (names.size() > 1) error("Expected '=' in assignment");
 
     if (caller) func = caller->table.find(names[0])->second;
-    else func = state->scope.get(names[0]);
-
+    if (!func) func = scope.get(names[0]);
     if (!func) error("Undefined name '" + names[0] + "'");
+
+    ValuePtr arg = nullptr;
+    ValuePtr block = nullptr;
+    if (expr->right) arg = eval(expr->right, scope);
+    if (expr->left) block = eval(expr->left, scope);
 
     Value& funcref = *func;
     if (TYPE_EQ(funcref, Func))
     {
-        ValuePtr arg = nullptr;
-        ValuePtr block = nullptr;
-        if (expr->right) arg = eval(expr->right);
-        if (expr->left) block = eval(expr->left);
         return static_cast<Func&>(*func).val(arg, caller, block);
     }
     if (TYPE_EQ(funcref, Block))
     {
+        ExprPtr exprs = static_cast<Block&>(*func).val;
+        auto params = words(static_cast<Block&>(*func).val->val);
+        Scope blockScope(&scope);
+        if (block) blockScope.set("yield", block);
+        if (caller) blockScope.set("self", caller);
+        // set parameters
+        if (params.size() == 1)
+        {
+            if (!arg) error("Expected argument");
+            blockScope.set(params[0], arg);
+        }
+        else if (params.size() > 1)
+        {
+            if (!arg) error("Expected argument");
+            uint counter = ARRAY_BEGIN_INDEX;
+            for (auto& par : params)
+            {
+                auto item = arg->table.find(par);
+                if (item == arg->table.end()) item = arg->table.find(std::to_string(counter++));
+                if (item == arg->table.end()) error("Cannot split value");
 
+                blockScope.set(par, item->second);
+            }
+        }
+
+        // evaluate block
+        ValuePtr result = nullptr;
+        while (exprs && exprs->left)
+        {
+            result = eval(exprs->left, blockScope);
+            exprs = exprs->right;
+        }
+        return result;
     }
 
     return func;
 }
 
-ValuePtr Evaluator::cond(ExprPtr expr)
+ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     return nullptr;
 }
 
-ValuePtr Evaluator::access(ExprPtr expr)
+ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
     return nullptr;
 }
 
-ValuePtr Evaluator::file(ExprPtr expr)
+ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
     return nullptr;
 }
 
-ValuePtr Evaluator::value(ExprPtr expr)
+ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
 {
     ValuePtr result = nullptr;
-    //result->type = expr->type;
     if (expr->type == Expression::TUP)
     {
         result = std::make_shared<Tuple>();
@@ -97,7 +137,7 @@ ValuePtr Evaluator::value(ExprPtr expr)
             if (expr->val == "") expr->val = std::to_string(counter++);
 
             // add tuple value to object table
-            result->table.emplace(expr->val, value(expr->left));
+            result->table.emplace(expr->val, eval(expr->left, scope));
             expr = expr->right;
         }
     }
@@ -120,6 +160,25 @@ ValuePtr Evaluator::value(ExprPtr expr)
     else if (expr->type == Expression::BOOL)
     {
         result = std::make_shared<Bool>(expr);
+    }
+    return result;
+}
+
+// ----------------------------
+
+std::vector<std::string> Evaluator::words(const std::string& str)
+{
+    std::vector<std::string> result;
+    std::string word = "";
+    for (auto& c : str)
+    {
+        if (c == ' ')
+        {
+            result.push_back(word);
+            word = "";
+            continue;
+        }
+        word += c;
     }
     return result;
 }
