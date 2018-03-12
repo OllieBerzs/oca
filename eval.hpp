@@ -11,8 +11,6 @@
 
 OCA_BEGIN
 
-class State;
-
 class Evaluator
 {
 public:
@@ -26,7 +24,7 @@ private:
     ValuePtr file(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
 
-    ValuePtr doBlock(ExprPtr expr, Scope& scope);
+    ValuePtr callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope);
 
     void split(ValuePtr val, const std::vector<std::string>& names, Scope& scope);
     std::vector<std::string> words(const std::string& str);

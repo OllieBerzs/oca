@@ -31,7 +31,6 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
     if (names.size() == 1) scope.set(names[0], obj);
     else split(obj, names, scope);
 
-
     return obj;
 }
 
@@ -41,7 +40,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     auto names = words(expr->val);
     if (names.size() > 1) error("Expected '=' in assignment");
 
-    if (caller) func = caller->table.find(names[0])->second;
+    if (caller) func = caller->scope.get(names[0]);
     if (!func) func = scope.get(names[0]);
     if (!func) error("Undefined name '" + names[0] + "'");
 
@@ -51,40 +50,41 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     if (expr->left) block = eval(expr->left, scope);
 
     Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func))
-    {
-        return static_cast<Func&>(*func).val(arg, caller, block);
-    }
-    if (TYPE_EQ(funcref, Block))
-    {
-        ExprPtr exprs = static_cast<Block&>(*func).val;
-        auto params = words(static_cast<Block&>(*func).val->val);
-
-        // create block temp scope
-        Scope blockScope(&scope);
-        if (block) blockScope.set("yield", block);
-        if (caller) blockScope.set("self", caller);
-
-        // set parameters
-        if (params.size() != 0 && !arg) error("Expected argument");
-        if (params.size() == 1) blockScope.set(params[0], arg);
-        else if (params.size() > 1) split(arg, params, blockScope);
-
-        // evaluate block
-        return doBlock(exprs, blockScope);
-    }
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val(arg, caller, block);
+    if (TYPE_EQ(funcref, Block)) return callBlock(func, arg, caller, block, scope);
 
     return func;
 }
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
+    ValuePtr conditional = eval(expr->left, scope);
+    Value& b = *conditional;
+    if (!(TYPE_EQ(b, Bool))) error("Expected a boolean value in 'if'");
+    bool trueness = static_cast<Bool&>(*conditional).val;
+
+    if (trueness)
+        return callBlock(eval(expr->right->left, scope), nullptr, nullptr, nullptr, scope);
+    else if (expr->right->right)
+        return callBlock(eval(expr->right->right, scope), nullptr, nullptr, nullptr, scope);
+
     return nullptr;
 }
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
-    return nullptr;
+    ValuePtr caller = eval(expr->left, scope);
+    auto data = caller->scope.get(expr->right->val);
+
+    if (!data)
+        error("Undefined name '" + expr->right->val + "' for '" + expr->left->val + "'");
+
+    Value& val = *data;
+    if (TYPE_EQ(val, Block)) return callBlock
+        (data, eval(expr->right->right, scope), caller, eval(expr->right->left, scope), scope);
+    if (TYPE_EQ(val, Func)) return static_cast<Func&>
+        (val).val(eval(expr->right->right, scope), caller, eval(expr->right->left, scope));
+    else return data;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
@@ -97,7 +97,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     ValuePtr result = nullptr;
     if (expr->type == Expression::TUP)
     {
-        result = std::make_shared<Tuple>();
+        result = std::make_shared<Tuple>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
         while(expr && expr->left)
         {
@@ -105,46 +105,56 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
             if (expr->val == "") expr->val = std::to_string(counter++);
 
             // add tuple value to object table
-            result->table.emplace(expr->val, eval(expr->left, scope));
+            result->scope.set(expr->val, eval(expr->left, scope));
             expr = expr->right;
         }
     }
     else if (expr->type == Expression::BLOCK)
     {
-        result = std::make_shared<Block>(expr);
+        result = std::make_shared<Block>(expr, &scope);
     }
     else if (expr->type == Expression::STR)
     {
-        result = std::make_shared<String>(expr);
+        result = std::make_shared<String>(expr, &scope);
     }
     else if (expr->type == Expression::INT)
     {
-        result = std::make_shared<Integer>(expr);
+        result = std::make_shared<Integer>(expr, &scope);
     }
     else if (expr->type == Expression::REAL)
     {
-        result = std::make_shared<Real>(expr);
+        result = std::make_shared<Real>(expr, &scope);
     }
     else if (expr->type == Expression::BOOL)
     {
-        result = std::make_shared<Bool>(expr);
+        result = std::make_shared<Bool>(expr, &scope);
     }
     return result;
 }
 
 // ---------------------------
 
-ValuePtr Evaluator::doBlock(ExprPtr expr, Scope& scope)
+ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope)
 {
+    Block& b = static_cast<Block&>(*val);
+    auto params = words(b.val->val);
+
+    // create temp scope
+    Scope temp(&scope);
+    if (block) temp.set("yield", block);
+    if (caller) temp.set("self", caller);
+
+    // set parameters
+    if (params.size() != 0 && !arg) error("Expected argument");
+    if (params.size() == 1) temp.set(params[0], arg);
+    else split(arg, params, temp);
+
+    // evaluate the block's value
     ValuePtr result = nullptr;
+    ExprPtr expr = b.val;
     while (expr && expr->left)
     {
-        if (expr->left->type == Expression::RETURN)
-        {
-            result = eval(expr->left->right, scope);
-            std::cout << "return " << result.get() << "\n";
-            return result;
-        }
+        if (expr->left->type == Expression::RETURN) return eval(expr->left->right, scope);
         if (expr->left->type == Expression::BREAK) return result;
         result = eval(expr->left, scope);
         expr = expr->right;
@@ -159,11 +169,11 @@ void Evaluator::split(ValuePtr val, const std::vector<std::string>& names, Scope
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& name : names)
     {
-        auto item = val->table.find(name);
-        if (item == val->table.end()) item = val->table.find(std::to_string(counter++));
-        if (item == val->table.end()) error("Cannot split value");
+        ValuePtr item = nullptr;
+        if (!(item = val->scope.get(name))) item = val->scope.get(std::to_string(counter++));
+        if (!item) error("Cannot split value");
 
-        scope.set(name, item->second);
+        scope.set(name, item);
     }
 }
 

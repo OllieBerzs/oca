@@ -154,6 +154,11 @@ bool Parser::access()
     {
         if (!integer() && !call()) error("No accessor call after '.'");
     }
+    else if (lit("["))
+    {
+        if (!integer() && !call()) error("No key after '['");
+        if (!lit("]")) error("Missing closing brace");
+    }
     else return false;
 
     // assemble attachment
@@ -378,7 +383,7 @@ bool Parser::block()
     {
         while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
-    else if (!expr()) error("Expected expression for block");    
+    else if (!expr()) error("Expected expression for block");
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, "");

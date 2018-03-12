@@ -23,7 +23,7 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::NAME,            "()([A-Za-z_]+)"},
     {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
 
-    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,)"},
+    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,|\\[|\\])"},
 
     //{Token::COMMENT,         "#(.)*(\\n|$)"},
     {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},

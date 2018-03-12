@@ -3,7 +3,7 @@
 
 oca::Ret print(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
 {
-    if (!arg.get()) std::cout << "nil\n";
+    if (!arg.get() || !arg) std::cout << "nil\n";
     else std::cout << arg->toStr(false) << "\n";
     return nullptr;
 }
