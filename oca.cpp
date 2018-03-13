@@ -95,7 +95,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
 
 void State::set(const std::string& name, CPPFunc func)
 {
-    ValuePtr val = std::make_shared<Func>(func);
+    ValuePtr val = std::make_shared<Func>(func, &scope);
     scope.set(name, val);
 }
 

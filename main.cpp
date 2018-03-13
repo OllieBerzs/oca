@@ -4,13 +4,13 @@
 oca::Ret print(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
 {
     std::cout << arg->toStr(false) << "\n";
-    return nullptr;
+    return NIL;
 }
 
 oca::Ret pause(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
 {
     std::cin.get();
-    return nullptr;
+    return NIL;
 }
 
 int main(int argc, char** argv)
@@ -24,6 +24,7 @@ int main(int argc, char** argv)
     oca::State state;
     state.set("print", print);
     state.set("pause", pause);
+
     state.script(argv[1]);
 
     return 0;

@@ -14,10 +14,10 @@ OCA_BEGIN
 
 class Scope
 {
+public:
     std::map<std::string, ValuePtr> names;
     Scope* parent;
 
-public:
     Scope(Scope* parent);
 
     void clean();

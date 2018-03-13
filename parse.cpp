@@ -13,7 +13,7 @@ OCA_BEGIN
 Expression::Expression(Expression::Type type, const std::string& val)
     : type(type), val(val) {}
 
-void Expression::print(uint indent)
+void Expression::print(uint indent, char mod)
 {
     std::vector<std::string> types =
     {
@@ -24,10 +24,10 @@ void Expression::print(uint indent)
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
 
-    std::cout << "<" + types[type] << ">" << val << "\n";
+    std::cout << mod << "<" << types[type] << ">" << val << "\n";
 
-    if (left) left->print(indent + 1);
-    if (right) right->print(indent + 1);
+    if (left) left->print(indent + 1, 'L');
+    if (right) right->print(indent + 1, 'R');
 }
 
 // ----------------------------
@@ -150,9 +150,16 @@ bool Parser::call()
 
 bool Parser::access()
 {
+    std::string mod = "";
     if (lit("."))
     {
         if (!integer() && !call()) error("No accessor call after '.'");
+    }
+    else if (lit("["))
+    {
+        mod = "[";
+        if (!integer() && !string() && !call()) error("No key after '['");
+        if (!lit("]")) error("Missing closing brace");
     }
     else return false;
 
@@ -161,7 +168,7 @@ bool Parser::access()
     cache.pop_back();
     ExprPtr prev = cache.back();
     cache.pop_back();
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "");
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, mod);
     a->left = prev;
     a->right = next;
     cache.push_back(a);
@@ -365,28 +372,20 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
-    uint cached = cache.size();
-
     bool hasParam = false;
     if (lit(":"))
     {
         if (!name()) error("No name provided for parameter after ':'");
         hasParam = true;
-        if (!checkIndent(Indent::MORE)) error("Expected indentation at the start of a block");
+    }
 
-        cached = cache.size();
-        while (expr())
-        {
-            if (!checkIndent(Indent::SAME)) break;
-        }
-    }
-    else
+    if (checkIndent(Indent::SAME)) error("Expected indented block");
+    uint cached = cache.size();
+    if (checkIndent(Indent::MORE))
     {
-        if (checkIndent(Indent::SAME)) error("Expected indented block");
-        checkIndent(Indent::MORE);
-        cached = cache.size();
-        if (!expr()) error("Expected expression for block");
+        while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
+    else if (!expr()) error("Expected expression for block");
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, "");
@@ -487,6 +486,7 @@ bool Parser::name()
         if (!lit(",")) break;
         trailComma = true;
     }
+    nam.pop_back();
     if (trailComma) --index;
     cache.push_back(std::make_shared<Expression>(Expression::NAME, nam));
     return true;

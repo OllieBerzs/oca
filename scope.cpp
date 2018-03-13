@@ -4,6 +4,7 @@
 */
 
 #include "scope.hpp"
+#include "value.hpp"
 
 OCA_BEGIN
 
@@ -27,7 +28,7 @@ ValuePtr Scope::get(const std::string& name)
     if (val == names.end())
     {
         if (parent) return parent->get(name);
-        else return nullptr;
+        else return NIL;
     }
     return val->second;
 }

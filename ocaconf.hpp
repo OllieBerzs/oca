@@ -10,4 +10,4 @@
 //#define OUT_VALUES
 
 #define OCA_64BIT
-#define ARRAY_BEGIN_INDEX 1
+#define ARRAY_BEGIN_INDEX 0

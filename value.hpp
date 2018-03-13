@@ -16,10 +16,11 @@ OCA_BEGIN
 class Value
 {
 public:
-    std::map<std::string, ValuePtr> table;
+    Scope scope = Scope(nullptr);
 
     virtual ~Value() = default;
     virtual std::string toStr(bool debug) = 0;
+    virtual bool isNil();
 };
 
 class Integer : public Value
@@ -27,7 +28,7 @@ class Integer : public Value
 public:
     int val;
 
-    Integer(ExprPtr expr);
+    Integer(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -36,7 +37,7 @@ class Real : public Value
 public:
     float val;
 
-    Real(ExprPtr expr);
+    Real(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -45,7 +46,7 @@ class String : public Value
 public:
     std::string val;
 
-    String(ExprPtr expr);
+    String(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -54,7 +55,7 @@ class Bool : public Value
 public:
     bool val;
 
-    Bool(ExprPtr expr);
+    Bool(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -63,14 +64,14 @@ class Block : public Value
 public:
     ExprPtr val;
 
-    Block(ExprPtr expr);
+    Block(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
 };
 
 class Tuple : public Value
 {
 public:
-    Tuple();
+    Tuple(Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -79,8 +80,15 @@ class Func : public Value
 public:
     CPPFunc val;
 
-    Func(CPPFunc func);
+    Func(CPPFunc func, Scope* parent);
     std::string toStr(bool debug);
+};
+
+class Nil : public Value
+{
+public:
+    std::string toStr(bool debug);
+    bool isNil();
 };
 
 OCA_END

@@ -10,8 +10,16 @@
 
 OCA_BEGIN
 
-Integer::Integer(ExprPtr expr)
+bool Value::isNil()
 {
+    return false;
+}
+
+// ---------------------------------
+
+Integer::Integer(ExprPtr expr, Scope* parent)
+{
+    scope.parent = parent;
     val = std::stoi(expr->val);
     // add functions
 }
@@ -26,8 +34,9 @@ std::string Integer::toStr(bool debug)
 
 // ----------------------------------
 
-Real::Real(ExprPtr expr)
+Real::Real(ExprPtr expr, Scope* parent)
 {
+    scope.parent = parent;
     val = std::stof(expr->val);
     // add functions
 }
@@ -44,8 +53,9 @@ std::string Real::toStr(bool debug)
 
 // ---------------------------------
 
-String::String(ExprPtr expr)
+String::String(ExprPtr expr, Scope* parent)
 {
+    scope.parent = parent;
     val = expr->val;
     // add functions
 }
@@ -60,8 +70,9 @@ std::string String::toStr(bool debug)
 
 // ---------------------------------
 
-Bool::Bool(ExprPtr expr)
+Bool::Bool(ExprPtr expr, Scope* parent)
 {
+    scope.parent = parent;
     val = (expr->val == "true");
     // add functions
 }
@@ -76,8 +87,9 @@ std::string Bool::toStr(bool debug)
 
 // ---------------------------------
 
-Block::Block(ExprPtr expr)
+Block::Block(ExprPtr expr, Scope* parent)
 {
+    scope.parent = parent;
     val = expr;
     // add functions
 }
@@ -95,14 +107,17 @@ std::string Block::toStr(bool debug)
 
 // ---------------------------------
 
-Tuple::Tuple() {}
+Tuple::Tuple(Scope* parent)
+{
+    scope.parent = parent;
+}
 
 std::string Tuple::toStr(bool debug)
 {
     std::string result = "";
     if (debug) result += "<tup>";
     result += "(";
-    for (auto& i : table)
+    for (auto& i : scope.names)
     {
         if (debug) result += "[" + i.first + "]";
         result += i.second->toStr(debug);
@@ -116,8 +131,9 @@ std::string Tuple::toStr(bool debug)
 
 // ---------------------------------
 
-Func::Func(CPPFunc func)
+Func::Func(CPPFunc func, Scope* parent)
 {
+    scope = Scope(parent);
     val = func;
     // add functions
 }
@@ -131,6 +147,18 @@ std::string Func::toStr(bool debug)
     ss << address;
     result += ss.str();
     return result;
+}
+
+// ---------------------------------
+
+std::string Nil::toStr(bool debug)
+{
+    return "nil";
+}
+
+bool Nil::isNil()
+{
+    return true;
 }
 
 OCA_END
