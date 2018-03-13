@@ -10,6 +10,13 @@
 
 OCA_BEGIN
 
+bool Value::isNil()
+{
+    return false;
+}
+
+// ---------------------------------
+
 Integer::Integer(ExprPtr expr, Scope* parent)
 {
     scope.parent = parent;
@@ -140,6 +147,18 @@ std::string Func::toStr(bool debug)
     ss << address;
     result += ss.str();
     return result;
+}
+
+// ---------------------------------
+
+std::string Nil::toStr(bool debug)
+{
+    return "nil";
+}
+
+bool Nil::isNil()
+{
+    return true;
 }
 
 OCA_END

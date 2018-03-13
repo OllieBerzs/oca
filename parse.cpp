@@ -13,7 +13,7 @@ OCA_BEGIN
 Expression::Expression(Expression::Type type, const std::string& val)
     : type(type), val(val) {}
 
-void Expression::print(uint indent)
+void Expression::print(uint indent, char mod)
 {
     std::vector<std::string> types =
     {
@@ -24,10 +24,10 @@ void Expression::print(uint indent)
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
 
-    std::cout << "<" + types[type] << ">" << val << "\n";
+    std::cout << mod << "<" << types[type] << ">" << val << "\n";
 
-    if (left) left->print(indent + 1);
-    if (right) right->print(indent + 1);
+    if (left) left->print(indent + 1, 'L');
+    if (right) right->print(indent + 1, 'R');
 }
 
 // ----------------------------
@@ -150,13 +150,15 @@ bool Parser::call()
 
 bool Parser::access()
 {
+    std::string mod = "";
     if (lit("."))
     {
         if (!integer() && !call()) error("No accessor call after '.'");
     }
     else if (lit("["))
     {
-        if (!integer() && !call()) error("No key after '['");
+        mod = "[";
+        if (!integer() && !string() && !call()) error("No key after '['");
         if (!lit("]")) error("Missing closing brace");
     }
     else return false;
@@ -166,7 +168,7 @@ bool Parser::access()
     cache.pop_back();
     ExprPtr prev = cache.back();
     cache.pop_back();
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "");
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, mod);
     a->left = prev;
     a->right = next;
     cache.push_back(a);
@@ -484,6 +486,7 @@ bool Parser::name()
         if (!lit(",")) break;
         trailComma = true;
     }
+    nam.pop_back();
     if (trailComma) --index;
     cache.push_back(std::make_shared<Expression>(Expression::NAME, nam));
     return true;

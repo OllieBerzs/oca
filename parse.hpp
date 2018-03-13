@@ -31,7 +31,7 @@ public:
     ExprPtr right;
 
     Expression(Type type, const std::string& val);
-    void print(uint indent = 0);
+    void print(uint indent = 0, char mod = '.');
 };
 
 class Parser

@@ -20,6 +20,7 @@ public:
 
     virtual ~Value() = default;
     virtual std::string toStr(bool debug) = 0;
+    virtual bool isNil();
 };
 
 class Integer : public Value
@@ -81,6 +82,13 @@ public:
 
     Func(CPPFunc func, Scope* parent);
     std::string toStr(bool debug);
+};
+
+class Nil : public Value
+{
+public:
+    std::string toStr(bool debug);
+    bool isNil();
 };
 
 OCA_END

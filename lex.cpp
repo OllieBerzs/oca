@@ -13,8 +13,8 @@ OCA_BEGIN
 std::vector<std::pair<Token::Type, std::string>> syntax
 {
 
-    {Token::STRING,          "()'(.)*'"},
-    {Token::REAL,           "()([0-9]+\\.[0-9]+)"},
+    {Token::STRING,          "()('[^']*')"},
+    {Token::REAL,            "()([0-9]+\\.[0-9]+)"},
     {Token::INTEGER,         "()([0-9]+)"},
     {Token::BOOLEAN,         "()\\b(true|false)\\b"},
     {Token::FILEPATH,        "()\\$(.)+"},
@@ -37,7 +37,7 @@ void Token::print()
     {
         "string", "real", "integer", "boolean", "filepath",
         "keyword", "name", "operator", "punctuation",
-        "comment", "indent", "whitespace", "invalid"
+        "comment", "indent", "whitespace", "invalid", "last"
     };
     std::cout << "<" << types[type] << " " << pos << ">";
     if (type != Type::INDENT) std::cout << val;

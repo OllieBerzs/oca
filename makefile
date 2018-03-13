@@ -53,7 +53,7 @@ clean:
 	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
 	@$(RM) *.ilk *.pdb
 
-run: $(BIN)
+script: $(BIN)
 	@./$(BIN) tests/script.oca
 
 test: $(TEST)

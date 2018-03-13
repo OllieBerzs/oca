@@ -11,40 +11,73 @@
 TEST_CASE("Evaluation of basic types", "[types]")
 {
     oca::State state;
-    oca::ValuePtr obj = nullptr;
 
     // integer
-    REQUIRE((obj = state.eval("820")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<int>820");
+    REQUIRE(state.eval("820")->toStr(true) == "<int>820");
 
     // real
-    REQUIRE((obj = state.eval("45.5")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<real>45.5");
+    REQUIRE(state.eval("45.5")->toStr(true) == "<real>45.5");
 
     // string
-    REQUIRE((obj = state.eval("'This is a string!'")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<str>This is a string!");
+    REQUIRE(state.eval("'This is a string!'")->toStr(true) == "<str>This is a string!");
 
     // bool
-    REQUIRE((obj = state.eval("true")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<bool>true");
+    REQUIRE(state.eval("true")->toStr(true) == "<bool>true");
 
     // tuple
-    REQUIRE((obj = state.eval("(2, 3, (true, false))")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<tup>([1]<int>2, [2]<int>3, [3]<tup>([1]<bool>true, [2]<bool>false))");
+    REQUIRE(state.eval("(2, 3, (true, false))")->toStr(true) == "<tup>([0]<int>2, [1]<int>3, [2]<tup>([0]<bool>true, [1]<bool>false))");
+}
+
+TEST_CASE("Variable setting and getting", "[variables]")
+{
+    oca::State state;
+
+    // simple variable
+    REQUIRE(state.eval("a = 5")->toStr(false) == "5");
+    REQUIRE(state.eval("a")->toStr(false) == "5");
+
+    // simple tuples
+    state.eval("b = (1, 2, 3, 4)");
+    state.eval("bi = 3");
+    REQUIRE(state.eval("b.2")->toStr(false) == "3");
+    REQUIRE(state.eval("b[1]")->toStr(false) == "2");
+    REQUIRE(state.eval("b[bi]")->toStr(false) == "4");
+
+    // named tuples
+    state.eval("c = (x: 5, y: 6, z: 10)");
+    state.eval("ci = 'y'");
+    REQUIRE(state.eval("c.x")->toStr(false) == "5");
+    REQUIRE(state.eval("c['z']")->toStr(false) == "10");
+    REQUIRE(state.eval("c[ci]")->toStr(false) == "6");
+
+    // blocks
+    state.eval("ret = do :val return val");
+    REQUIRE(state.eval("ret 6")->toStr(false) == "6");
+}
+
+TEST_CASE("Conditional evaluation", "[conditionals]")
+{
+    oca::State state;
+
+    // if
+    REQUIRE(state.eval("if true then 'yes'")->toStr(false) == "yes");
+
+    // if else
+    REQUIRE(state.eval("if false then 'yes' else 'no'")->toStr(false) == "no");
+
+    // if else with variable
+    state.eval("a = true");
+    REQUIRE(state.eval("if a then 'yes' else 'no'")->toStr(false) == "yes");
 }
 
 TEST_CASE("Evaluation of functions", "[functions]")
 {
     oca::State state;
 
-    state.set("passback", [](oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller) -> oca::Ret
+    // passthrough function
+    state.set("pass", [](oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller) -> oca::Ret
     {
         return arg;
     });
-
-    oca::ValuePtr obj = nullptr;
-
-    REQUIRE((obj = state.eval("passback 5")) != nullptr);
-    REQUIRE(obj->toStr(true) == "<int>5");
+    REQUIRE(state.eval("pass 5")->toStr(false) == "5");
 }
