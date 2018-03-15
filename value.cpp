@@ -133,7 +133,7 @@ std::string Tuple::toStr(bool debug)
 
 Func::Func(CPPFunc func, Scope* parent)
 {
-    scope = Scope(parent);
+    scope.parent = parent;
     val = func;
     // add functions
 }
@@ -150,6 +150,11 @@ std::string Func::toStr(bool debug)
 }
 
 // ---------------------------------
+
+Nil::Nil(Scope* parent)
+{
+    scope.parent = parent;
+}
 
 std::string Nil::toStr(bool debug)
 {
