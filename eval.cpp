@@ -116,23 +116,22 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
-    ValuePtr caller = eval(expr->left, scope);
-    ValuePtr data = NIL(&scope);
+    ValuePtr left = eval(expr->left, scope);
+    ValuePtr right = NIL(&scope);
 
-    if (expr->val == "[")
-        data = caller->scope.get(eval(expr->right, scope)->toStr(false));
-    else
-        data = caller->scope.get(expr->right->val);
+    std::string name = "";
+    if (expr->val == "[]") name = eval(expr->right, scope)->toStr(false);
+    else name = expr->right->val;
+    right = left->scope.get(name);
 
-    if (data->isNil())
-        error("Undefined name '" + expr->right->val + "' for '" + expr->left->val + "'");
+    if (right->isNil()) error("Undefined '" + name + "' in '" + left->toStr(true) + "'");
 
-    Value& val = *data;
+    Value& val = *right;
     if (TYPE_EQ(val, Block)) return callBlock
-        (data, eval(expr->right->right, scope), caller, eval(expr->right->left, scope), scope);
+        (right, eval(expr->right->right, scope), left, eval(expr->right->left, scope), scope);
     if (TYPE_EQ(val, Func)) return static_cast<Func&>
-        (val).val(eval(expr->right->right, scope), caller, eval(expr->right->left, scope));
-    else return data;
+        (val).val(eval(expr->right->right, scope), left, eval(expr->right->left, scope));
+    else return right;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)

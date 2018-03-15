@@ -17,13 +17,13 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::REAL,            "()([0-9]+\\.[0-9]+)"},
     {Token::INTEGER,         "()([0-9]+)"},
     {Token::BOOLEAN,         "()\\b(true|false)\\b"},
-    {Token::FILEPATH,        "()\\$(.)+"},
+    //{Token::FILEPATH,        "()\\$(.)+"},
 
     {Token::KEYWORD,         "()\\b(do|if|then|else|return|break)\\b"},
     {Token::NAME,            "()([A-Za-z_]+)"},
     {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|&|!|<|>|~)+"},
 
-    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,|\\[|\\]|=)"},
+    {Token::PUNCTUATION,     "()(\\.|\\$|:|\\(|\\)|,|=|\\[|\\])"},
 
     //{Token::COMMENT,         "#(.)*(\\n|$)"},
     {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},

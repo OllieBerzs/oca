@@ -54,8 +54,13 @@ TEST_CASE("Variable setting and getting", "[variables]")
     REQUIRE(state.eval("c['z']")->toStr(false) == "10");
     REQUIRE(state.eval("c[ci]")->toStr(false) == "6");
 
+    // complex tuples
+    state.eval("complex = (x: (1, 2, 3), y: 'hi')");
+    state.eval("complex.x.1 = 6");
+    REQUIRE(state.eval("complex.x.1")->toStr(false) == "6");
+
     // blocks
-    state.eval("ret = do :val return val");
+    state.eval("ret = do $val return val");
     REQUIRE(state.eval("ret 6")->toStr(false) == "6");
 }
 

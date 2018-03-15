@@ -41,6 +41,7 @@ class Parser
     std::vector<ExprPtr> cache;
     uint index;
     uint indent;
+    bool inAccess;
 
 public:
     Parser(std::vector<Token>& ts, const std::string& path);

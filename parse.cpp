@@ -33,7 +33,7 @@ void Expression::print(uint indent, char mod)
 // ----------------------------
 
 Parser::Parser(std::vector<Token>& ts, const std::string& path)
-    : path(path), index(0), indent(0)
+    : path(path), index(0), indent(0), inAccess(false)
 {
     tokens = std::move(ts);
 }
@@ -136,7 +136,7 @@ bool Parser::call()
     c->right = arg;
     cache.push_back(c);
 
-    access();
+    if (!inAccess) access();
     if (lit(","))
     {
         if (!call()) error("Expected a variable after ','");
@@ -156,20 +156,25 @@ bool Parser::call()
 
 bool Parser::access()
 {
+    inAccess = true;
     std::string mod = "";
     if (lit("."))
     {
-        if (!integer() && !call()) error("No accessor call after '.'");
+        if (!integer() && !call()) error("No accessor key after '.'");
     }
     else if (lit("["))
     {
-        mod = "[";
-        if (!integer() && !string() && !call()) error("No key after '['");
-        if (!lit("]")) error("Missing closing brace");
+        mod = "[]";
+        if (!integer() && !string() && !call()) error("No accessor key call after '['");
+        if (!lit("]")) error("Expected ']' after key");
     }
-    else return false;
+    else
+    {
+        inAccess = false;
+        return false;
+    }
 
-    // assemble attachment
+    // assemble access
     ExprPtr next = cache.back();
     cache.pop_back();
     ExprPtr prev = cache.back();
@@ -178,6 +183,11 @@ bool Parser::access()
     a->left = prev;
     a->right = next;
     cache.push_back(a);
+
+    // additional access
+    access();
+    inAccess = false;
+
     return true;
 }
 
@@ -380,7 +390,7 @@ bool Parser::block()
 
     // checking for parameters
     std::string params = "";
-    if (lit(":"))
+    if (lit("$"))
     {
         while (name())
         {
