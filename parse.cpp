@@ -19,7 +19,7 @@ void Expression::print(uint indent, char mod)
     {
         "set", "call", "access", "if", "else", "next", "main",
         "branches", "part oper", "oper", "return", "break", "file", "str",
-        "int", "real", "bool", "block", "tup", "name"
+        "int", "real", "bool", "block", "tup", "name", "calls"
     };
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
@@ -85,28 +85,22 @@ bool Parser::checkIndent(Indent ind)
 
 bool Parser::expr()
 {
-    if (set() || call() || value() || cond() || keyword() || file()) return true;
+    if (call() || value() || cond() || keyword() || file()) return true;
     return false;
 }
 
 bool Parser::set()
 {
-    if (!name()) return false;
+    if (!lit("=")) return false;
 
-    if (!lit("="))
-    {
-        cache.pop_back();
-        --index;
-        return false;
-    }
-    if (!set() && !call() &&
-        !value() && !file() && !cond()) error("Expected value after '='");
+    if (!call() && !value() &&
+        !file() && !cond()) error("Expected value after '='");
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>(Expression::SET, "");
     s->right = cache.back();
     cache.pop_back();
-    s->val = cache.back()->val;
+    s->left = cache.back();
     cache.pop_back();
     cache.push_back(s);
 
@@ -116,7 +110,6 @@ bool Parser::set()
 bool Parser::call()
 {
     if (!name()) return false;
-
 
     bool hasArg = value() || call();
     bool hasBlock = block();
@@ -144,7 +137,20 @@ bool Parser::call()
     cache.push_back(c);
 
     access();
-    oper();
+    if (lit(","))
+    {
+        if (!call()) error("Expected a variable after ','");
+        ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "");
+        calls->right = cache.back();
+        cache.pop_back();
+        calls->left = cache.back();
+        cache.pop_back();
+        cache.push_back(calls);
+    }
+
+    bool hasSet = false;
+    if (cache.size() == 1) hasSet = set();
+    if (!hasSet) oper();
     return true;
 }
 
@@ -372,13 +378,20 @@ bool Parser::block()
 {
     if (!lit("do")) return false;
 
-    bool hasParam = false;
+    // checking for parameters
+    std::string params = "";
     if (lit(":"))
     {
-        if (!name()) error("No name provided for parameter after ':'");
-        hasParam = true;
+        while (name())
+        {
+            params += cache.back()->val;
+            cache.pop_back();
+            if (!lit(",")) break;
+        }
+        if (params == "") error("No name provided for parameter after ':'");
     }
 
+    // getting the expression block
     if (checkIndent(Indent::SAME)) error("Expected indented block");
     uint cached = cache.size();
     if (checkIndent(Indent::MORE))
@@ -388,7 +401,7 @@ bool Parser::block()
     else if (!expr()) error("Expected expression for block");
 
     // assemble block
-    ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, "");
+    ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, params);
 
     ExprPtr curr = bl;
     for (uint i = cached; i < cache.size(); ++i)
@@ -402,11 +415,6 @@ bool Parser::block()
     }
     cache.resize(cached);
 
-    if (hasParam)
-    {
-        bl->val = cache.back()->val;
-        cache.pop_back();
-    }
     cache.push_back(bl);
 
     return true;
@@ -475,20 +483,9 @@ bool Parser::value()
 bool Parser::name()
 {
     if (get().type != Token::NAME) return false;
-    std::string nam = "";
 
-    bool trailComma = false;
-    while (get().type == Token::NAME)
-    {
-        trailComma = false;
-        nam += get().val + " ";
-        ++index;
-        if (!lit(",")) break;
-        trailComma = true;
-    }
-    nam.pop_back();
-    if (trailComma) --index;
-    cache.push_back(std::make_shared<Expression>(Expression::NAME, nam));
+    cache.push_back(std::make_shared<Expression>(Expression::NAME, get().val));
+    ++index;
     return true;
 }
 

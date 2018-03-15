@@ -23,6 +23,8 @@ public:
     void clean();
     void set(const std::string& name, ValuePtr value);
     ValuePtr get(const std::string& name);
+
+    void print();
 };
 
 OCA_END

@@ -15,7 +15,7 @@ OCA_BEGIN
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
     if (expr->type == Expression::SET) return set(expr, scope);
-    else if (expr->type == Expression::CALL) return call(expr, NIL, scope);
+    else if (expr->type == Expression::CALL) return call(expr, NIL(&scope), scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
     else return value(expr, scope);
@@ -25,27 +25,70 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 {
-    auto names = words(expr->val);
-    ValuePtr obj = eval(expr->right, scope);
+    // getting variables from left side
+    std::vector<ExprPtr> lefts;
+    ExprPtr it = expr->left;
+    if (it->type == Expression::CALL) lefts.push_back(it);
+    else
+    {
+        while (it->type == Expression::CALLS)
+        {
+            lefts.push_back(it->left);
+            it = it->right;
+        }
+        lefts.push_back(it);
+    }
 
-    if (names.size() == 1) scope.set(names[0], obj);
-    else split(obj, names, scope);
+    ValuePtr rightVal = eval(expr->right, scope);
 
-    return obj;
+    uint counter = ARRAY_BEGIN_INDEX;
+    for (auto& leftExpr : lefts)
+    {
+        ValuePtr leftVal = eval(leftExpr, scope);
+
+        // get variable name
+        std::string name = "";
+        if (leftVal->isNil()) // variable does not exist
+        {
+            if (leftExpr->type == Expression::ACCESS) error("Cannot add new key to tuple");
+            name = leftExpr->val;
+        }
+        else // variable exists
+        {
+            // find the variable in parent scope
+            for (auto& var : leftVal->scope.parent->names)
+            {
+                if (var.second.get() == leftVal.get())
+                {
+                    name = var.first;
+                    break;
+                }
+            }
+        }
+
+        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal);
+        else // split right tuple
+        {
+            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
+            if (rightValPart->isNil()) error("Could not split value");
+
+            leftVal->scope.parent->set(name, rightValPart);
+        }
+    }
+
+    return rightVal;
 }
 
 ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
-    ValuePtr func = NIL;
-    auto names = words(expr->val);
-    if (names.size() > 1) error("Expected '=' in assignment");
+    ValuePtr func = NIL(&scope);
 
-    if (caller) func = caller->scope.get(names[0]);
-    if (func->isNil()) func = scope.get(names[0]);
-    if (func->isNil()) error("Undefined name '" + names[0] + "'");
+    if (caller) func = caller->scope.get(expr->val);
+    if (func->isNil()) func = scope.get(expr->val);
+    if (func->isNil()) return func;
 
-    ValuePtr arg = NIL;
-    ValuePtr block = NIL;
+    ValuePtr arg = NIL(&scope);
+    ValuePtr block = NIL(&scope);
     if (expr->right) arg = eval(expr->right, scope);
     if (expr->left) block = eval(expr->left, scope);
 
@@ -64,17 +107,17 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
     bool trueness = static_cast<Bool&>(*conditional).val;
 
     if (trueness)
-        return callBlock(eval(expr->right->left, scope), NIL, NIL, NIL, scope);
+        return callBlock(eval(expr->right->left, scope), NIL(&scope), NIL(&scope), NIL(&scope), scope);
     else if (expr->right->right)
-        return callBlock(eval(expr->right->right, scope), NIL, NIL, NIL, scope);
+        return callBlock(eval(expr->right->right, scope), NIL(&scope), NIL(&scope), NIL(&scope), scope);
 
-    return NIL;
+    return NIL(&scope);
 }
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
     ValuePtr caller = eval(expr->left, scope);
-    ValuePtr data = NIL;
+    ValuePtr data = NIL(&scope);
 
     if (expr->val == "[")
         data = caller->scope.get(eval(expr->right, scope)->toStr(false));
@@ -94,12 +137,12 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
-    return NIL;
+    return NIL(&scope);
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
 {
-    ValuePtr result = NIL;
+    ValuePtr result = NIL(&scope);
     if (expr->type == Expression::TUP)
     {
         result = std::make_shared<Tuple>(&scope);
@@ -110,7 +153,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
             if (expr->val == "") expr->val = std::to_string(counter++);
 
             // add tuple value to object table
-            result->scope.set(expr->val, eval(expr->left, scope));
+            result->scope.set(expr->val, eval(expr->left, result->scope));
             expr = expr->right;
         }
     }
@@ -143,7 +186,21 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope)
 {
     Block& b = static_cast<Block&>(*val);
-    auto params = words(b.val->val);
+
+    // split parameters
+    std::vector<std::string> params;
+    std::string word = "";
+    for (auto& c : b.val->val)
+    {
+        if (c == ' ')
+        {
+            params.push_back(word);
+            word = "";
+            continue;
+        }
+        word += c;
+    }
+    if (word != "") params.push_back(word);
 
     // create temp scope
     Scope temp(&scope);
@@ -153,10 +210,21 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
     // set parameters
     if (params.size() != 0 && arg->isNil()) error("Expected argument");
     if (params.size() == 1) temp.set(params[0], arg);
-    else split(arg, params, temp);
+    else
+    {
+        uint counter = ARRAY_BEGIN_INDEX;
+        for (auto& param : params)
+        {
+            ValuePtr item = NIL(&scope);
+            if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
+            if (item->isNil()) error("Cannot split value");
+
+            temp.set(param, item);
+        }
+    }
 
     // evaluate the block's value
-    ValuePtr result = NIL;
+    ValuePtr result = NIL(&scope);
     ExprPtr expr = b.val;
     while (expr && expr->left)
     {
@@ -165,39 +233,6 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         result = eval(expr->left, temp);
         expr = expr->right;
     }
-    return result;
-}
-
-// ----------------------------
-
-void Evaluator::split(ValuePtr val, const std::vector<std::string>& names, Scope& scope)
-{
-    uint counter = ARRAY_BEGIN_INDEX;
-    for (auto& name : names)
-    {
-        ValuePtr item = NIL;
-        if ((item = val->scope.get(name))->isNil()) item = val->scope.get(std::to_string(counter++));
-        if (item->isNil()) error("Cannot split value");
-
-        scope.set(name, item);
-    }
-}
-
-std::vector<std::string> Evaluator::words(const std::string& str)
-{
-    std::vector<std::string> result;
-    std::string word = "";
-    for (auto& c : str)
-    {
-        if (c == ' ')
-        {
-            result.push_back(word);
-            word = "";
-            continue;
-        }
-        word += c;
-    }
-    if (word != "") result.push_back(word);
     return result;
 }
 

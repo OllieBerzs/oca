@@ -3,6 +3,7 @@
 ** scope to hold named stuff
 */
 
+#include <iostream>
 #include "scope.hpp"
 #include "value.hpp"
 
@@ -19,7 +20,9 @@ void Scope::clean()
 
 void Scope::set(const std::string& name, ValuePtr value)
 {
-    names.emplace(name, value);
+    if (names.find(name) == names.end())
+        names.emplace(name, value);
+    else names[name] = value;
 }
 
 ValuePtr Scope::get(const std::string& name)
@@ -28,9 +31,20 @@ ValuePtr Scope::get(const std::string& name)
     if (val == names.end())
     {
         if (parent) return parent->get(name);
-        else return NIL;
+        else return NIL(this);
     }
     return val->second;
+}
+
+// -----------------------------
+
+void Scope::print()
+{
+    std::string out = "{";
+    for (auto& name : names) out += name.first + " ";
+    if (out.size() > 1) out.pop_back();
+    out += "}";
+    std::cout << out << "\n";
 }
 
 OCA_END

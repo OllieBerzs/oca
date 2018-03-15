@@ -21,9 +21,9 @@ std::vector<std::pair<Token::Type, std::string>> syntax
 
     {Token::KEYWORD,         "()\\b(do|if|then|else|return|break)\\b"},
     {Token::NAME,            "()([A-Za-z_]+)"},
-    {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|&|=|!|<|>|~)+"},
+    {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|&|!|<|>|~)+"},
 
-    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,|\\[|\\])"},
+    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,|\\[|\\]|=)"},
 
     //{Token::COMMENT,         "#(.)*(\\n|$)"},
     {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},

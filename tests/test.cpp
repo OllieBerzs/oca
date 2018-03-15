@@ -35,6 +35,8 @@ TEST_CASE("Variable setting and getting", "[variables]")
     // simple variable
     REQUIRE(state.eval("a = 5")->toStr(false) == "5");
     REQUIRE(state.eval("a")->toStr(false) == "5");
+    state.eval("a = 7");
+    REQUIRE(state.eval("a")->toStr(false) == "7");
 
     // simple tuples
     state.eval("b = (1, 2, 3, 4)");
@@ -42,6 +44,8 @@ TEST_CASE("Variable setting and getting", "[variables]")
     REQUIRE(state.eval("b.2")->toStr(false) == "3");
     REQUIRE(state.eval("b[1]")->toStr(false) == "2");
     REQUIRE(state.eval("b[bi]")->toStr(false) == "4");
+    state.eval("b[0] = 6");
+    REQUIRE(state.eval("b.0")->toStr(false) == "6");
 
     // named tuples
     state.eval("c = (x: 5, y: 6, z: 10)");

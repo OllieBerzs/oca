@@ -87,6 +87,7 @@ public:
 class Nil : public Value
 {
 public:
+    Nil(Scope* parent);
     std::string toStr(bool debug);
     bool isNil();
 };
