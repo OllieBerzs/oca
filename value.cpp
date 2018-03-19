@@ -21,7 +21,26 @@ Integer::Integer(ExprPtr expr, Scope* parent)
 {
     scope.parent = parent;
     val = std::stoi(expr->val);
+
     // add functions
+    scope.set("__add", std::make_shared<Func>(
+        [](oca::Arg arg, oca::ValuePtr caller, oca::ValuePtr block) -> oca::Ret
+        {
+            Value& left = *caller;
+            Value& right = *arg;
+            if (!TYPE_EQ(left, Integer)) std::cout << "Left is not an int\n";
+            if (!TYPE_EQ(right, Integer)) std::cout << "Right is not an int\n";
+
+            int lint = static_cast<Integer&>(left).val;
+            int rint = static_cast<Integer&>(right).val;
+            int result = lint + rint;
+
+            return std::make_shared<Integer>(
+                std::make_shared<Expression>(
+                    Expression::INT, std::to_string(result)), nullptr);
+        },
+        &scope
+    ));
 }
 
 std::string Integer::toStr(bool debug)

@@ -15,7 +15,7 @@
 #define OCA_BEGIN namespace oca {
 #define OCA_END }
 #define DLLEXPORT __declspec(dllexport) void
-#define TYPE_EQ(a, b) std::type_index(typeid(a)).name() == std::type_index(typeid(b)).name()
+#define TYPE_EQ(a, b) (std::type_index(typeid(a)).name() == std::type_index(typeid(b)).name())
 #define NIL(scope) std::make_shared<oca::Nil>(scope)
 
 OCA_BEGIN

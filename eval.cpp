@@ -18,6 +18,7 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::CALL) return call(expr, NIL(&scope), scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
+    else if (expr->type == Expression::OPER) return oper(expr, scope);
     else return value(expr, scope);
 }
 
@@ -99,6 +100,25 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     return func;
 }
 
+ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
+{
+    std::map<std::string, std::string> operFuncs = {
+        {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"}
+    };
+
+    ValuePtr left = eval(expr->left, scope);
+    ValuePtr right = eval(expr->right, scope);
+    ValuePtr func = left->scope.get(operFuncs[expr->val]);
+    if (func->isNil()) error("Operator does not exist");
+
+    // call the operator
+    Value& funcref = *func;
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val(right, left, NIL(&scope));
+    if (TYPE_EQ(funcref, Block)) return callBlock(func, right, left, NIL(&scope), scope);
+
+    return func;
+}
+
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     ValuePtr conditional = eval(expr->left, scope);
@@ -144,6 +164,9 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     ValuePtr result = NIL(&scope);
     if (expr->type == Expression::TUP)
     {
+        // if tuple has only one member, open it up
+        if (expr->right == nullptr) return eval(expr->left, scope);
+
         result = std::make_shared<Tuple>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
         while(expr && expr->left)
