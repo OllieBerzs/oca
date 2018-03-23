@@ -26,7 +26,15 @@ enum ErrorType
     NO_ACCESS_KEY_CALL,
     NO_CONDITIONAL,
     NO_THEN,
-    NO_RIGHT_VALUE
+    NO_RIGHT_VALUE,
+
+    // Evaluating
+    NEW_TUPLE_KEY,
+    CANNOT_SPLIT,
+    UNDEFINED_OPERATOR,
+    IF_BOOL,
+    UNDEFINED_IN_TUPLE,
+    NO_ARGUMENT
 };
 
 class ErrorHandler
@@ -35,19 +43,14 @@ class ErrorHandler
 
     const std::string* source;
     const std::vector<Token>* tokens;
-    const std::vector<ExprPtr>* exprs;
 
 public:
     Lexer* lexer;
     Parser* parser;
 
-    std::vector<uint> tokenPos;
-    std::vector<std::pair<uint, uint>> exprPos;
+    ErrorHandler(const std::string* p, const std::string* s, const std::vector<Token>* t);
 
-    ErrorHandler(const std::string* p, const std::string* s,
-        const std::vector<Token>* t, const std::vector<ExprPtr>* e);
-
-    void error(ErrorType type);
+    void error(ErrorType type, ExprPtr expr = nullptr);
 };
 
 OCA_END

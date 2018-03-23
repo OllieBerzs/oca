@@ -28,11 +28,7 @@ void Scope::set(const std::string& name, ValuePtr value)
 ValuePtr Scope::get(const std::string& name)
 {
     auto val = names.find(name);
-    if (val == names.end())
-    {
-        if (parent) return parent->get(name);
-        else return NIL(this);
-    }
+    if (val == names.end()) return NIL(this);
     return val->second;
 }
 

@@ -31,7 +31,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::vector<ExprPtr> ast;
 
     // error handling
-    ErrorHandler er(&path, &source, &tokens, &ast);
+    ErrorHandler er(&path, &source, &tokens);
 
     // Lexing
     Lexer lexer(&er);
@@ -56,7 +56,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator ev;
+    Evaluator ev(&er);
     ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {

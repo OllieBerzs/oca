@@ -68,14 +68,13 @@ void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
             uint index = i / 2;
             if (syntax[index].first == Token::WHITESPACE) continue;
             if (syntax[index].first == Token::COMMENT) continue;
-            tokens.push_back({syntax[index].first, it->str()});
-            er->tokenPos.push_back(pos);
+            tokens.push_back({syntax[index].first, it->str(), pos});
             if (syntax[index].first == Token::INVALID) er->error(UNKNOWN_SYMBOL);
             break;
         }
     }
 
-    tokens.push_back({Token::LAST, ""});
+    tokens.push_back({Token::LAST, "", static_cast<uint>(source.size())});
 }
 
 OCA_END

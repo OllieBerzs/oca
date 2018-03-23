@@ -23,6 +23,7 @@ public:
 
     Type type;
     std::string val;
+    uint pos;
 
     void print();
 };

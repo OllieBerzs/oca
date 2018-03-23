@@ -9,8 +9,11 @@
 #include "parse.hpp"
 #include "value.hpp"
 #include "oca.hpp"
+#include "error.hpp"
 
 OCA_BEGIN
+
+Evaluator::Evaluator(ErrorHandler* er) : er(er) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
@@ -51,7 +54,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         std::string name = "";
         if (leftVal->isNil()) // variable does not exist
         {
-            if (leftExpr->type == Expression::ACCESS) error("Cannot add new key to tuple");
+            if (leftExpr->type == Expression::ACCESS) er->error(NEW_TUPLE_KEY, leftExpr);
             name = leftExpr->val;
         }
         else // variable exists
@@ -71,7 +74,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         else // split right tuple
         {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
-            if (rightValPart->isNil()) error("Could not split value");
+            if (rightValPart->isNil()) er->error(CANNOT_SPLIT, expr->right);
 
             leftVal->scope.parent->set(name, rightValPart);
         }
@@ -109,7 +112,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val]);
-    if (func->isNil()) error("Operator does not exist");
+    if (func->isNil()) er->error(UNDEFINED_OPERATOR, expr);
 
     // call the operator
     Value& funcref = *func;
@@ -123,7 +126,7 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     ValuePtr conditional = eval(expr->left, scope);
     Value& b = *conditional;
-    if (!(TYPE_EQ(b, Bool))) error("Expected a boolean value in 'if'");
+    if (!(TYPE_EQ(b, Bool))) er->error(IF_BOOL, expr->left);
     bool trueness = static_cast<Bool&>(*conditional).val;
 
     if (trueness)
@@ -144,7 +147,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     else name = expr->right->val;
     right = left->scope.get(name);
 
-    if (right->isNil()) error("Undefined '" + name + "' in '" + left->toStr(true) + "'");
+    if (right->isNil()) er->error(UNDEFINED_IN_TUPLE, expr->right);
 
     Value& val = *right;
     if (TYPE_EQ(val, Block)) return callBlock
@@ -230,7 +233,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
     if (!caller->isNil()) temp.set("self", caller);
 
     // set parameters
-    if (params.size() != 0 && arg->isNil()) error("Expected argument");
+    if (params.size() != 0 && arg->isNil()) er->error(NO_ARGUMENT, b.val);
     if (params.size() == 1) temp.set(params[0], arg);
     else
     {
@@ -239,7 +242,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         {
             ValuePtr item = NIL(&scope);
             if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
-            if (item->isNil()) error("Cannot split value");
+            if (item->isNil()) er->error(CANNOT_SPLIT, b.val);
 
             temp.set(param, item);
         }
@@ -256,14 +259,6 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         expr = expr->right;
     }
     return result;
-}
-
-// ----------------------------
-
-void Evaluator::error(const std::string& message)
-{
-    std::cout << message << "\n";
-    exit(1);
 }
 
 OCA_END

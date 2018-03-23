@@ -37,7 +37,7 @@ Integer::Integer(ExprPtr expr, Scope* parent)
 
             return std::make_shared<Integer>(
                 std::make_shared<Expression>(
-                    Expression::INT, std::to_string(result)), nullptr);
+                    Expression::INT, std::to_string(result), 0), nullptr);
         },
         &scope
     ));

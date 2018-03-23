@@ -29,8 +29,9 @@ public:
     std::string val;
     ExprPtr left;
     ExprPtr right;
+    uint index;
 
-    Expression(Type type, const std::string& val);
+    Expression(Type type, const std::string& val, uint index);
     void print(uint indent = 0, char mod = '.');
 };
 

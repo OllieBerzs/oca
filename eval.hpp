@@ -14,6 +14,9 @@ OCA_BEGIN
 class Evaluator
 {
 public:
+    ErrorHandler* er;
+
+    Evaluator(ErrorHandler* er);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:
@@ -26,8 +29,6 @@ private:
     ValuePtr value(ExprPtr expr, Scope& scope);
 
     ValuePtr callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope);
-
-    void error(const std::string& message);
 };
 
 OCA_END
