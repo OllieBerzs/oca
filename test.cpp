@@ -4,9 +4,9 @@
 */
 
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "catch2/catch.hpp"
 
-#include "../oca.hpp"
+#include "oca.hpp"
 
 TEST_CASE("Evaluation of basic types", "[types]")
 {

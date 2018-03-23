@@ -8,11 +8,11 @@ DEBUG = true
 
 ifeq ($(OS),Windows_NT)
 BIN = oca.exe
-TEST = tester.exe
+TEST = test.exe
 TARGET = $(ARCH)-windows-gnu
 else
 BIN = oca
-TEST = tester
+TEST = test
 TARGET = $(ARCH)-linux-gnu
 endif
 
@@ -28,50 +28,58 @@ else
 endif
 
 # Objects
-BIN_OBJ = main.o
-TEST_OBJ = tests/test.o
-OBJ = oca.o lex.o parse.o value.o scope.o eval.o
+BINOBJ = main.o
+TESTOBJ = test.o
+OBJ = oca.o lex.o parse.o value.o scope.o eval.o error.o
 
 all: $(BIN)
 
-# value files
-%.o: %.cpp
+# object files
+%.o:
 	@echo [Compile] $<
 	@$(CXX) $(CPPFLAGS) -c -o $@ $<
+	@$(RM) *.o-*
 
 # binaries
-$(BIN): $(BIN_OBJ) $(OBJ)
+$(BIN): $(BINOBJ) $(OBJ)
 	@echo [Link] $(BIN)
 	@$(CXX) $(CPPFLAGS) -o $(BIN) $^
+	@$(RM) *.o-*
 
-$(TEST): $(TEST_OBJ) $(OBJ)
+$(TEST): $(TESTOBJ) $(OBJ)
 	@echo [Link] $(TEST)
 	@$(CXX) $(CPPFLAGS) -o $(TEST) $^
+	@$(RM) *.o-*
+
+deps:
+	@echo [Gen dependencies]
+	@$(CXX) -MM $(OBJ:.o=.cpp) $(BINOBJ:.o=.cpp) $(TESTOBJ:.o=.cpp) >> makefile
 
 clean:
+	@echo [Clean]
 	@$(RM) $(BIN) $(TEST)
-	@$(RM) $(OBJ) $(TEST_OBJ) $(BIN_OBJ)
-	@$(RM) *.ilk *.pdb
+	@$(RM) *.o *.o-*
 
 script: $(BIN)
-	@./$(BIN) tests/script.oca
+	@echo [Run] script.oca
+	@./$(BIN) examples/script.oca
 
 test: $(TEST)
+	@echo [Test]
 	@./$(TEST)
 
-# dependencies
-OCA_H = oca.hpp common.hpp scope.hpp ocaconf.hpp value.hpp
-LEX_H = lex.hpp common.hpp ocaconf.hpp
-PARSE_H = parse.hpp common.hpp ocaconf.hpp
-OBJECT_H = value.hpp common.hpp ocaconf.hpp
-SCOPE_H = scope.hpp common.hpp ocaconf.hpp
-EVAL_H = eval.hpp common.hpp ocaconf.hpp
+.PHONY: test script clean deps
 
-test.o: $(OCA_H) $(OBJECT_H)
-main.o: $(OCA_H)
-oca.o: $(OCA_H) $(LEX_H) $(PARSE_H) $(OBJECT_H) $(EVAL_H)
-lex.o: $(LEX_H)
-parse.o: $(PARSE_H) $(LEX_H)
-value.o: $(OBJECT_H) $(PARSE_H)
-scope.o: $(SCOPE_H) $(OBJECT_H)
-eval.o: $(EVAL_H) $(PARSE_H) $(OBJECT_H)
+# dependencies (generated) -----------------------------------
+oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp lex.hpp \
+  parse.hpp eval.hpp error.hpp
+lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp
+parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp
+value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp
+scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
+eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
+  scope.hpp oca.hpp
+error.o: error.cpp error.hpp common.hpp ocaconf.hpp lex.hpp
+main.o: main.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp
+test.o: test.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
+  scope.hpp value.hpp

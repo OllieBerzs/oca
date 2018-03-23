@@ -6,11 +6,11 @@
 #include <iostream>
 //#include <windows.h>
 #include <fstream>
-
 #include "oca.hpp"
 #include "lex.hpp"
 #include "parse.hpp"
 #include "eval.hpp"
+#include "error.hpp"
 
 OCA_BEGIN
 
@@ -27,8 +27,15 @@ ValuePtr State::script(const std::string& path)
 
 ValuePtr State::eval(const std::string& source, const std::string& path)
 {
+    std::vector<Token> tokens;
+    std::vector<ExprPtr> ast;
+
+    // error handling
+    ErrorHandler er(&path, &source, &tokens, &ast);
+
     // Lexing
-    auto tokens = Lexer{source, path}.lex();
+    Lexer lexer(&er);
+    lexer.lex(source, tokens);
 
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
@@ -36,7 +43,8 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     #endif
 
     // Parsing
-    auto ast = Parser(tokens, path).parse();
+    Parser parser(&er);
+    parser.parse(tokens, ast);
 
     #ifdef OUT_AST
     std::cout << "------------ AST -------------\n";

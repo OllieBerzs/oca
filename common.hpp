@@ -9,7 +9,6 @@
 #include <functional>
 #include <memory>
 #include <typeindex>
-
 #include "ocaconf.hpp"
 
 #define OCA_BEGIN namespace oca {
@@ -23,8 +22,11 @@ OCA_BEGIN
 class Token;
 class Lexer;
 class Expression;
+class Parser;
 class Value;
 class Scope;
+class Evaluator;
+class ErrorHandler;
 
 typedef unsigned int uint;
 

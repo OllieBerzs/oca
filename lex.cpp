@@ -5,8 +5,8 @@
 
 #include <iostream>
 #include <regex>
-
 #include "lex.hpp"
+#include "error.hpp"
 
 OCA_BEGIN
 
@@ -18,15 +18,12 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::INTEGER,         "()([0-9]+)"},
     {Token::BOOLEAN,         "()\\b(true|false)\\b"},
     {Token::FILEPATH,        "()@(.)+"},
-
     {Token::KEYWORD,         "()\\b(do|if|then|else|return|break)\\b"},
     {Token::NAME,            "()([A-Za-z_]+)"},
+    {Token::COMMENT,         "()--(.|\\n)*--"},
     {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|<|>)"},
-
     {Token::PUNCTUATION,     "()(\\.|\\$|:|\\(|\\)|,|=|\\[|\\])"},
-
-    //{Token::COMMENT,         "#(.)*(\\n|$)"},
-    {Token::INDENT,          "(^ +|\\n *)(?=\\S)"},
+    {Token::INDENT,          "(\\n *)(?=\\S)"},
     {Token::WHITESPACE,      "()(\\n *| +)"},
     {Token::INVALID,         "()(.)+"}
 };
@@ -39,18 +36,21 @@ void Token::print()
         "keyword", "name", "operator", "punctuation",
         "comment", "indent", "whitespace", "invalid", "last"
     };
-    std::cout << "<" << types[type] << " " << pos << ">";
+    std::cout << "<" << types[type] << ">";
     if (type != Type::INDENT) std::cout << val;
     std::cout << "\n";
 }
 
 //-----------------------------
 
-Lexer::Lexer(const std::string& s, const std::string& p) : source(s), path(p) {}
-
-std::vector<Token> Lexer::lex()
+Lexer::Lexer(ErrorHandler* er) : er(er)
 {
-    std::vector<Token> result;
+    er->lexer = this;
+}
+
+void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
+{
+    if (source[0] == ' ') er->error(INDENTED_FILE);
 
     std::string reg;
     for (const auto& r : syntax) reg += r.second + "|";
@@ -68,65 +68,14 @@ std::vector<Token> Lexer::lex()
             uint index = i / 2;
             if (syntax[index].first == Token::WHITESPACE) continue;
             if (syntax[index].first == Token::COMMENT) continue;
-            if (syntax[index].first == Token::INVALID) error("Unknown symbol", {syntax[index].first, it->str(), pos});
-            result.push_back({syntax[index].first, it->str(), pos});
+            tokens.push_back({syntax[index].first, it->str()});
+            er->tokenPos.push_back(pos);
+            if (syntax[index].first == Token::INVALID) er->error(UNKNOWN_SYMBOL);
             break;
         }
     }
 
-    result.push_back({Token::Type::LAST, "", static_cast<uint>(source.size())});
-    return result;
-}
-
-void Lexer::error(const std::string& message, const Token t)
-{
-    // get error line
-    std::string errline = "";
-    uint lineNum = 1;
-    uint colNum = 1;
-    uint index = 0;
-
-    char c = 'a';
-    bool found = false;
-
-    while (c != '\n' || !found)
-    {
-        c = source[index];
-        if (c == '\n')
-        {
-            lineNum++;
-            errline = "";
-        }
-        else errline += c;
-        if (index == t.pos)
-        {
-            found = true;
-            colNum = errline.size() - 1;
-        }
-        index++;
-    }
-
-    std::string lineStart = errline.substr(0, colNum - 1);
-    std::string lineEnd = colNum < errline.size()
-        ? errline.substr(colNum, errline.size()) : "";
-
-    system("printf '\033[1A'");
-    std::cout << "\033[38;5;14m";
-    std::cout << "-- ERROR -------------------- " << path << "\n";
-    std::cout << "\033[0m";
-    std::cout << lineNum << "| ";
-    std::cout << "\033[38;5;15m";
-    std::cout << lineStart;
-    std::cout << "\033[48;5;9m";
-    std::cout << (t.val == "\n" ? " " : t.val);
-    std::cout << "\033[0m";
-    std::cout << "\033[38;5;15m";
-    std::cout << lineEnd << "\n";
-    std::cout << "\033[0m";
-    std::cout << message << "\n";
-
-    std::cin.get();
-    exit(1);
+    tokens.push_back({Token::LAST, ""});
 }
 
 OCA_END
