@@ -30,15 +30,11 @@ public:
 
 class Lexer
 {
-    std::string source;
-    std::string path;
+    ErrorHandler* er;
 
 public:
-    Lexer(const std::string& s, const std::string& p);
-    std::vector<Token> lex();
-
-private:
-    void error(const std::string& message, const Token t);
+    Lexer(ErrorHandler* er);
+    void lex(const std::string& source, std::vector<Token>& tokens);
 };
 
 OCA_END

@@ -29,26 +29,27 @@ public:
     std::string val;
     ExprPtr left;
     ExprPtr right;
+    uint index;
 
-    Expression(Type type, const std::string& val);
+    Expression(Type type, const std::string& val, uint index);
     void print(uint indent = 0, char mod = '.');
 };
 
 class Parser
 {
-    std::string path;
-    std::vector<Token> tokens;
+    ErrorHandler* er;
+    const std::vector<Token>* tokens;
     std::vector<ExprPtr> cache;
     uint index;
     uint indent;
+    bool inAccess;
 
 public:
-    Parser(std::vector<Token>& ts, const std::string& path);
-
-    std::vector<ExprPtr> parse();
+    Parser(ErrorHandler* er);
+    void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
 
 private:
-    Token& get();
+    const Token& get();
     bool checkIndent(Indent ind);
 
     bool expr();
@@ -70,7 +71,7 @@ private:
     bool name();
     bool lit(const std::string& t);
 
-    void error(const std::string& message);
+    friend class ErrorHandler;
 };
 
 OCA_END

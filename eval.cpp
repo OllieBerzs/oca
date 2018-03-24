@@ -9,8 +9,11 @@
 #include "parse.hpp"
 #include "value.hpp"
 #include "oca.hpp"
+#include "error.hpp"
 
 OCA_BEGIN
+
+Evaluator::Evaluator(ErrorHandler* er, State* state) : er(er), state(state) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
@@ -18,6 +21,7 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::CALL) return call(expr, NIL(&scope), scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
+    else if (expr->type == Expression::OPER) return oper(expr, scope);
     else return value(expr, scope);
 }
 
@@ -50,7 +54,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         std::string name = "";
         if (leftVal->isNil()) // variable does not exist
         {
-            if (leftExpr->type == Expression::ACCESS) error("Cannot add new key to tuple");
+            if (leftExpr->type == Expression::ACCESS) er->error(NEW_TUPLE_KEY, leftExpr);
             name = leftExpr->val;
         }
         else // variable exists
@@ -70,7 +74,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         else // split right tuple
         {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
-            if (rightValPart->isNil()) error("Could not split value");
+            if (rightValPart->isNil()) er->error(CANNOT_SPLIT, expr->right);
 
             leftVal->scope.parent->set(name, rightValPart);
         }
@@ -83,8 +87,9 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     ValuePtr func = NIL(&scope);
 
-    if (caller) func = caller->scope.get(expr->val);
-    if (func->isNil()) func = scope.get(expr->val);
+    if (caller) func = caller->scope.get(expr->val); // type specific
+    if (func->isNil()) func = state->scope.get(expr->val); // global
+    if (func->isNil()) func = scope.get(expr->val); // in this scope
     if (func->isNil()) return func;
 
     ValuePtr arg = NIL(&scope);
@@ -99,11 +104,30 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     return func;
 }
 
+ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
+{
+    std::map<std::string, std::string> operFuncs = {
+        {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"}
+    };
+
+    ValuePtr left = eval(expr->left, scope);
+    ValuePtr right = eval(expr->right, scope);
+    ValuePtr func = left->scope.get(operFuncs[expr->val]);
+    if (func->isNil()) er->error(UNDEFINED_OPERATOR, expr);
+
+    // call the operator
+    Value& funcref = *func;
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val(right, left, NIL(&scope));
+    if (TYPE_EQ(funcref, Block)) return callBlock(func, right, left, NIL(&scope), scope);
+
+    return func;
+}
+
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     ValuePtr conditional = eval(expr->left, scope);
     Value& b = *conditional;
-    if (!(TYPE_EQ(b, Bool))) error("Expected a boolean value in 'if'");
+    if (!(TYPE_EQ(b, Bool))) er->error(IF_BOOL, expr->left);
     bool trueness = static_cast<Bool&>(*conditional).val;
 
     if (trueness)
@@ -116,23 +140,22 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
-    ValuePtr caller = eval(expr->left, scope);
-    ValuePtr data = NIL(&scope);
+    ValuePtr left = eval(expr->left, scope);
+    ValuePtr right = NIL(&scope);
 
-    if (expr->val == "[")
-        data = caller->scope.get(eval(expr->right, scope)->toStr(false));
-    else
-        data = caller->scope.get(expr->right->val);
+    std::string name = "";
+    if (expr->val == "[]") name = eval(expr->right, scope)->toStr(false);
+    else name = expr->right->val;
+    right = left->scope.get(name);
 
-    if (data->isNil())
-        error("Undefined name '" + expr->right->val + "' for '" + expr->left->val + "'");
+    if (right->isNil()) er->error(UNDEFINED_IN_TUPLE, expr->right);
 
-    Value& val = *data;
+    Value& val = *right;
     if (TYPE_EQ(val, Block)) return callBlock
-        (data, eval(expr->right->right, scope), caller, eval(expr->right->left, scope), scope);
+        (right, eval(expr->right->right, scope), left, eval(expr->right->left, scope), scope);
     if (TYPE_EQ(val, Func)) return static_cast<Func&>
-        (val).val(eval(expr->right->right, scope), caller, eval(expr->right->left, scope));
-    else return data;
+        (val).val(eval(expr->right->right, scope), left, eval(expr->right->left, scope));
+    else return right;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
@@ -145,6 +168,9 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     ValuePtr result = NIL(&scope);
     if (expr->type == Expression::TUP)
     {
+        // if tuple has only one member, open it up
+        if (expr->right == nullptr) return eval(expr->left, scope);
+
         result = std::make_shared<Tuple>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
         while(expr && expr->left)
@@ -208,7 +234,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
     if (!caller->isNil()) temp.set("self", caller);
 
     // set parameters
-    if (params.size() != 0 && arg->isNil()) error("Expected argument");
+    if (params.size() != 0 && arg->isNil()) er->error(NO_ARGUMENT, b.val);
     if (params.size() == 1) temp.set(params[0], arg);
     else
     {
@@ -217,7 +243,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         {
             ValuePtr item = NIL(&scope);
             if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
-            if (item->isNil()) error("Cannot split value");
+            if (item->isNil()) er->error(CANNOT_SPLIT, b.val);
 
             temp.set(param, item);
         }
@@ -234,14 +260,6 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         expr = expr->right;
     }
     return result;
-}
-
-// ----------------------------
-
-void Evaluator::error(const std::string& message)
-{
-    std::cout << message << "\n";
-    exit(1);
 }
 
 OCA_END
