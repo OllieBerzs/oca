@@ -19,7 +19,7 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::BOOLEAN,         "()\\b(true|false)\\b"},
     {Token::FILEPATH,        "()@(.)+"},
     {Token::KEYWORD,         "()\\b(do|if|then|else|return|break)\\b"},
-    {Token::NAME,            "()([A-Za-z_]+)"},
+    {Token::NAME,            "([A-Za-z_]+)([0-9]*)"},
     {Token::COMMENT,         "()--(.|\\n)*--"},
     {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|<|>)"},
     {Token::PUNCTUATION,     "()(\\.|\\$|:|\\(|\\)|,|=|\\[|\\])"},

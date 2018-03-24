@@ -15,8 +15,9 @@ class Evaluator
 {
 public:
     ErrorHandler* er;
+    State* state;
 
-    Evaluator(ErrorHandler* er);
+    Evaluator(ErrorHandler* er, State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:

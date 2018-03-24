@@ -27,6 +27,7 @@ class Value;
 class Scope;
 class Evaluator;
 class ErrorHandler;
+class State;
 
 typedef unsigned int uint;
 

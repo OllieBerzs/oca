@@ -56,7 +56,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator ev(&er);
+    Evaluator ev(&er, this);
     ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {

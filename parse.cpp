@@ -131,8 +131,7 @@ bool Parser::call()
         cache.pop_back();
     }
 
-    ExprPtr c = std::make_shared<Expression>
-        (Expression::CALL, cache.back()->val, orig);
+    ExprPtr c = std::make_shared<Expression>(Expression::CALL, cache.back()->val, orig);
     cache.pop_back();
     c->left = bl;
     c->right = arg;
@@ -141,9 +140,9 @@ bool Parser::call()
     if (!inAccess) access();
     if (lit(","))
     {
+        uint origc = index;
         if (!call()) er->error(NO_NAME);
-        ExprPtr calls = std::make_shared<Expression>
-            (Expression::CALLS, "", index);
+        ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "", origc);
         calls->right = cache.back();
         cache.pop_back();
         calls->left = cache.back();
@@ -203,6 +202,7 @@ bool Parser::cond()
     if (!set() && !call() && !value()) er->error(NO_CONDITIONAL);
     if (!lit("then")) er->error(NO_THEN);
 
+    uint origt = index;
     uint cached = cache.size();
     if (checkIndent(Indent::MORE))
     {
@@ -220,6 +220,7 @@ bool Parser::cond()
 
     uint elseCached = cache.size();
     bool hasElse = false;
+    uint orige = index;
     if (lit("else"))
     {
         hasElse = true;
@@ -237,7 +238,7 @@ bool Parser::cond()
     }
 
     // assemble conditional
-    ExprPtr els = std::make_shared<Expression>(Expression::ELSE, "", orig);
+    ExprPtr els = std::make_shared<Expression>(Expression::ELSE, "", orige);
 
     ExprPtr curr = els;
     for (uint i = elseCached; i < cache.size(); ++i)
@@ -252,7 +253,7 @@ bool Parser::cond()
     }
     cache.resize(elseCached);
 
-    ExprPtr mn = std::make_shared<Expression>(Expression::MAIN, "", orig);
+    ExprPtr mn = std::make_shared<Expression>(Expression::MAIN, "", origt);
 
     curr = mn;
     for (uint i = cached; i < cache.size(); ++i)
@@ -270,8 +271,7 @@ bool Parser::cond()
     ExprPtr ifer = std::make_shared<Expression>(Expression::IF, "", orig);
     ifer->left = cache.back(); // condition
     cache.pop_back();
-    ExprPtr branches = std::make_shared<Expression>
-        (Expression::BRANCHES, "", orig);
+    ExprPtr branches = std::make_shared<Expression>(Expression::BRANCHES, "", orig);
     branches->left = mn;
     if (hasElse) branches->right = els;
     ifer->right = branches;
@@ -288,8 +288,7 @@ bool Parser::oper()
     if (get().type != Token::OPERATOR) return false;
     bool first = (cached < 2) || (cache[cached - 2]->type != Expression::PART_OPER);
 
-    cache.push_back(std::make_shared<Expression>
-        (Expression::PART_OPER, get().val, orig));
+    cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
     index++;
     if (!value() && !call()) er->error(NO_RIGHT_VALUE);
     oper();
@@ -302,6 +301,7 @@ bool Parser::oper()
         for (auto it = cache.begin() + cached - 1; it != cache.end(); it++)
         {
             if ((*it)->type != Expression::PART_OPER) continue;
+            uint origp = (*it)->index;
 
             // set priority
             int priority = 1;
@@ -312,7 +312,7 @@ bool Parser::oper()
 
             if (priority != p) continue;
 
-            ExprPtr o = std::make_shared<Expression>(Expression::OPER, (*it)->val, orig);
+            ExprPtr o = std::make_shared<Expression>(Expression::OPER, (*it)->val, origp);
             o->left = *(it - 1);
             o->right = *(it + 1);
             cache.erase(it - 1, it + 2);
@@ -325,11 +325,10 @@ bool Parser::oper()
 
 bool Parser::keyword()
 {
-    uint orig = index;
     if (get().val == "return")
     {
-        index++;
-        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", orig);
+        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index);
+        ++index;
         if (expr())
         {
             r->right = cache.back();
@@ -340,8 +339,8 @@ bool Parser::keyword()
     }
     else if (get().val == "break")
     {
-        index++;
-        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", orig));
+        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
+        ++index;
         return true;
     }
     return false;
@@ -447,7 +446,6 @@ bool Parser::block()
 
 bool Parser::value()
 {
-    uint orig = index;
     uint cached = cache.size();
 
     if (string() || integer() || real() || boolean() || block()) // single value
@@ -463,6 +461,7 @@ bool Parser::value()
         {
             if (checkIndent(Indent::MORE)) er->error(UNEXPECTED_INDENT);
             checkIndent(Indent::SAME);
+            uint origt = index;
             std::string nam = "";
             if (name())
             {
@@ -480,7 +479,7 @@ bool Parser::value()
             }
             if (!expr()) er->error(NOTHING_TO_SET);
 
-            ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, orig);
+            ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
             tup->left = cache.back();
             cache.pop_back();
             cache.push_back(tup);
@@ -492,8 +491,10 @@ bool Parser::value()
 
         // assemble tuple
         ExprPtr tup = cache[cached];
-        for (uint i = cached; i < cache.size() - 1; i++)
+        for (uint i = cached; i < cache.size() - 1; ++i)
+        {
             cache[i]->right = cache[i + 1];
+        }
         cache.resize(cached);
         cache.push_back(tup);
 

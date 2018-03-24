@@ -18,6 +18,7 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
     std::vector<std::string> typeStrings = {
         "UNKNOWN SYMBOL",
         "INDENTED FILE",
+
         "NOT AN EXPRESSION",
         "UNEXPECTED INDENT",
         "NO NEWLINE",
@@ -27,10 +28,11 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
         "NO INDENT",
         "NO NAME",
         "NO ACCESS KEY",
-        "NO ACCESS KEY CALL"
+        "NO ACCESS KEY CALL",
         "NO CONDITIONAL",
         "NO THEN",
         "NO RIGHT VALUE",
+
         "NEW TUPLE KEY",
         "CANNOT SPLIT",
         "UNDEFINED OPERATOR",

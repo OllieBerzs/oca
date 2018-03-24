@@ -13,7 +13,7 @@
 
 OCA_BEGIN
 
-Evaluator::Evaluator(ErrorHandler* er) : er(er) {}
+Evaluator::Evaluator(ErrorHandler* er, State* state) : er(er), state(state) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
@@ -87,8 +87,9 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     ValuePtr func = NIL(&scope);
 
-    if (caller) func = caller->scope.get(expr->val);
-    if (func->isNil()) func = scope.get(expr->val);
+    if (caller) func = caller->scope.get(expr->val); // type specific
+    if (func->isNil()) func = state->scope.get(expr->val); // global
+    if (func->isNil()) func = scope.get(expr->val); // in this scope
     if (func->isNil()) return func;
 
     ValuePtr arg = NIL(&scope);
