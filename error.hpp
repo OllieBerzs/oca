@@ -34,7 +34,8 @@ enum ErrorType
     UNDEFINED_OPERATOR,
     IF_BOOL,
     UNDEFINED_IN_TUPLE,
-    NO_ARGUMENT
+    NO_ARGUMENT,
+    UNDEFINED
 };
 
 class ErrorHandler

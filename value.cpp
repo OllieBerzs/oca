@@ -7,6 +7,7 @@
 #include <sstream>
 #include "value.hpp"
 #include "parse.hpp"
+#include "oca.hpp"
 
 OCA_BEGIN
 
@@ -15,32 +16,59 @@ bool Value::isNil()
     return false;
 }
 
+ValueCast Value::operator[](const std::string& name)
+{
+    ValuePtr var = scope.get(name);
+    if (var->isNil())
+    {
+        scope.set(name, Nil::in(&scope));
+        return ValueCast(scope.get(name), name);
+    }
+    return ValueCast(var, name);
+}
+
+int Value::toInt()
+{
+    if (TYPE_EQ(*this, Integer))
+    {
+        return static_cast<Integer&>(*this).val;
+    }
+    else return 0;
+}
+
+float Value::toFloat()
+{
+    if (TYPE_EQ(*this, Real))
+    {
+        return static_cast<Real&>(*this).val;
+    }
+    else return 0.0f;
+}
+
+bool Value::toBool()
+{
+    if (TYPE_EQ(*this, Bool))
+    {
+        return static_cast<Bool&>(*this).val;
+    }
+    else return false;
+}
+
 // ---------------------------------
 
-Integer::Integer(ExprPtr expr, Scope* parent)
+Integer::Integer(ExprPtr expr, Scope* parent) : Integer(std::stoi(expr->val), parent) {}
+
+Integer::Integer(int val, Scope* parent) : val(val)
 {
     scope.parent = parent;
-    val = std::stoi(expr->val);
 
-    // add functions
-    scope.set("__add", std::make_shared<Func>(
-        [](oca::Arg arg, oca::ValuePtr caller, oca::ValuePtr block) -> oca::Ret
-        {
-            Value& left = *caller;
-            Value& right = *arg;
-            if (!TYPE_EQ(left, Integer)) std::cout << "Left is not an int\n";
-            if (!TYPE_EQ(right, Integer)) std::cout << "Right is not an int\n";
-
-            int lint = static_cast<Integer&>(left).val;
-            int rint = static_cast<Integer&>(right).val;
-            int result = lint + rint;
-
-            return std::make_shared<Integer>(
-                std::make_shared<Expression>(
-                    Expression::INT, std::to_string(result), 0), nullptr);
-        },
-        &scope
-    ));
+    // functions
+    (*this)["__add"] = [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toInt();
+        int right = arg.value->toInt();
+        return cast(left + right);
+    };
 }
 
 std::string Integer::toStr(bool debug)
@@ -53,11 +81,11 @@ std::string Integer::toStr(bool debug)
 
 // ----------------------------------
 
-Real::Real(ExprPtr expr, Scope* parent)
+Real::Real(ExprPtr expr, Scope* parent) : Real(std::stof(expr->val), parent) {}
+
+Real::Real(float val, Scope* parent) : val(val)
 {
     scope.parent = parent;
-    val = std::stof(expr->val);
-    // add functions
 }
 
 std::string Real::toStr(bool debug)
@@ -72,11 +100,19 @@ std::string Real::toStr(bool debug)
 
 // ---------------------------------
 
-String::String(ExprPtr expr, Scope* parent)
+String::String(ExprPtr expr, Scope* parent) : String(expr->val, parent) {}
+
+String::String(const std::string& val, Scope* parent) : val(val)
 {
     scope.parent = parent;
-    val = expr->val;
-    // add functions
+
+    // functions
+    (*this)["__add"] = [](Arg arg) -> Ret
+    {
+        std::string left = arg.caller->toStr(false);
+        std::string right = arg.value->toStr(false);
+        return cast(left + right);
+    };
 }
 
 std::string String::toStr(bool debug)
@@ -89,11 +125,11 @@ std::string String::toStr(bool debug)
 
 // ---------------------------------
 
-Bool::Bool(ExprPtr expr, Scope* parent)
+Bool::Bool(ExprPtr expr, Scope* parent) : Bool((expr->val == "true"), parent) {}
+
+Bool::Bool(bool val, Scope* parent) : val(val)
 {
     scope.parent = parent;
-    val = (expr->val == "true");
-    // add functions
 }
 
 std::string Bool::toStr(bool debug)
@@ -170,9 +206,11 @@ std::string Func::toStr(bool debug)
 
 // ---------------------------------
 
-Nil::Nil(Scope* parent)
+std::shared_ptr<Nil> Nil::in(Scope* parent)
 {
-    scope.parent = parent;
+    auto n = std::make_shared<Nil>();
+    n->scope.parent = parent;
+    return n;
 }
 
 std::string Nil::toStr(bool debug)

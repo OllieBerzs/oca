@@ -18,7 +18,7 @@ Evaluator::Evaluator(ErrorHandler* er, State* state) : er(er), state(state) {}
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
     if (expr->type == Expression::SET) return set(expr, scope);
-    else if (expr->type == Expression::CALL) return call(expr, NIL(&scope), scope);
+    else if (expr->type == Expression::CALL) return call(expr, Nil::in(&scope), scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
     else if (expr->type == Expression::OPER) return oper(expr, scope);
@@ -48,17 +48,14 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& leftExpr : lefts)
     {
-        ValuePtr leftVal = eval(leftExpr, scope);
+        std::string name = leftExpr->val;
+        ValuePtr leftVal = Nil::in(&scope);
 
-        // get variable name
-        std::string name = "";
-        if (leftVal->isNil()) // variable does not exist
+        if (leftExpr->type == Expression::ACCESS)
         {
-            if (leftExpr->type == Expression::ACCESS) er->error(NEW_TUPLE_KEY, leftExpr);
-            name = leftExpr->val;
-        }
-        else // variable exists
-        {
+            leftVal = eval(leftExpr, scope);
+            if (leftVal->isNil()) er->error(NEW_TUPLE_KEY, leftExpr);
+
             // find the variable in parent scope
             for (auto& var : leftVal->scope.parent->names)
             {
@@ -70,7 +67,10 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             }
         }
 
-        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal);
+        if (lefts.size() == 1)
+        {
+            leftVal->scope.parent->set(name, rightVal);
+        }
         else // split right tuple
         {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
@@ -85,20 +85,20 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
-    ValuePtr func = NIL(&scope);
+    ValuePtr func = Nil::in(&scope);
 
     if (caller) func = caller->scope.get(expr->val); // type specific
     if (func->isNil()) func = state->scope.get(expr->val); // global
     if (func->isNil()) func = scope.get(expr->val); // in this scope
-    if (func->isNil()) return func;
+    if (func->isNil()) er->error(UNDEFINED, expr);
 
-    ValuePtr arg = NIL(&scope);
-    ValuePtr block = NIL(&scope);
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
     if (expr->right) arg = eval(expr->right, scope);
     if (expr->left) block = eval(expr->left, scope);
 
     Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val(arg, caller, block);
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({caller, arg, block});
     if (TYPE_EQ(funcref, Block)) return callBlock(func, arg, caller, block, scope);
 
     return func;
@@ -117,8 +117,8 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 
     // call the operator
     Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val(right, left, NIL(&scope));
-    if (TYPE_EQ(funcref, Block)) return callBlock(func, right, left, NIL(&scope), scope);
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({left, right, Nil::in(&scope)});
+    if (TYPE_EQ(funcref, Block)) return callBlock(func, right, left, Nil::in(&scope), scope);
 
     return func;
 }
@@ -131,17 +131,17 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
     bool trueness = static_cast<Bool&>(*conditional).val;
 
     if (trueness)
-        return callBlock(eval(expr->right->left, scope), NIL(&scope), NIL(&scope), NIL(&scope), scope);
+        return callBlock(eval(expr->right->left, scope), Nil::in(&scope), Nil::in(&scope), Nil::in(&scope), scope);
     else if (expr->right->right)
-        return callBlock(eval(expr->right->right, scope), NIL(&scope), NIL(&scope), NIL(&scope), scope);
+        return callBlock(eval(expr->right->right, scope), Nil::in(&scope), Nil::in(&scope), Nil::in(&scope), scope);
 
-    return NIL(&scope);
+    return Nil::in(&scope);
 }
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
     ValuePtr left = eval(expr->left, scope);
-    ValuePtr right = NIL(&scope);
+    ValuePtr right = Nil::in(&scope);
 
     std::string name = "";
     if (expr->val == "[]") name = eval(expr->right, scope)->toStr(false);
@@ -150,22 +150,25 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 
     if (right->isNil()) er->error(UNDEFINED_IN_TUPLE, expr->right);
 
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
+    if (expr->right->right) arg = eval(expr->right->right, scope);
+    if (expr->right->left) block = eval(expr->right->left, scope);
+
     Value& val = *right;
-    if (TYPE_EQ(val, Block)) return callBlock
-        (right, eval(expr->right->right, scope), left, eval(expr->right->left, scope), scope);
-    if (TYPE_EQ(val, Func)) return static_cast<Func&>
-        (val).val(eval(expr->right->right, scope), left, eval(expr->right->left, scope));
+    if (TYPE_EQ(val, Block)) return callBlock(right, arg, left, block, scope);
+    if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block});
     else return right;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
-    return NIL(&scope);
+    return Nil::in(&scope);
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
 {
-    ValuePtr result = NIL(&scope);
+    ValuePtr result = Nil::in(&scope);
     if (expr->type == Expression::TUP)
     {
         // if tuple has only one member, open it up
@@ -241,7 +244,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         uint counter = ARRAY_BEGIN_INDEX;
         for (auto& param : params)
         {
-            ValuePtr item = NIL(&scope);
+            ValuePtr item = Nil::in(&scope);
             if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
             if (item->isNil()) er->error(CANNOT_SPLIT, b.val);
 
@@ -250,7 +253,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
     }
 
     // evaluate the block's value
-    ValuePtr result = NIL(&scope);
+    ValuePtr result = Nil::in(&scope);
     ExprPtr expr = b.val;
     while (expr && expr->left)
     {

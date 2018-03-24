@@ -15,7 +15,6 @@
 #define OCA_END }
 #define DLLEXPORT __declspec(dllexport) void
 #define TYPE_EQ(a, b) (std::type_index(typeid(a)).name() == std::type_index(typeid(b)).name())
-#define NIL(scope) std::make_shared<oca::Nil>(scope)
 
 OCA_BEGIN
 
@@ -28,15 +27,15 @@ class Scope;
 class Evaluator;
 class ErrorHandler;
 class State;
+struct Arg;
+class ValueCast;
 
 typedef unsigned int uint;
 
 typedef std::shared_ptr<Expression> ExprPtr;
 typedef std::shared_ptr<Value> ValuePtr;
-typedef std::function<ValuePtr(ValuePtr, ValuePtr, ValuePtr)> CPPFunc;
-
 typedef void(*DLLfunc)(Scope&);
-typedef ValuePtr Arg;
 typedef ValuePtr Ret;
+typedef Ret(*CPPFunc)(Arg);
 
 OCA_END

@@ -38,7 +38,8 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
         "UNDEFINED OPERATOR",
         "IF BOOL",
         "UNDEFINED IN TUPLE",
-        "NO ARGUMENT"
+        "NO ARGUMENT",
+        "UNDEFINED"
     };
 
     // error message config
@@ -194,6 +195,13 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
         width = tokens->at(expr->index).val.size();
         message = "This block requires an argument to be called.";
         break;
+
+    case UNDEFINED:
+        // current expression
+        pos = tokens->at(expr->index).pos;
+        width = tokens->at(expr->index).val.size();
+        message = "Undefined variable.";
+        break;
     }
 
     // get error line and the previous line if exists
@@ -231,7 +239,7 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
     std::string lineEnd = errline.substr(colNum + width, errline.size() - (colNum + width));
 
     // header
-    system("printf '\033[1A'");
+    system("printf ''");
     std::cout << "\033[38;5;14m";
     std::cout << "-- " << typeStrings[type] << " -------------------- " << *path << "\n";
     std::cout << "\033[0m";

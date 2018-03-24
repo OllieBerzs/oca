@@ -84,9 +84,9 @@ TEST_CASE("Evaluation of functions", "[functions]")
     oca::State state;
 
     // passthrough function
-    state.set("pass", [](oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller) -> oca::Ret
+    state["pass"] = [](oca::Arg arg) -> oca::Ret
     {
-        return arg;
-    });
+        return arg.value;
+    };
     REQUIRE(state.eval("pass 5")->toStr(false) == "5");
 }
