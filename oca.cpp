@@ -4,7 +4,6 @@
 */
 
 #include <iostream>
-//#include <windows.h>
 #include <fstream>
 #include "oca.hpp"
 #include "lex.hpp"
@@ -13,6 +12,64 @@
 #include "error.hpp"
 
 OCA_BEGIN
+
+ValueCast::ValueCast(ValuePtr val, const std::string& name)
+    : val(val), name(name) {}
+
+// ---------------------------------------
+
+void ValueCast::operator=(int v)
+{
+    Scope* parent = val->scope.parent;
+    parent->set(name, std::make_shared<Integer>(v, parent));
+}
+
+void ValueCast::operator=(float v)
+{
+    Scope* parent = val->scope.parent;
+    parent->set(name, std::make_shared<Real>(v, parent));
+}
+
+void ValueCast::operator=(const std::string& v)
+{
+    Scope* parent = val->scope.parent;
+    parent->set(name, std::make_shared<String>(v, parent));
+}
+
+void ValueCast::operator=(bool v)
+{
+    Scope* parent = val->scope.parent;
+    parent->set(name, std::make_shared<Bool>(v, parent));
+}
+
+void ValueCast::operator=(CPPFunc v)
+{
+    Scope* parent = val->scope.parent;
+    parent->set(name, std::make_shared<Func>(v, parent));
+}
+
+ValueCast ValueCast::operator[](const std::string& name)
+{
+    ValuePtr var = val->scope.get(name);
+    if (var->isNil())
+    {
+        val->scope.set(name, Nil::in(&val->scope));
+        return ValueCast(val->scope.get(name), name);
+    }
+    return ValueCast(var, name);
+}
+
+// ---------------------------------------
+
+State::State()
+{
+    // add base functions
+    (*this)["print"] = [](Arg arg) -> Ret
+    {
+        std::cout << arg.value->toStr(false) << "\n";
+        return NIL;
+    };
+}
 
 ValuePtr State::script(const std::string& path)
 {
@@ -56,11 +113,11 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator ev(&er, this);
+    Evaluator evaluator(&er, this);
     ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {
-        obj = ev.eval(e, scope);
+        obj = evaluator.eval(e, scope);
         #ifdef OUT_VALUES
         if (obj == nullptr) std::cout << "->nil\n";
         else std::cout << "->" << obj->toStr(true) << "\n";
@@ -72,39 +129,37 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
 
 // ---------------------------------------
 
-/*void State::load(const std::string& lib)
+ValueCast State::operator[](const std::string& name)
 {
-    char path[MAX_PATH];
-    GetFullPathNameA((lib + ".ocalib").c_str(), MAX_PATH, path, nullptr);
-    HINSTANCE DLL = LoadLibraryA(path);
-
-    if (!DLL)
+    ValuePtr var = scope.get(name);
+    if (var->isNil())
     {
-        std::cout << "could not load " << path << "\n";
-        std::cin.get();
-        exit(1);
+        scope.set(name, Nil::in(&scope));
+        return ValueCast(scope.get(name), name);
     }
+    return ValueCast(var, name);
+}
 
-    // resolve function address here
-    DLLfunc function = (DLLfunc)GetProcAddress(DLL, "load");
+// ---------------------------------------
 
-    // call function
-    if (!function)
-    {
-        std::cout << "load function not found\n";
-        std::cin.get();
-        exit(1);
-    }
-    function(scope);
-
-    // free DLL
-    //FreeLibrary(DLL);
-}*/
-
-void State::set(const std::string& name, CPPFunc func)
+std::shared_ptr<Integer> cast(int val)
 {
-    ValuePtr val = std::make_shared<Func>(func, &scope);
-    scope.set(name, val);
+    return std::make_shared<Integer>(val, nullptr);
+}
+
+std::shared_ptr<Real> cast(float val)
+{
+    return std::make_shared<Real>(val, nullptr);
+}
+
+std::shared_ptr<Bool> cast(bool val)
+{
+    return std::make_shared<Bool>(val, nullptr);
+}
+
+std::shared_ptr<String> cast(std::string val)
+{
+    return std::make_shared<String>(val, nullptr);
 }
 
 OCA_END

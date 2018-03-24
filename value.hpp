@@ -21,6 +21,12 @@ public:
     virtual ~Value() = default;
     virtual std::string toStr(bool debug) = 0;
     virtual bool isNil();
+
+    int toInt();
+    float toFloat();
+    bool toBool();
+
+    ValueCast operator[](const std::string& name);
 };
 
 class Integer : public Value
@@ -29,6 +35,7 @@ public:
     int val;
 
     Integer(ExprPtr expr, Scope* parent);
+    Integer(int val, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -38,6 +45,7 @@ public:
     float val;
 
     Real(ExprPtr expr, Scope* parent);
+    Real(float val, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -47,6 +55,7 @@ public:
     std::string val;
 
     String(ExprPtr expr, Scope* parent);
+    String(const std::string& val, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -56,6 +65,7 @@ public:
     bool val;
 
     Bool(ExprPtr expr, Scope* parent);
+    Bool(bool val, Scope* parent);
     std::string toStr(bool debug);
 };
 
@@ -87,7 +97,7 @@ public:
 class Nil : public Value
 {
 public:
-    Nil(Scope* parent);
+    static std::shared_ptr<Nil> in(Scope* parent);
     std::string toStr(bool debug);
     bool isNil();
 };

@@ -1,18 +1,6 @@
 #include <iostream>
 #include "oca.hpp"
 
-oca::Ret print(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
-{
-    std::cout << arg->toStr(false) << "\n";
-    return NIL(nullptr);
-}
-
-oca::Ret pause(oca::Arg arg, oca::ValuePtr block, oca::ValuePtr caller)
-{
-    std::cin.get();
-    return NIL(nullptr);
-}
-
 int main(int argc, char** argv)
 {
     if (argc < 2)
@@ -22,9 +10,6 @@ int main(int argc, char** argv)
     }
 
     oca::State state;
-    state.set("print", print);
-    state.set("pause", pause);
-
     state.script(argv[1]);
 
     return 0;

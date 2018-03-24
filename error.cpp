@@ -239,7 +239,7 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
     std::string lineEnd = errline.substr(colNum + width, errline.size() - (colNum + width));
 
     // header
-    system("printf '\033[1A'");
+    system("printf ''");
     std::cout << "\033[38;5;14m";
     std::cout << "-- " << typeStrings[type] << " -------------------- " << *path << "\n";
     std::cout << "\033[0m";
