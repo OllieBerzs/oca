@@ -8,11 +8,11 @@ DEBUG = true
 
 ifeq ($(OS),Windows_NT)
 BIN = oca.exe
-TEST = test.exe
+TEST = tests.exe
 TARGET = $(ARCH)-windows-gnu
 else
 BIN = oca
-TEST = test
+TEST = tests
 TARGET = $(ARCH)-linux-gnu
 endif
 
@@ -29,7 +29,7 @@ endif
 
 # Objects
 BINOBJ = main.o
-TESTOBJ = test.o
+TESTOBJ = tests.o
 OBJ = oca.o lex.o parse.o value.o scope.o eval.o error.o
 
 all: $(BIN)
@@ -66,7 +66,6 @@ script: $(BIN)
 
 test: $(TEST)
 	@echo [Test]
-	ls
 	@./$(TEST)
 
 .PHONY: test script clean deps
@@ -75,12 +74,12 @@ test: $(TEST)
 oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp lex.hpp \
   parse.hpp eval.hpp error.hpp
 lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp
-parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp
+parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp error.hpp
 value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp
 scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
-  scope.hpp oca.hpp
-error.o: error.cpp error.hpp common.hpp ocaconf.hpp lex.hpp
+  scope.hpp oca.hpp error.hpp
+error.o: error.cpp error.hpp common.hpp ocaconf.hpp lex.hpp parse.hpp
 main.o: main.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp
-test.o: test.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
+tests.o: tests.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
   scope.hpp value.hpp
