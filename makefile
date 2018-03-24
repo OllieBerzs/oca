@@ -66,6 +66,7 @@ script: $(BIN)
 
 test: $(TEST)
 	@echo [Test]
+	ls
 	@./$(TEST)
 
 .PHONY: test script clean deps
