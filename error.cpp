@@ -38,7 +38,8 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
         "UNDEFINED OPERATOR",
         "IF BOOL",
         "UNDEFINED IN TUPLE",
-        "NO ARGUMENT"
+        "NO ARGUMENT",
+        "UNDEFINED"
     };
 
     // error message config
@@ -193,6 +194,13 @@ void ErrorHandler::error(ErrorType type, ExprPtr expr)
         pos = tokens->at(expr->index).pos;
         width = tokens->at(expr->index).val.size();
         message = "This block requires an argument to be called.";
+        break;
+
+    case UNDEFINED:
+        // current expression
+        pos = tokens->at(expr->index).pos;
+        width = tokens->at(expr->index).val.size();
+        message = "Undefined variable.";
         break;
     }
 

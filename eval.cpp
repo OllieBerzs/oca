@@ -48,17 +48,14 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& leftExpr : lefts)
     {
-        ValuePtr leftVal = eval(leftExpr, scope);
+        std::string name = leftExpr->val;
+        ValuePtr leftVal = NIL(&scope);
 
-        // get variable name
-        std::string name = "";
-        if (leftVal->isNil()) // variable does not exist
+        if (leftExpr->type == Expression::ACCESS)
         {
-            if (leftExpr->type == Expression::ACCESS) er->error(NEW_TUPLE_KEY, leftExpr);
-            name = leftExpr->val;
-        }
-        else // variable exists
-        {
+            leftVal = eval(leftExpr, scope);
+            if (leftVal->isNil()) er->error(NEW_TUPLE_KEY, leftExpr);
+
             // find the variable in parent scope
             for (auto& var : leftVal->scope.parent->names)
             {
@@ -70,7 +67,10 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             }
         }
 
-        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal);
+        if (lefts.size() == 1)
+        {
+            leftVal->scope.parent->set(name, rightVal);
+        }
         else // split right tuple
         {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
@@ -90,7 +90,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     if (caller) func = caller->scope.get(expr->val); // type specific
     if (func->isNil()) func = state->scope.get(expr->val); // global
     if (func->isNil()) func = scope.get(expr->val); // in this scope
-    if (func->isNil()) return func;
+    if (func->isNil()) er->error(UNDEFINED, expr);
 
     ValuePtr arg = NIL(&scope);
     ValuePtr block = NIL(&scope);
