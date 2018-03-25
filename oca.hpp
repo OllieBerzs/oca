@@ -42,6 +42,7 @@ class State
 {
     friend class Evaluator;
     Scope scope = Scope(nullptr);
+    Scope global = Scope(nullptr);
 
 public:
     State();

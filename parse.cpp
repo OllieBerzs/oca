@@ -138,7 +138,7 @@ bool Parser::call()
     cache.push_back(c);
 
     if (!inAccess) access();
-    if (lit(","))
+    if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
         if (!call()) er->error(NO_NAME);
@@ -150,9 +150,7 @@ bool Parser::call()
         cache.push_back(calls);
     }
 
-    bool hasSet = false;
-    if (cache.size() == 1) hasSet = set();
-    if (!hasSet) oper();
+    if (!set()) oper();
     return true;
 }
 
@@ -371,7 +369,7 @@ bool Parser::string()
 bool Parser::integer()
 {
     bool negative = false;
-    if (lit("-")) negative = true;
+    //if (lit("-")) negative = true;
     if (get().type != Token::INTEGER)
     {
         if (negative) --index;
@@ -387,7 +385,7 @@ bool Parser::integer()
 bool Parser::real()
 {
     bool negative = false;
-    if (lit("-")) negative = true;
+    //if (lit("-")) negative = true;
     if (get().type != Token::REAL)
     {
         if (negative) --index;
@@ -416,14 +414,15 @@ bool Parser::block()
 
     // checking for parameters
     std::string params = "";
-    if (lit("$"))
+    if (lit("with"))
     {
         while (name())
         {
-            params += cache.back()->val;
+            params += cache.back()->val + " ";
             cache.pop_back();
             if (!lit(",")) break;
         }
+        params.pop_back();
         if (params == "") er->error(NO_PARAMETER);
     }
 

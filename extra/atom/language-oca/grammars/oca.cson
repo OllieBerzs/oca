@@ -1,0 +1,82 @@
+'scopeName': 'source.oca'
+'name': 'Oca'
+'fileTypes': [
+  'oca'
+]
+'patterns': [
+  # numerals
+  {
+    'match': '-?[0-9]+(\\.[0-9]+)?'
+    'name': 'constant.numeric.oca'
+  }
+
+  # strings
+  {
+    'begin': '\''
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.definition.string.begin.oca'
+    'end': '\''
+    'endCaptures':
+      '0':
+        'name': 'punctuation.definition.string.end.oca'
+    'name': 'string.quoted.single.oca'
+  }
+
+  # comments
+  {
+    'begin': '--'
+    'captures':
+      '0':
+        'name': 'punctuation.definition.comment.oca'
+    'end': '--'
+    'name': 'comment.block.oca'
+  }
+
+  # block parameters
+  {
+    'match': '\\b(with) ([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*)'
+    'name': 'meta.function.oca'
+    'captures':
+      '1':
+        'name': 'keyword.control.oca'
+      '2':
+        'name': 'entity.name.function.oca'
+  }
+
+  # operators
+  {
+    'match': '(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=)'
+    'name': 'keyword.operator.oca'
+  }
+
+  # variables
+  {
+    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *=(?![=<>])'
+    'name': 'storage.type.oca'
+  }
+
+  # keywords
+  {
+    'match': '\\b(do|if|then|else|return|break|with|yield)\\b'
+    'name': 'keyword.control.oca'
+  }
+
+  # constants
+  {
+    'match': '\\b(true|false)\\b'
+    'name': 'constant.language.oca'
+  }
+
+  # super
+  {
+    'match': '\\b(super)\\b'
+    'name': 'variable.language.self.oca'
+  }
+
+  # functions
+  {
+    'match': '\\b(print)\\b'
+    'name': 'support.function.oca'
+  }
+]
