@@ -69,6 +69,27 @@ Integer::Integer(int val, Scope* parent) : val(val)
         int right = arg.value->toInt();
         return cast(left + right);
     };
+
+    (*this)["__sub"] = [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toInt();
+        int right = arg.value->toInt();
+        return cast(left - right);
+    };
+
+    (*this)["__mul"] = [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toInt();
+        int right = arg.value->toInt();
+        return cast(left * right);
+    };
+
+    (*this)["__eq"] = [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toInt();
+        int right = arg.value->toInt();
+        return cast(left == right);
+    };
 }
 
 std::string Integer::toStr(bool debug)

@@ -1,0 +1,9 @@
+{
+  "name": "language-oca",
+  "version": "0.0.1",
+  "description": "Add syntax highlighting to Oca files in Atom",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "license": "MIT"
+}

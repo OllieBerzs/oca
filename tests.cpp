@@ -60,7 +60,7 @@ TEST_CASE("Variable setting and getting", "[variables]")
     REQUIRE(state.eval("complex.x.1")->toStr(false) == "6");
 
     // blocks
-    state.eval("ret = do $val return val");
+    state.eval("ret = do with val return val");
     REQUIRE(state.eval("ret 6")->toStr(false) == "6");
 }
 

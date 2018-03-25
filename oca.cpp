@@ -131,11 +131,11 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
 
 ValueCast State::operator[](const std::string& name)
 {
-    ValuePtr var = scope.get(name);
+    ValuePtr var = global.get(name);
     if (var->isNil())
     {
-        scope.set(name, Nil::in(&scope));
-        return ValueCast(scope.get(name), name);
+        global.set(name, Nil::in(&global));
+        return ValueCast(global.get(name), name);
     }
     return ValueCast(var, name);
 }

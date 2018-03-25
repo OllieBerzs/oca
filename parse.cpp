@@ -138,7 +138,7 @@ bool Parser::call()
     cache.push_back(c);
 
     if (!inAccess) access();
-    if (lit(","))
+    if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
         if (!call()) er->error(NO_NAME);
@@ -150,9 +150,7 @@ bool Parser::call()
         cache.push_back(calls);
     }
 
-    bool hasSet = false;
-    if (cache.size() == 1) hasSet = set();
-    if (!hasSet) oper();
+    if (!set()) oper();
     return true;
 }
 
@@ -370,18 +368,32 @@ bool Parser::string()
 
 bool Parser::integer()
 {
-    if (get().type != Token::INTEGER) return false;
+    bool negative = false;
+    //if (lit("-")) negative = true;
+    if (get().type != Token::INTEGER)
+    {
+        if (negative) --index;
+        return false;
+    }
 
-    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index));
+    cache.push_back(std::make_shared<Expression>
+        (Expression::INT, (negative ? "-" : "") + get().val, index));
     index++;
     return true;
 }
 
 bool Parser::real()
 {
-    if (get().type != Token::REAL) return false;
+    bool negative = false;
+    //if (lit("-")) negative = true;
+    if (get().type != Token::REAL)
+    {
+        if (negative) --index;
+        return false;
+    }
 
-    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index));
+    cache.push_back(std::make_shared<Expression>
+        (Expression::REAL, (negative ? "-" : "") + get().val, index));
     index++;
     return true;
 }
@@ -402,14 +414,15 @@ bool Parser::block()
 
     // checking for parameters
     std::string params = "";
-    if (lit("$"))
+    if (lit("with"))
     {
         while (name())
         {
-            params += cache.back()->val;
+            params += cache.back()->val + " ";
             cache.pop_back();
             if (!lit(",")) break;
         }
+        params.pop_back();
         if (params == "") er->error(NO_PARAMETER);
     }
 
