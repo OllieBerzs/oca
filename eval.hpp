@@ -13,11 +13,9 @@ OCA_BEGIN
 
 class Evaluator
 {
-public:
-    ErrorHandler* er;
     State* state;
-
-    Evaluator(ErrorHandler* er, State* state);
+public:
+    Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:

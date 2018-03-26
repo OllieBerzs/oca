@@ -13,7 +13,7 @@
 
 OCA_BEGIN
 
-Evaluator::Evaluator(ErrorHandler* er, State* state) : er(er), state(state) {}
+Evaluator::Evaluator(State* state) : state(state) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
@@ -54,7 +54,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         if (leftExpr->type == Expression::ACCESS)
         {
             leftVal = eval(leftExpr, scope);
-            if (leftVal->isNil()) er->error(NEW_TUPLE_KEY, leftExpr);
+            if (leftVal->isNil()) Errors::instance().panic(NEW_TUPLE_KEY, leftExpr);
 
             // find the variable in parent scope
             for (auto& var : leftVal->scope.parent->names)
@@ -74,7 +74,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         else // split right tuple
         {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
-            if (rightValPart->isNil()) er->error(CANNOT_SPLIT, expr->right);
+            if (rightValPart->isNil()) Errors::instance().panic(CANNOT_SPLIT, expr->right);
 
             leftVal->scope.parent->set(name, rightValPart);
         }
@@ -99,7 +99,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     if (caller) func = caller->scope.get(expr->val); // type specific
     if (func->isNil()) func = state->global.get(expr->val); // global
     if (func->isNil()) func = scope.get(expr->val); // in this scope
-    if (func->isNil() && expr->val != "super") er->error(UNDEFINED, expr);
+    if (func->isNil() && expr->val != "super") Errors::instance().panic(UNDEFINED, expr);
 
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
@@ -123,7 +123,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val]);
-    if (func->isNil()) er->error(UNDEFINED_OPERATOR, expr);
+    if (func->isNil()) Errors::instance().panic(UNDEFINED_OPERATOR, expr);
 
     // call the operator
     Value& funcref = *func;
@@ -137,7 +137,7 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     ValuePtr conditional = eval(expr->left, scope);
     Value& b = *conditional;
-    if (!(TYPE_EQ(b, Bool))) er->error(IF_BOOL, expr->left);
+    if (!(TYPE_EQ(b, Bool))) Errors::instance().panic(IF_BOOL, expr->left);
     bool trueness = static_cast<Bool&>(*conditional).val;
 
     ValuePtr block = Nil::in(&scope);
@@ -168,7 +168,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 
     right = left->scope.get(name);
     if (expr->left->val == "super" && right->isNil()) right = left->scope.parent->get(name);
-    if (right->isNil()) er->error(UNDEFINED_IN_TUPLE, expr->right);
+    if (right->isNil()) Errors::instance().panic(UNDEFINED_IN_TUPLE, expr->right);
 
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
@@ -257,7 +257,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
     temp.set("super", caller);
 
     // set parameters
-    if (params.size() != 0 && arg->isNil()) er->error(NO_ARGUMENT, b.val);
+    if (params.size() != 0 && arg->isNil()) Errors::instance().panic(NO_ARGUMENT, b.val);
     if (params.size() == 1) temp.set(params[0], arg);
     else
     {
@@ -266,7 +266,7 @@ ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, Value
         {
             ValuePtr item = Nil::in(&scope);
             if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
-            if (item->isNil()) er->error(CANNOT_SPLIT, b.val);
+            if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, b.val);
 
             temp.set(param, item);
         }

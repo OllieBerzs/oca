@@ -43,14 +43,9 @@ void Token::print()
 
 //-----------------------------
 
-Lexer::Lexer(ErrorHandler* er) : er(er)
+void lex(const std::string& source, std::vector<Token>& tokens)
 {
-    er->lexer = this;
-}
-
-void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
-{
-    if (source[0] == ' ') er->error(INDENTED_FILE);
+    if (source[0] == ' ') Errors::instance().panic(INDENTED_FILE);
 
     std::string reg;
     for (const auto& r : syntax) reg += r.second + "|";
@@ -69,7 +64,10 @@ void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
             if (syntax[index].first == Token::WHITESPACE) continue;
             if (syntax[index].first == Token::COMMENT) continue;
             tokens.push_back({syntax[index].first, it->str(), pos});
-            if (syntax[index].first == Token::INVALID) er->error(UNKNOWN_SYMBOL);
+            if (syntax[index].first == Token::INVALID)
+            {
+                Errors::instance().panic(UNKNOWN_SYMBOL);
+            }
             break;
         }
     }

@@ -37,7 +37,6 @@ public:
 
 class Parser
 {
-    ErrorHandler* er;
     const std::vector<Token>* tokens;
     std::vector<ExprPtr> cache;
     uint index;
@@ -45,7 +44,6 @@ class Parser
     bool inAccess;
 
 public:
-    Parser(ErrorHandler* er);
     void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
 
 private:
@@ -71,7 +69,7 @@ private:
     bool name();
     bool lit(const std::string& t);
 
-    friend class ErrorHandler;
+    friend class Errors;
 };
 
 OCA_END

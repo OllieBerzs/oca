@@ -33,14 +33,12 @@ void Expression::print(uint indent, char mod)
 
 // ----------------------------
 
-Parser::Parser(ErrorHandler* er)
-    : er(er), index(0), indent(0), inAccess(false)
-{
-    er->parser = this;
-}
-
 void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs)
 {
+    index = 0;
+    indent = 0;
+    inAccess = false;
+
     this->tokens = &tokens;
     while (index < tokens.size() - 1)
     {
@@ -49,10 +47,10 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
             exprs.push_back(cache.back());
             cache.pop_back();
         }
-        else er->error(NOT_AN_EXPRESSION);
+        else Errors::instance().panic(NOT_AN_EXPRESSION);
         if (get().type == Token::LAST) break;
-        if (checkIndent(Indent::MORE)) er->error(UNEXPECTED_INDENT);
-        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) er->error(NO_NEWLINE);
+        if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
+        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) Errors::instance().panic(NO_NEWLINE);
     }
 }
 
@@ -94,7 +92,7 @@ bool Parser::set()
     if (!lit("=")) return false;
 
     if (!call() && !value() &&
-        !file() && !cond()) er->error(NOTHING_TO_SET);
+        !file() && !cond()) Errors::instance().panic(NOTHING_TO_SET);
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
@@ -141,7 +139,7 @@ bool Parser::call()
     if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
-        if (!call()) er->error(NO_NAME);
+        if (!call()) Errors::instance().panic(NO_NAME);
         ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "", origc);
         calls->right = cache.back();
         cache.pop_back();
@@ -161,13 +159,13 @@ bool Parser::access()
     std::string mod = "";
     if (lit("."))
     {
-        if (!integer() && !call()) er->error(NO_ACCESS_KEY);
+        if (!integer() && !call()) Errors::instance().panic(NO_ACCESS_KEY);
     }
     else if (lit("["))
     {
         mod = "[]";
-        if (!integer() && !string() && !call()) er->error(NO_ACCESS_KEY_CALL);
-        if (!lit("]")) er->error(NO_CLOSING_BRACE);
+        if (!integer() && !string() && !call()) Errors::instance().panic(NO_ACCESS_KEY_CALL);
+        if (!lit("]")) Errors::instance().panic(NO_CLOSING_BRACE);
     }
     else
     {
@@ -197,8 +195,8 @@ bool Parser::cond()
     uint orig = index;
     if (!lit("if")) return false;
 
-    if (!set() && !call() && !value()) er->error(NO_CONDITIONAL);
-    if (!lit("then")) er->error(NO_THEN);
+    if (!set() && !call() && !value()) Errors::instance().panic(NO_CONDITIONAL);
+    if (!lit("then")) Errors::instance().panic(NO_THEN);
 
     uint origt = index;
     uint cached = cache.size();
@@ -212,7 +210,7 @@ bool Parser::cond()
     }
     else
     {
-        if (!expr()) er->error(NOT_AN_EXPRESSION);
+        if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
         checkIndent(Indent::SAME);
     }
 
@@ -231,7 +229,7 @@ bool Parser::cond()
         }
         else
         {
-            if (!expr()) er->error(NOT_AN_EXPRESSION);
+            if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
         }
     }
 
@@ -288,7 +286,7 @@ bool Parser::oper()
 
     cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
     index++;
-    if (!value() && !call()) er->error(NO_RIGHT_VALUE);
+    if (!value() && !call()) Errors::instance().panic(NO_RIGHT_VALUE);
     oper();
 
     if (!first) return true;
@@ -423,17 +421,17 @@ bool Parser::block()
             if (!lit(",")) break;
         }
         params.pop_back();
-        if (params == "") er->error(NO_PARAMETER);
+        if (params == "") Errors::instance().panic(NO_PARAMETER);
     }
 
     // getting the expression block
-    if (checkIndent(Indent::SAME)) er->error(NO_INDENT);
+    if (checkIndent(Indent::SAME)) Errors::instance().panic(NO_INDENT);
     uint cached = cache.size();
     if (checkIndent(Indent::MORE))
     {
         while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
-    else if (!expr()) er->error(NOT_AN_EXPRESSION);
+    else if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, params, orig);
@@ -472,7 +470,7 @@ bool Parser::value()
         checkIndent(Indent::MORE);
         while (true)
         {
-            if (checkIndent(Indent::MORE)) er->error(UNEXPECTED_INDENT);
+            if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
@@ -490,7 +488,7 @@ bool Parser::value()
                 }
 
             }
-            if (!expr()) er->error(NOTHING_TO_SET);
+            if (!expr()) Errors::instance().panic(NOTHING_TO_SET);
 
             ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
             tup->left = cache.back();
@@ -500,7 +498,7 @@ bool Parser::value()
             if (!lit(",")) break;
         }
         checkIndent(Indent::LESS);
-        if (!lit(")")) er->error(NO_CLOSING_BRACE);
+        if (!lit(")")) Errors::instance().panic(NO_CLOSING_BRACE);
 
         // assemble tuple
         ExprPtr tup = cache[cached];

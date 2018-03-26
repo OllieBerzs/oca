@@ -40,7 +40,6 @@ struct Arg
 
 class State
 {
-    friend class Evaluator;
     Scope scope = Scope(nullptr);
     Scope global = Scope(nullptr);
 
@@ -52,6 +51,8 @@ public:
     void load(const std::string& lib);
 
     ValueCast operator[](const std::string& name);
+    
+    friend class Evaluator;
 };
 
 std::shared_ptr<Integer> cast(int val);
