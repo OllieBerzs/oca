@@ -26,8 +26,6 @@ private:
     ValuePtr access(ExprPtr expr, Scope& scope);
     ValuePtr file(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
-
-    ValuePtr callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope);
 };
 
 OCA_END

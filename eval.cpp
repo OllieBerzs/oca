@@ -108,7 +108,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 
     Value& funcref = *func;
     if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({caller, arg, block});
-    if (TYPE_EQ(funcref, Block)) return callBlock(func, arg, caller, block, scope);
+    if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(caller, arg, block, this);
 
     return func;
 }
@@ -128,7 +128,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     // call the operator
     Value& funcref = *func;
     if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({left, right, Nil::in(&scope)});
-    if (TYPE_EQ(funcref, Block)) return callBlock(func, right, left, Nil::in(&scope), scope);
+    if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(left, right, Nil::in(&scope), this);
 
     return func;
 }
@@ -176,8 +176,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     if (expr->right->left) block = eval(expr->right->left, scope);
 
     Value& val = *right;
-    if (TYPE_EQ(val, Block)) return callBlock(right, arg, left, block, scope);
     if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block});
+    if (TYPE_EQ(val, Block)) return static_cast<Block&>(val)(left, arg, block, this);
     else return right;
 }
 
@@ -226,61 +226,6 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::BOOL)
     {
         result = std::make_shared<Bool>(expr, &scope);
-    }
-    return result;
-}
-
-// ---------------------------
-
-ValuePtr Evaluator::callBlock(ValuePtr val, ValuePtr arg, ValuePtr caller, ValuePtr block, Scope& scope)
-{
-    Block& b = static_cast<Block&>(*val);
-
-    // split parameters
-    std::vector<std::string> params;
-    std::string word = "";
-    for (auto& c : b.val->val)
-    {
-        if (c == ' ')
-        {
-            params.push_back(word);
-            word = "";
-            continue;
-        }
-        word += c;
-    }
-    if (word != "") params.push_back(word);
-
-    // create temp scope
-    Scope temp(&scope);
-    if (!block->isNil()) temp.set("yield", block);
-    temp.set("super", caller);
-
-    // set parameters
-    if (params.size() != 0 && arg->isNil()) Errors::instance().panic(NO_ARGUMENT, b.val);
-    if (params.size() == 1) temp.set(params[0], arg);
-    else
-    {
-        uint counter = ARRAY_BEGIN_INDEX;
-        for (auto& param : params)
-        {
-            ValuePtr item = Nil::in(&scope);
-            if ((item = arg->scope.get(param))->isNil()) item = arg->scope.get(std::to_string(counter++));
-            if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, b.val);
-
-            temp.set(param, item);
-        }
-    }
-
-    // evaluate the block's value
-    ValuePtr result = Nil::in(&scope);
-    ExprPtr expr = b.val;
-    while (expr && expr->left)
-    {
-        if (expr->left->type == Expression::RETURN) return eval(expr->left->right, temp);
-        if (expr->left->type == Expression::BREAK) return result;
-        result = eval(expr->left, temp);
-        expr = expr->right;
     }
     return result;
 }
