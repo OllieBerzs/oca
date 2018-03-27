@@ -29,8 +29,10 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 {
-    // getting variables from left side
     std::vector<ExprPtr> lefts;
+    ValuePtr rightVal = eval(expr->right, scope);
+
+    // get variables from left side
     ExprPtr it = expr->left;
     if (it->type == Expression::CALL) lefts.push_back(it);
     else
@@ -43,14 +45,14 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         lefts.push_back(it);
     }
 
-    ValuePtr rightVal = eval(expr->right, scope);
-
+    // split the right value into all variables on the left
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& leftExpr : lefts)
     {
         std::string name = leftExpr->val;
         ValuePtr leftVal = Nil::in(&scope);
 
+        // get the name if it is a tuple member
         if (leftExpr->type == Expression::ACCESS)
         {
             leftVal = eval(leftExpr, scope);
@@ -59,20 +61,17 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             // find the variable in parent scope
             for (auto& var : leftVal->scope.parent->names)
             {
-                if (var.second.get() == leftVal.get())
-                {
-                    name = var.first;
-                    break;
-                }
+                if (var.second.get() != leftVal.get()) continue;
+                name = var.first;
+                break;
             }
         }
 
-        if (lefts.size() == 1)
+        // set the left variable to the right value
+        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal);
+        else
         {
-            leftVal->scope.parent->set(name, rightVal);
-        }
-        else // split right tuple
-        {
+            // get the right value based on the index
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
             if (rightValPart->isNil()) Errors::instance().panic(CANNOT_SPLIT, expr->right);
 
@@ -87,6 +86,8 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     // TODO: check if requires argument
     ValuePtr func = Nil::in(&scope);
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
 
     /*std::cout << "------ " << expr->val << " ------\n";
     std::cout << "caller: ";
@@ -96,19 +97,20 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     std::cout << "this: ";
     scope.print();*/
 
+    // get the function from one of the scopes
     if (caller) func = caller->scope.get(expr->val); // type specific
     if (func->isNil()) func = state->global.get(expr->val); // global
     if (func->isNil()) func = scope.get(expr->val); // in this scope
     if (func->isNil() && expr->val != "super") Errors::instance().panic(UNDEFINED, expr);
 
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
+    // get the argument and yield block
     if (expr->right) arg = eval(expr->right, scope);
     if (expr->left) block = eval(expr->left, scope);
 
-    Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({caller, arg, block});
-    if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(caller, arg, block, this);
+    // call the function
+    Value& f = *func;
+    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f).val({caller, arg, block});
+    if (TYPE_EQ(f, Block)) return static_cast<Block&>(f)(caller, arg, block, this);
 
     return func;
 }
@@ -135,18 +137,22 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
+    ValuePtr result = Nil::in(&scope);
     ValuePtr conditional = eval(expr->left, scope);
-    Value& b = *conditional;
-    if (!(TYPE_EQ(b, Bool))) Errors::instance().panic(IF_BOOL, expr->left);
-    bool trueness = static_cast<Bool&>(*conditional).val;
+    ValuePtr branch = Nil::in(&scope);
+    bool trueness;
 
-    ValuePtr block = Nil::in(&scope);
-    if (trueness) block = eval(expr->right->left, scope);
-    else if (expr->right->right) block = eval(expr->right->right, scope);
+    // evaluate the conditional
+    Value& c = *conditional;
+    if (!(TYPE_EQ(c, Bool))) Errors::instance().panic(IF_BOOL, expr->left);
+    trueness = static_cast<Bool&>(c).val;
+
+    // set the appropriate branch based on the conditional
+    if (trueness) branch = eval(expr->right->left, scope);
+    else if (expr->right->right) branch = eval(expr->right->right, scope);
 
     // evaluate the branch
-    ValuePtr result = Nil::in(&scope);
-    ExprPtr it = static_cast<Block&>(*block).val;
+    ExprPtr it = static_cast<Block&>(*branch).val;
     while (it && it->left)
     {
         if (it->left->type == Expression::RETURN) return eval(it->left->right, scope);
@@ -161,24 +167,28 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = Nil::in(&scope);
-
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
     std::string name = "";
+
+    // get the entry name
     if (expr->val == "[]") name = eval(expr->right, scope)->toStr(false);
     else name = expr->right->val;
 
+    // get the data member
     right = left->scope.get(name);
     if (expr->left->val == "super" && right->isNil()) right = left->scope.parent->get(name);
     if (right->isNil()) Errors::instance().panic(UNDEFINED_IN_TUPLE, expr->right);
 
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
+    // get the argument and yield block
     if (expr->right->right) arg = eval(expr->right->right, scope);
     if (expr->right->left) block = eval(expr->right->left, scope);
 
+    // call the data member
     Value& val = *right;
     if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block});
     if (TYPE_EQ(val, Block)) return static_cast<Block&>(val)(left, arg, block, this);
-    else return right;
+    else return right; // if is not callable
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)

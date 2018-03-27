@@ -49,6 +49,7 @@ public:
 private:
     const Token& get();
     bool checkIndent(Indent ind);
+    ExprPtr uncache();
 
     bool expr();
     bool set();

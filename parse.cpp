@@ -64,11 +64,9 @@ const Token& Parser::get()
 
 bool Parser::checkIndent(Indent ind)
 {
+    uint size = get().val.size() - 1;
+
     if (get().type != Token::INDENT) return false;
-
-    uint size = get().val.size();
-    if (get().val[0] == '\n') --size;
-
     if (ind == Indent::LESS) if (size >= indent) return false;
     if (ind == Indent::SAME) if (size > indent || size < indent) return false;
     if (ind == Indent::MORE) if (size <= indent) return false;
@@ -76,6 +74,13 @@ bool Parser::checkIndent(Indent ind)
     indent = size;
     ++index;
     return true;
+}
+
+ExprPtr Parser::uncache()
+{
+    ExprPtr result = cache.back();
+    cache.pop_back();
+    return result;
 }
 
 // ----------------------------
@@ -89,17 +94,18 @@ bool Parser::expr()
 bool Parser::set()
 {
     uint orig = index;
+
+    // assignment starts with '='
     if (!lit("=")) return false;
 
+    // has to have a value after
     if (!call() && !value() &&
         !file() && !cond()) Errors::instance().panic(NOTHING_TO_SET);
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
-    s->right = cache.back();
-    cache.pop_back();
-    s->left = cache.back();
-    cache.pop_back();
+    s->right = uncache();
+    s->left = uncache();
     cache.push_back(s);
 
     return true;
@@ -108,43 +114,32 @@ bool Parser::set()
 bool Parser::call()
 {
     uint orig = index;
+
+    // call has to start with a name
     if (!name()) return false;
 
+    // can have an argument and/or a yield block
     bool hasArg = value() || call();
-    bool hasBlock = block();
+    bool hasYield = block();
 
     // assemble call
-    ExprPtr bl = nullptr;
-    ExprPtr arg = nullptr;
+    ExprPtr yield = (hasYield) ? uncache() : nullptr;
+    ExprPtr arg = (hasArg) ? uncache() : nullptr;
 
-    if (hasBlock)
-    {
-        bl = cache.back();
-        cache.pop_back();
-    }
-
-    if (hasArg)
-    {
-        arg = cache.back();
-        cache.pop_back();
-    }
-
-    ExprPtr c = std::make_shared<Expression>(Expression::CALL, cache.back()->val, orig);
-    cache.pop_back();
-    c->left = bl;
+    ExprPtr c = std::make_shared<Expression>(Expression::CALL, uncache()->val, orig);
+    c->left = yield;
     c->right = arg;
     cache.push_back(c);
 
+    // TODO: better access
     if (!inAccess) access();
     if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
         if (!call()) Errors::instance().panic(NO_NAME);
         ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "", origc);
-        calls->right = cache.back();
-        cache.pop_back();
-        calls->left = cache.back();
-        cache.pop_back();
+        calls->right = uncache();
+        calls->left = uncache();
         cache.push_back(calls);
     }
 
@@ -323,20 +318,14 @@ bool Parser::keyword()
 {
     if (get().val == "return")
     {
-        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index);
-        ++index;
-        if (expr())
-        {
-            r->right = cache.back();
-            cache.pop_back();
-        }
+        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index++);
+        if (expr()) r->right = uncache();
         cache.push_back(r);
         return true;
     }
     else if (get().val == "break")
     {
-        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
-        ++index;
+        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index++));
         return true;
     }
     return false;
@@ -357,42 +346,24 @@ bool Parser::string()
 {
     if (get().type != Token::STRING) return false;
 
-    std::string val = get().val;
-    cache.push_back(std::make_shared<Expression>
-        (Expression::STR, val.substr(1, val.size() - 2), index));
-    index++;
+    std::string s = get().val.substr(1, get().val.size() - 2);
+    cache.push_back(std::make_shared<Expression>(Expression::STR, s, index++));
     return true;
 }
 
 bool Parser::integer()
 {
-    bool negative = false;
-    //if (lit("-")) negative = true;
-    if (get().type != Token::INTEGER)
-    {
-        if (negative) --index;
-        return false;
-    }
+    if (get().type != Token::INTEGER) return false;
 
-    cache.push_back(std::make_shared<Expression>
-        (Expression::INT, (negative ? "-" : "") + get().val, index));
-    index++;
+    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index++));
     return true;
 }
 
 bool Parser::real()
 {
-    bool negative = false;
-    //if (lit("-")) negative = true;
-    if (get().type != Token::REAL)
-    {
-        if (negative) --index;
-        return false;
-    }
+    if (get().type != Token::REAL) return false;
 
-    cache.push_back(std::make_shared<Expression>
-        (Expression::REAL, (negative ? "-" : "") + get().val, index));
-    index++;
+    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index++));
     return true;
 }
 
@@ -400,8 +371,7 @@ bool Parser::boolean()
 {
     if (get().type != Token::BOOLEAN) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::BOOL, get().val, index));
-    index++;
+    cache.push_back(std::make_shared<Expression>(Expression::BOOL, get().val, index++));
     return true;
 }
 
@@ -410,14 +380,13 @@ bool Parser::block()
     uint orig = index;
     if (!lit("do")) return false;
 
-    // checking for parameters
+    // check for parameters
     std::string params = "";
     if (lit("with"))
     {
         while (name())
         {
-            params += cache.back()->val + " ";
-            cache.pop_back();
+            params += uncache()->val + " ";
             if (!lit(",")) break;
         }
         params.pop_back();
@@ -476,11 +445,7 @@ bool Parser::value()
             std::string nam = "";
             if (name())
             {
-                if (lit(":"))
-                {
-                    nam = cache.back()->val;
-                    cache.pop_back();
-                }
+                if (lit(":")) nam = uncache()->val;
                 else
                 {
                     cache.pop_back();
@@ -491,8 +456,7 @@ bool Parser::value()
             if (!expr()) Errors::instance().panic(NOTHING_TO_SET);
 
             ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
-            tup->left = cache.back();
-            cache.pop_back();
+            tup->left = uncache();
             cache.push_back(tup);
 
             if (!lit(",")) break;
@@ -502,10 +466,7 @@ bool Parser::value()
 
         // assemble tuple
         ExprPtr tup = cache[cached];
-        for (uint i = cached; i < cache.size() - 1; ++i)
-        {
-            cache[i]->right = cache[i + 1];
-        }
+        for (uint i = cached; i < cache.size() - 1; ++i) cache[i]->right = cache[i + 1];
         cache.resize(cached);
         cache.push_back(tup);
 
@@ -520,16 +481,14 @@ bool Parser::name()
 {
     if (get().type != Token::NAME) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::NAME, get().val, index));
-    ++index;
+    cache.push_back(std::make_shared<Expression>(Expression::NAME, get().val, index++));
     return true;
 }
 
 bool Parser::lit(const std::string& t)
 {
     if (get().val != t) return false;
-
-    index++;
+    ++index;
     return true;
 }
 

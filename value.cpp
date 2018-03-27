@@ -185,8 +185,11 @@ std::string Block::toStr(bool debug)
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evaluator* e)
 {
-    // get parameters
+    Scope temp(&scope);
     std::vector<std::string> params;
+    ValuePtr result = Nil::in(&scope);
+
+    // get parameters
     std::string word = "";
     for (auto& c : val->val)
     {
@@ -199,8 +202,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evalua
     }
     if (word != "") params.push_back(word);
 
-    // create temp scope
-    Scope temp(&scope);
+    // set super and yield in scope
     if (!block->isNil()) temp.set("yield", block);
     temp.set("super", caller);
 
@@ -212,11 +214,8 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evalua
         uint counter = ARRAY_BEGIN_INDEX;
         for (auto& param : params)
         {
-            ValuePtr item = Nil::in(&scope);
-            if ((item = arg->scope.get(param))->isNil())
-            {
-                item = arg->scope.get(std::to_string(counter++));
-            }
+            ValuePtr item = arg->scope.get(param);
+            if (item->isNil()) item = arg->scope.get(std::to_string(counter++));
             if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, val);
 
             temp.set(param, item);
@@ -224,7 +223,6 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evalua
     }
 
     // evaluate the block's value
-    ValuePtr result = Nil::in(&scope);
     ExprPtr expr = val;
     while (expr)
     {
