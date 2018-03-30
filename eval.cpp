@@ -72,7 +72,8 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         else
         {
             // get the right value based on the index
-            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter++));
+            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter));
+            ++counter;
             if (rightValPart->isNil()) Errors::instance().panic(CANNOT_SPLIT, expr->right);
 
             leftVal->scope.parent->set(name, rightValPart);
@@ -209,7 +210,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
         while(expr && expr->left)
         {
             // unnamed value
-            if (expr->val == "") expr->val = std::to_string(counter++);
+            if (expr->val == "") expr->val = std::to_string(counter);
+            ++counter;
 
             // add tuple value to object table
             result->scope.set(expr->val, eval(expr->left, result->scope));

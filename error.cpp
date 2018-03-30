@@ -244,7 +244,7 @@ void Errors::panic(ErrorType type, ExprPtr expr)
         c = (*file.source)[index];
         if (c == '\n' && !found)
         {
-            lineNum++;
+            ++lineNum;
             prevline = errline;
             errline = "";
         }

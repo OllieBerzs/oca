@@ -281,7 +281,7 @@ bool Parser::oper()
     bool first = (cached < 2) || (cache[cached - 2]->type != Expression::PART_OPER);
 
     cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
-    index++;
+    ++index;
     if (!value() && !call()) Errors::instance().panic(NO_RIGHT_VALUE);
     oper();
 
@@ -319,14 +319,16 @@ bool Parser::keyword()
 {
     if (get().val == "return")
     {
-        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index++);
+        ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index);
+        ++index;
         if (expr()) r->right = uncache();
         cache.push_back(r);
         return true;
     }
     else if (get().val == "break")
     {
-        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index++));
+        cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
+        ++index;
         return true;
     }
     return false;
@@ -337,7 +339,7 @@ bool Parser::file()
     if (get().type != Token::FILEPATH) return false;
 
     cache.push_back(std::make_shared<Expression>(Expression::FILE, get().val.substr(1), index));
-    index++;
+    ++index;
     return true;
 }
 
@@ -348,7 +350,8 @@ bool Parser::string()
     if (get().type != Token::STRING) return false;
 
     std::string s = get().val.substr(1, get().val.size() - 2);
-    cache.push_back(std::make_shared<Expression>(Expression::STR, s, index++));
+    cache.push_back(std::make_shared<Expression>(Expression::STR, s, index));
+    ++index;
     return true;
 }
 
@@ -356,7 +359,8 @@ bool Parser::integer()
 {
     if (get().type != Token::INTEGER) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index++));
+    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index));
+    ++index;
     return true;
 }
 
@@ -364,7 +368,8 @@ bool Parser::real()
 {
     if (get().type != Token::REAL) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index++));
+    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index));
+    ++index;
     return true;
 }
 
@@ -372,7 +377,8 @@ bool Parser::boolean()
 {
     if (get().type != Token::BOOLEAN) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::BOOL, get().val, index++));
+    cache.push_back(std::make_shared<Expression>(Expression::BOOL, get().val, index));
+    ++index;
     return true;
 }
 
@@ -484,7 +490,8 @@ bool Parser::name()
 {
     if (get().type != Token::NAME) return false;
 
-    cache.push_back(std::make_shared<Expression>(Expression::NAME, get().val, index++));
+    cache.push_back(std::make_shared<Expression>(Expression::NAME, get().val, index));
+    ++index;
     return true;
 }
 

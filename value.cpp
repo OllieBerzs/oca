@@ -215,7 +215,11 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evalua
         for (auto& param : params)
         {
             ValuePtr item = arg->scope.get(param);
-            if (item->isNil()) item = arg->scope.get(std::to_string(counter++));
+            if (item->isNil())
+            {
+                item = arg->scope.get(std::to_string(counter));
+                ++counter;
+            }
             if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, val);
 
             temp.set(param, item);

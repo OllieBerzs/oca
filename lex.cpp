@@ -54,7 +54,7 @@ void lex(const std::string& source, std::vector<Token>& tokens)
     std::regex regex(reg);
     auto matches = std::sregex_iterator(source.begin(), source.end(), regex);
 
-    for (auto it = matches; it != std::sregex_iterator(); it++)
+    for (auto it = matches; it != std::sregex_iterator(); ++it)
     {
         uint pos = static_cast<uint>(it->position());
         for (uint i = 0; i < it->size(); ++i)
