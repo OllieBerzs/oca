@@ -28,7 +28,7 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::INVALID,         "()(.)+"}
 };
 
-void Token::print()
+void Token::print() const
 {
     std::vector<std::string> types =
     {

@@ -24,9 +24,9 @@ ValueCast Value::operator[](const std::string& name)
     if (var->isNil())
     {
         scope.set(name, Nil::in(&scope));
-        return ValueCast(scope.get(name), name);
+        return ValueCast(scope.get(name), name, evaler);
     }
-    return ValueCast(var, name);
+    return ValueCast(var, name, evaler);
 }
 
 int Value::toInt()
@@ -58,10 +58,11 @@ bool Value::toBool()
 
 // ---------------------------------
 
-Integer::Integer(ExprPtr expr, Scope* parent) : Integer(std::stoi(expr->val), parent) {}
+Integer::Integer(ExprPtr expr, Scope* parent, Evaluator* e) : Integer(std::stoi(expr->val), parent, e) {}
 
-Integer::Integer(int val, Scope* parent) : val(val)
+Integer::Integer(int val, Scope* parent, Evaluator* e) : val(val)
 {
+    evaler = e;
     scope.parent = parent;
 
     // functions
@@ -69,28 +70,39 @@ Integer::Integer(int val, Scope* parent) : val(val)
     {
         int left = arg.caller->toInt();
         int right = arg.value->toInt();
-        return cast(left + right);
+        return arg.state->cast(left + right);
     };
 
     (*this)["__sub"] = [](Arg arg) -> Ret
     {
         int left = arg.caller->toInt();
         int right = arg.value->toInt();
-        return cast(left - right);
+        return arg.state->cast(left - right);
     };
 
     (*this)["__mul"] = [](Arg arg) -> Ret
     {
         int left = arg.caller->toInt();
         int right = arg.value->toInt();
-        return cast(left * right);
+        return arg.state->cast(left * right);
     };
 
     (*this)["__eq"] = [](Arg arg) -> Ret
     {
         int left = arg.caller->toInt();
         int right = arg.value->toInt();
-        return cast(left == right);
+        return arg.state->cast(left == right);
+    };
+
+    (*this)["times"] = [](Arg arg) -> Ret
+    {
+        int counter = arg.caller->toInt();
+        Block& yield = static_cast<Block&>(*arg.value);
+        for (int i = 0; i < counter; ++i)
+        {
+            yield(Nil::in(arg.caller->scope.parent), arg.state->cast(i), Nil::in(nullptr));
+        }
+        return Nil::in(nullptr);
     };
 }
 
@@ -104,10 +116,11 @@ std::string Integer::toStr(bool debug)
 
 // ----------------------------------
 
-Real::Real(ExprPtr expr, Scope* parent) : Real(std::stof(expr->val), parent) {}
+Real::Real(ExprPtr expr, Scope* parent, Evaluator* e) : Real(std::stof(expr->val), parent, e) {}
 
-Real::Real(float val, Scope* parent) : val(val)
+Real::Real(float val, Scope* parent, Evaluator* e) : val(val)
 {
+    evaler = e;
     scope.parent = parent;
 }
 
@@ -123,10 +136,11 @@ std::string Real::toStr(bool debug)
 
 // ---------------------------------
 
-String::String(ExprPtr expr, Scope* parent) : String(expr->val, parent) {}
+String::String(ExprPtr expr, Scope* parent, Evaluator* e) : String(expr->val, parent, e) {}
 
-String::String(const std::string& val, Scope* parent) : val(val)
+String::String(const std::string& val, Scope* parent, Evaluator* e) : val(val)
 {
+    evaler = e;
     scope.parent = parent;
 
     // functions
@@ -134,7 +148,7 @@ String::String(const std::string& val, Scope* parent) : val(val)
     {
         std::string left = arg.caller->toStr(false);
         std::string right = arg.value->toStr(false);
-        return cast(left + right);
+        return arg.state->cast(left + right);
     };
 }
 
@@ -148,10 +162,11 @@ std::string String::toStr(bool debug)
 
 // ---------------------------------
 
-Bool::Bool(ExprPtr expr, Scope* parent) : Bool((expr->val == "true"), parent) {}
+Bool::Bool(ExprPtr expr, Scope* parent, Evaluator* e) : Bool((expr->val == "true"), parent, e) {}
 
-Bool::Bool(bool val, Scope* parent) : val(val)
+Bool::Bool(bool val, Scope* parent, Evaluator* e) : val(val)
 {
+    evaler = e;
     scope.parent = parent;
 }
 
@@ -165,8 +180,9 @@ std::string Bool::toStr(bool debug)
 
 // ---------------------------------
 
-Block::Block(ExprPtr expr, Scope* parent)
+Block::Block(ExprPtr expr, Scope* parent, Evaluator* e)
 {
+    evaler = e;
     scope.parent = parent;
     val = expr;
     // add functions
@@ -183,7 +199,7 @@ std::string Block::toStr(bool debug)
     return result;
 }
 
-ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evaluator* e)
+ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 {
     Scope temp(&scope);
     std::vector<std::string> params;
@@ -230,9 +246,9 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evalua
     ExprPtr expr = val;
     while (expr)
     {
-        if (expr->left->type == Expression::RETURN) return e->eval(expr->left->right, temp);
+        if (expr->left->type == Expression::RETURN) return evaler->eval(expr->left->right, temp);
         if (expr->left->type == Expression::BREAK) return result;
-        result = e->eval(expr->left, temp);
+        result = evaler->eval(expr->left, temp);
         expr = expr->right;
     }
     return result;

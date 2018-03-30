@@ -40,7 +40,6 @@ class Parser
     std::vector<ExprPtr> cache;
     uint index;
     uint indent;
-    bool inDot;
 
 public:
     void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
@@ -52,7 +51,7 @@ private:
 
     bool expr();
     bool set();
-    bool call();
+    bool call(bool inDot = false);
     bool access();
     bool dotaccess();
     bool cond();

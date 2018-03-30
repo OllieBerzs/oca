@@ -25,7 +25,7 @@ public:
     std::string val;
     uint pos;
 
-    void print();
+    void print() const;
 };
 
 void lex(const std::string& source, std::vector<Token>& tokens);

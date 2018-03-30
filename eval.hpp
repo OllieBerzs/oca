@@ -13,8 +13,8 @@ OCA_BEGIN
 
 class Evaluator
 {
-    State* state;
 public:
+    State* state;
     Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 

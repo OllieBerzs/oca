@@ -15,6 +15,9 @@ OCA_BEGIN
 
 class Value
 {
+protected:
+    Evaluator* evaler = nullptr;
+
 public:
     Scope scope = Scope(nullptr);
 
@@ -34,8 +37,8 @@ class Integer : public Value
 public:
     int val;
 
-    Integer(ExprPtr expr, Scope* parent);
-    Integer(int val, Scope* parent);
+    Integer(ExprPtr expr, Scope* parent, Evaluator* e);
+    Integer(int val, Scope* parent, Evaluator* e);
     std::string toStr(bool debug);
 };
 
@@ -44,8 +47,8 @@ class Real : public Value
 public:
     float val;
 
-    Real(ExprPtr expr, Scope* parent);
-    Real(float val, Scope* parent);
+    Real(ExprPtr expr, Scope* parent, Evaluator* e);
+    Real(float val, Scope* parent, Evaluator* e);
     std::string toStr(bool debug);
 };
 
@@ -54,8 +57,8 @@ class String : public Value
 public:
     std::string val;
 
-    String(ExprPtr expr, Scope* parent);
-    String(const std::string& val, Scope* parent);
+    String(ExprPtr expr, Scope* parent, Evaluator* e);
+    String(const std::string& val, Scope* parent, Evaluator* e);
     std::string toStr(bool debug);
 };
 
@@ -64,8 +67,8 @@ class Bool : public Value
 public:
     bool val;
 
-    Bool(ExprPtr expr, Scope* parent);
-    Bool(bool val, Scope* parent);
+    Bool(ExprPtr expr, Scope* parent, Evaluator* e);
+    Bool(bool val, Scope* parent, Evaluator* e);
     std::string toStr(bool debug);
 };
 
@@ -74,9 +77,9 @@ class Block : public Value
 public:
     ExprPtr val;
 
-    Block(ExprPtr expr, Scope* parent);
+    Block(ExprPtr expr, Scope* parent, Evaluator* e);
     std::string toStr(bool debug);
-    ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evaluator* e);
+    ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
 };
 
 class Tuple : public Value

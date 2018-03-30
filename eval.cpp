@@ -91,7 +91,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     ValuePtr block = Nil::in(&scope);
 
     /*std::cout << "------ " << expr->val << " ------\n";
-    std::cout << "caller: ";
+    std::cout << "super: ";
     caller->scope.print();
     std::cout << "global: ";
     state->global.print();
@@ -110,9 +110,8 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 
     // call the function
     Value& f = *func;
-    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f).val({caller, arg, block});
-    if (TYPE_EQ(f, Block)) return static_cast<Block&>(f)(caller, arg, block, this);
-
+    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f).val({caller, arg, block, state});
+    if (TYPE_EQ(f, Block)) return static_cast<Block&>(f)(caller, arg, block);
     return func;
 }
 
@@ -130,9 +129,8 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 
     // call the operator
     Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({left, right, Nil::in(&scope)});
-    if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(left, right, Nil::in(&scope), this);
-
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({left, right, Nil::in(&scope), state});
+    if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(left, right, Nil::in(&scope));
     return func;
 }
 
@@ -187,8 +185,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 
     // call the data member
     Value& val = *right;
-    if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block});
-    if (TYPE_EQ(val, Block)) return static_cast<Block&>(val)(left, arg, block, this);
+    if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block, state});
+    if (TYPE_EQ(val, Block)) return static_cast<Block&>(val)(left, arg, block);
     else return right; // if is not callable
 }
 
@@ -221,23 +219,23 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::BLOCK || expr->type == Expression::MAIN
         || expr->type == Expression::ELSE)
     {
-        result = std::make_shared<Block>(expr, &scope);
+        result = std::make_shared<Block>(expr, &scope, this);
     }
     else if (expr->type == Expression::STR)
     {
-        result = std::make_shared<String>(expr, &scope);
+        result = std::make_shared<String>(expr, &scope, this);
     }
     else if (expr->type == Expression::INT)
     {
-        result = std::make_shared<Integer>(expr, &scope);
+        result = std::make_shared<Integer>(expr, &scope, this);
     }
     else if (expr->type == Expression::REAL)
     {
-        result = std::make_shared<Real>(expr, &scope);
+        result = std::make_shared<Real>(expr, &scope, this);
     }
     else if (expr->type == Expression::BOOL)
     {
-        result = std::make_shared<Bool>(expr, &scope);
+        result = std::make_shared<Bool>(expr, &scope, this);
     }
     return result;
 }
