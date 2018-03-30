@@ -172,7 +172,7 @@ bool Parser::dotaccess()
     uint orig = index;
     if (!lit(".")) return false;
     inDot = true; // so the next call doesn't parse dotaccess
-    if (!call()) Errors::instance().panic(NO_ACCESS_KEY);
+    if (!call() && !integer()) Errors::instance().panic(NO_ACCESS_KEY);
 
     // assemble dot access
     ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);

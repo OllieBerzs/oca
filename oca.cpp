@@ -71,6 +71,11 @@ State::State()
     };
 }
 
+State::~State()
+{
+    if (Errors::instance().count() == 1) Errors::instance().end();
+}
+
 ValuePtr State::script(const std::string& path)
 {
     std::ifstream file(path);
@@ -89,7 +94,8 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     Parser parser;
 
     // error handling
-    Errors::instance().begin(&path, &source, &tokens, &parser);
+    if (path != "" || Errors::instance().count() == 0)
+        Errors::instance().begin(&path, &source, &tokens, &parser);
 
     // Lexing
     lex(source, tokens);
@@ -124,7 +130,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     }
 
     // pop file
-    Errors::instance().end();
+    if (path != "") Errors::instance().end();
 
     return obj;
 }

@@ -29,6 +29,11 @@ void Errors::end()
     files.pop_back();
 }
 
+uint Errors::count()
+{
+    return files.size();
+}
+
 // ------------------------------------
 
 void Errors::panic(ErrorType type, ExprPtr expr)

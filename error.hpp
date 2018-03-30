@@ -57,6 +57,7 @@ public:
     void begin(const std::string* path, const std::string* s,
         const std::vector<Token>* t, const Parser* p);
     void end();
+    uint count();
 
     void panic(ErrorType type, ExprPtr expr = nullptr);
 };
