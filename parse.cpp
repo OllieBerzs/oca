@@ -37,7 +37,6 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
 {
     index = 0;
     indent = 0;
-    inDot = false;
 
     this->tokens = &tokens;
     while (index < tokens.size() - 1)
@@ -111,7 +110,7 @@ bool Parser::set()
     return true;
 }
 
-bool Parser::call()
+bool Parser::call(bool inDot)
 {
     uint orig = index;
 
@@ -171,8 +170,8 @@ bool Parser::dotaccess()
 {
     uint orig = index;
     if (!lit(".")) return false;
-    inDot = true; // so the next call doesn't parse dotaccess
-    if (!call() && !integer()) Errors::instance().panic(NO_ACCESS_KEY);
+    // pass true, so the next call doesn't parse dotaccess
+    if (!call(true) && !integer()) Errors::instance().panic(NO_ACCESS_KEY);
 
     // assemble dot access
     ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);
@@ -261,8 +260,7 @@ bool Parser::cond()
     cache.resize(cached);
 
     ExprPtr ifer = std::make_shared<Expression>(Expression::IF, "", orig);
-    ifer->left = cache.back(); // condition
-    cache.pop_back();
+    ifer->left = uncache(); // condition
     ExprPtr branches = std::make_shared<Expression>(Expression::BRANCHES, "", orig);
     branches->left = mn;
     if (hasElse) branches->right = els;
@@ -438,7 +436,7 @@ bool Parser::value()
     if (string() || integer() || real() || boolean() || block()) // single value
     {
         // check for accessor
-        if (!access() && !inDot) dotaccess();
+        if (!access()) dotaccess();
         oper();
         return true;
     }
@@ -479,7 +477,7 @@ bool Parser::value()
         cache.push_back(tup);
 
         // check for accessor
-        if (!access() && !inDot) dotaccess();
+        if (!access()) dotaccess();
         oper();
         return true;
     }

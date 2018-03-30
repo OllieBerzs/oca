@@ -8,6 +8,8 @@
 #include "common.hpp"
 #include "scope.hpp"
 #include "value.hpp"
+#include "parse.hpp"
+#include "eval.hpp"
 
 #define NIL oca::Nil::in(nullptr)
 
@@ -17,9 +19,10 @@ class ValueCast
 {
     ValuePtr val;
     std::string name;
+    Evaluator* evaler;
 
 public:
-    ValueCast(ValuePtr val, const std::string& name);
+    ValueCast(ValuePtr val, const std::string& name, Evaluator* e);
 
     // api casting
     void operator=(int v);
@@ -36,12 +39,16 @@ struct Arg
     ValuePtr caller;
     ValuePtr value;
     ValuePtr block;
+    State* state;
 };
 
 class State
 {
     Scope scope = Scope(nullptr);
     Scope global = Scope(nullptr);
+
+    Parser parser;
+    Evaluator evaler;
 
 public:
     State();
@@ -53,12 +60,13 @@ public:
 
     ValueCast operator[](const std::string& name);
 
+    std::shared_ptr<Integer> cast(int val);
+    std::shared_ptr<Real> cast(float val);
+    std::shared_ptr<Bool> cast(bool val);
+    std::shared_ptr<String> cast(std::string val);
+
     friend class Evaluator;
 };
 
-std::shared_ptr<Integer> cast(int val);
-std::shared_ptr<Real> cast(float val);
-std::shared_ptr<Bool> cast(bool val);
-std::shared_ptr<String> cast(std::string val);
 
 OCA_END
