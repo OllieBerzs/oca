@@ -38,20 +38,28 @@ enum ErrorType
     UNDEFINED
 };
 
-class ErrorHandler
+class Errors
 {
-    const std::string* path;
+    struct File
+    {
+        const std::string* path;
+        const std::string* source;
+        const std::vector<Token>* tokens;
+        const Parser* parser;
+    };
+    std::vector<File> files;
 
-    const std::string* source;
-    const std::vector<Token>* tokens;
+    Errors() = default;
 
 public:
-    Lexer* lexer;
-    Parser* parser;
+    static Errors& instance();
 
-    ErrorHandler(const std::string* p, const std::string* s, const std::vector<Token>* t);
+    void begin(const std::string* path, const std::string* s,
+        const std::vector<Token>* t, const Parser* p);
+    void end();
+    uint count();
 
-    void error(ErrorType type, ExprPtr expr = nullptr);
+    void panic(ErrorType type, ExprPtr expr = nullptr);
 };
 
 OCA_END

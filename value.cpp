@@ -8,6 +8,8 @@
 #include "value.hpp"
 #include "parse.hpp"
 #include "oca.hpp"
+#include "error.hpp"
+#include "eval.hpp"
 
 OCA_BEGIN
 
@@ -178,6 +180,61 @@ std::string Block::toStr(bool debug)
     std::stringstream ss;
     ss << address;
     result += ss.str();
+    return result;
+}
+
+ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evaluator* e)
+{
+    Scope temp(&scope);
+    std::vector<std::string> params;
+    ValuePtr result = Nil::in(&scope);
+
+    // get parameters
+    std::string word = "";
+    for (auto& c : val->val)
+    {
+        if (c == ' ')
+        {
+            params.push_back(word);
+            word = "";
+        }
+        else word += c;
+    }
+    if (word != "") params.push_back(word);
+
+    // set super and yield in scope
+    if (!block->isNil()) temp.set("yield", block);
+    temp.set("super", caller);
+
+    // set parameters
+    if (params.size() != 0 && arg->isNil()) Errors::instance().panic(NO_ARGUMENT, val);
+    if (params.size() == 1) temp.set(params[0], arg);
+    else
+    {
+        uint counter = ARRAY_BEGIN_INDEX;
+        for (auto& param : params)
+        {
+            ValuePtr item = arg->scope.get(param);
+            if (item->isNil())
+            {
+                item = arg->scope.get(std::to_string(counter));
+                ++counter;
+            }
+            if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, val);
+
+            temp.set(param, item);
+        }
+    }
+
+    // evaluate the block's value
+    ExprPtr expr = val;
+    while (expr)
+    {
+        if (expr->left->type == Expression::RETURN) return e->eval(expr->left->right, temp);
+        if (expr->left->type == Expression::BREAK) return result;
+        result = e->eval(expr->left, temp);
+        expr = expr->right;
+    }
     return result;
 }
 

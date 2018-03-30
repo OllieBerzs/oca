@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-
 #include "common.hpp"
 
 OCA_BEGIN
@@ -37,25 +36,25 @@ public:
 
 class Parser
 {
-    ErrorHandler* er;
     const std::vector<Token>* tokens;
     std::vector<ExprPtr> cache;
     uint index;
     uint indent;
-    bool inAccess;
+    bool inDot;
 
 public:
-    Parser(ErrorHandler* er);
     void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
 
 private:
     const Token& get();
     bool checkIndent(Indent ind);
+    ExprPtr uncache();
 
     bool expr();
     bool set();
     bool call();
     bool access();
+    bool dotaccess();
     bool cond();
     bool oper();
     bool keyword();
@@ -71,7 +70,7 @@ private:
     bool name();
     bool lit(const std::string& t);
 
-    friend class ErrorHandler;
+    friend class Errors;
 };
 
 OCA_END

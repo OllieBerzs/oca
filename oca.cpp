@@ -71,6 +71,11 @@ State::State()
     };
 }
 
+State::~State()
+{
+    if (Errors::instance().count() == 1) Errors::instance().end();
+}
+
 ValuePtr State::script(const std::string& path)
 {
     std::ifstream file(path);
@@ -86,13 +91,14 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
 {
     std::vector<Token> tokens;
     std::vector<ExprPtr> ast;
+    Parser parser;
 
     // error handling
-    ErrorHandler er(&path, &source, &tokens);
+    if (path != "" || Errors::instance().count() == 0)
+        Errors::instance().begin(&path, &source, &tokens, &parser);
 
     // Lexing
-    Lexer lexer(&er);
-    lexer.lex(source, tokens);
+    lex(source, tokens);
 
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
@@ -100,7 +106,6 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     #endif
 
     // Parsing
-    Parser parser(&er);
     parser.parse(tokens, ast);
 
     #ifdef OUT_AST
@@ -113,7 +118,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    Evaluator evaluator(&er, this);
+    Evaluator evaluator(this);
     ValuePtr obj = nullptr;
     for (ExprPtr e : ast)
     {
@@ -123,6 +128,9 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
         else std::cout << "->" << obj->toStr(true) << "\n";
         #endif
     }
+
+    // pop file
+    if (path != "") Errors::instance().end();
 
     return obj;
 }

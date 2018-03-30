@@ -66,7 +66,7 @@ script: $(BIN)
 
 test: $(TEST)
 	@echo [Test]
-	@./$(TEST)
+	@./$(TEST) -d yes
 
 .PHONY: test script clean deps
 
@@ -76,7 +76,7 @@ oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp lex.hpp \
 lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp
 parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp error.hpp
 value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp \
-  oca.hpp
+  oca.hpp error.hpp eval.hpp
 scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
   scope.hpp oca.hpp error.hpp

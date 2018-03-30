@@ -33,14 +33,12 @@ void Expression::print(uint indent, char mod)
 
 // ----------------------------
 
-Parser::Parser(ErrorHandler* er)
-    : er(er), index(0), indent(0), inAccess(false)
-{
-    er->parser = this;
-}
-
 void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs)
 {
+    index = 0;
+    indent = 0;
+    inDot = false;
+
     this->tokens = &tokens;
     while (index < tokens.size() - 1)
     {
@@ -49,10 +47,10 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
             exprs.push_back(cache.back());
             cache.pop_back();
         }
-        else er->error(NOT_AN_EXPRESSION);
+        else Errors::instance().panic(NOT_AN_EXPRESSION);
         if (get().type == Token::LAST) break;
-        if (checkIndent(Indent::MORE)) er->error(UNEXPECTED_INDENT);
-        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) er->error(NO_NEWLINE);
+        if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
+        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) Errors::instance().panic(NO_NEWLINE);
     }
 }
 
@@ -66,11 +64,9 @@ const Token& Parser::get()
 
 bool Parser::checkIndent(Indent ind)
 {
+    uint size = get().val.size() - 1;
+
     if (get().type != Token::INDENT) return false;
-
-    uint size = get().val.size();
-    if (get().val[0] == '\n') --size;
-
     if (ind == Indent::LESS) if (size >= indent) return false;
     if (ind == Indent::SAME) if (size > indent || size < indent) return false;
     if (ind == Indent::MORE) if (size <= indent) return false;
@@ -78,6 +74,13 @@ bool Parser::checkIndent(Indent ind)
     indent = size;
     ++index;
     return true;
+}
+
+ExprPtr Parser::uncache()
+{
+    ExprPtr result = cache.back();
+    cache.pop_back();
+    return result;
 }
 
 // ----------------------------
@@ -91,17 +94,18 @@ bool Parser::expr()
 bool Parser::set()
 {
     uint orig = index;
+
+    // assignment starts with '='
     if (!lit("=")) return false;
 
+    // has to have a value after
     if (!call() && !value() &&
-        !file() && !cond()) er->error(NOTHING_TO_SET);
+        !file() && !cond()) Errors::instance().panic(NOTHING_TO_SET);
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
-    s->right = cache.back();
-    cache.pop_back();
-    s->left = cache.back();
-    cache.pop_back();
+    s->right = uncache();
+    s->left = uncache();
     cache.push_back(s);
 
     return true;
@@ -110,43 +114,33 @@ bool Parser::set()
 bool Parser::call()
 {
     uint orig = index;
+
+    // call has to start with a name
     if (!name()) return false;
 
+    // can have an argument and/or a yield block
     bool hasArg = value() || call();
-    bool hasBlock = block();
+    bool hasYield = block();
 
     // assemble call
-    ExprPtr bl = nullptr;
-    ExprPtr arg = nullptr;
+    ExprPtr yield = (hasYield) ? uncache() : nullptr;
+    ExprPtr arg = (hasArg) ? uncache() : nullptr;
 
-    if (hasBlock)
-    {
-        bl = cache.back();
-        cache.pop_back();
-    }
-
-    if (hasArg)
-    {
-        arg = cache.back();
-        cache.pop_back();
-    }
-
-    ExprPtr c = std::make_shared<Expression>(Expression::CALL, cache.back()->val, orig);
-    cache.pop_back();
-    c->left = bl;
+    ExprPtr c = std::make_shared<Expression>(Expression::CALL, uncache()->val, orig);
+    c->left = yield;
     c->right = arg;
     cache.push_back(c);
 
-    if (!inAccess) access();
+    // check for accessors
+    if (!access() && !inDot) dotaccess();
+
     if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
-        if (!call()) er->error(NO_NAME);
+        if (!call()) Errors::instance().panic(NO_NAME);
         ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "", origc);
-        calls->right = cache.back();
-        cache.pop_back();
-        calls->left = cache.back();
-        cache.pop_back();
+        calls->right = uncache();
+        calls->left = uncache();
         cache.push_back(calls);
     }
 
@@ -157,37 +151,37 @@ bool Parser::call()
 bool Parser::access()
 {
     uint orig = index;
-    inAccess = true;
-    std::string mod = "";
-    if (lit("."))
-    {
-        if (!integer() && !call()) er->error(NO_ACCESS_KEY);
-    }
-    else if (lit("["))
-    {
-        mod = "[]";
-        if (!integer() && !string() && !call()) er->error(NO_ACCESS_KEY_CALL);
-        if (!lit("]")) er->error(NO_CLOSING_BRACE);
-    }
-    else
-    {
-        inAccess = false;
-        return false;
-    }
+    if (!lit("[")) return false;
+    if (!integer() && !string() && !call()) Errors::instance().panic(NO_ACCESS_KEY_CALL);
+    if (!lit("]")) Errors::instance().panic(NO_CLOSING_BRACE);
 
     // assemble access
-    ExprPtr next = cache.back();
-    cache.pop_back();
-    ExprPtr prev = cache.back();
-    cache.pop_back();
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, mod, orig);
-    a->left = prev;
-    a->right = next;
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "[]", orig);
+    a->right = uncache();
+    a->left = uncache();
     cache.push_back(a);
 
     // additional access
     access();
-    inAccess = false;
+
+    return true;
+}
+
+bool Parser::dotaccess()
+{
+    uint orig = index;
+    if (!lit(".")) return false;
+    inDot = true; // so the next call doesn't parse dotaccess
+    if (!call() && !integer()) Errors::instance().panic(NO_ACCESS_KEY);
+
+    // assemble dot access
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);
+    a->right = uncache();
+    a->left = uncache();
+    cache.push_back(a);
+
+    // additional access
+    dotaccess();
 
     return true;
 }
@@ -197,8 +191,8 @@ bool Parser::cond()
     uint orig = index;
     if (!lit("if")) return false;
 
-    if (!set() && !call() && !value()) er->error(NO_CONDITIONAL);
-    if (!lit("then")) er->error(NO_THEN);
+    if (!set() && !call() && !value()) Errors::instance().panic(NO_CONDITIONAL);
+    if (!lit("then")) Errors::instance().panic(NO_THEN);
 
     uint origt = index;
     uint cached = cache.size();
@@ -212,7 +206,7 @@ bool Parser::cond()
     }
     else
     {
-        if (!expr()) er->error(NOT_AN_EXPRESSION);
+        if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
         checkIndent(Indent::SAME);
     }
 
@@ -231,7 +225,7 @@ bool Parser::cond()
         }
         else
         {
-            if (!expr()) er->error(NOT_AN_EXPRESSION);
+            if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
         }
     }
 
@@ -287,8 +281,8 @@ bool Parser::oper()
     bool first = (cached < 2) || (cache[cached - 2]->type != Expression::PART_OPER);
 
     cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
-    index++;
-    if (!value() && !call()) er->error(NO_RIGHT_VALUE);
+    ++index;
+    if (!value() && !call()) Errors::instance().panic(NO_RIGHT_VALUE);
     oper();
 
     if (!first) return true;
@@ -327,11 +321,7 @@ bool Parser::keyword()
     {
         ExprPtr r = std::make_shared<Expression>(Expression::RETURN, "", index);
         ++index;
-        if (expr())
-        {
-            r->right = cache.back();
-            cache.pop_back();
-        }
+        if (expr()) r->right = uncache();
         cache.push_back(r);
         return true;
     }
@@ -349,7 +339,7 @@ bool Parser::file()
     if (get().type != Token::FILEPATH) return false;
 
     cache.push_back(std::make_shared<Expression>(Expression::FILE, get().val.substr(1), index));
-    index++;
+    ++index;
     return true;
 }
 
@@ -359,42 +349,27 @@ bool Parser::string()
 {
     if (get().type != Token::STRING) return false;
 
-    std::string val = get().val;
-    cache.push_back(std::make_shared<Expression>
-        (Expression::STR, val.substr(1, val.size() - 2), index));
-    index++;
+    std::string s = get().val.substr(1, get().val.size() - 2);
+    cache.push_back(std::make_shared<Expression>(Expression::STR, s, index));
+    ++index;
     return true;
 }
 
 bool Parser::integer()
 {
-    bool negative = false;
-    //if (lit("-")) negative = true;
-    if (get().type != Token::INTEGER)
-    {
-        if (negative) --index;
-        return false;
-    }
+    if (get().type != Token::INTEGER) return false;
 
-    cache.push_back(std::make_shared<Expression>
-        (Expression::INT, (negative ? "-" : "") + get().val, index));
-    index++;
+    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index));
+    ++index;
     return true;
 }
 
 bool Parser::real()
 {
-    bool negative = false;
-    //if (lit("-")) negative = true;
-    if (get().type != Token::REAL)
-    {
-        if (negative) --index;
-        return false;
-    }
+    if (get().type != Token::REAL) return false;
 
-    cache.push_back(std::make_shared<Expression>
-        (Expression::REAL, (negative ? "-" : "") + get().val, index));
-    index++;
+    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index));
+    ++index;
     return true;
 }
 
@@ -403,7 +378,7 @@ bool Parser::boolean()
     if (get().type != Token::BOOLEAN) return false;
 
     cache.push_back(std::make_shared<Expression>(Expression::BOOL, get().val, index));
-    index++;
+    ++index;
     return true;
 }
 
@@ -412,28 +387,27 @@ bool Parser::block()
     uint orig = index;
     if (!lit("do")) return false;
 
-    // checking for parameters
+    // check for parameters
     std::string params = "";
     if (lit("with"))
     {
         while (name())
         {
-            params += cache.back()->val + " ";
-            cache.pop_back();
+            params += uncache()->val + " ";
             if (!lit(",")) break;
         }
         params.pop_back();
-        if (params == "") er->error(NO_PARAMETER);
+        if (params == "") Errors::instance().panic(NO_PARAMETER);
     }
 
     // getting the expression block
-    if (checkIndent(Indent::SAME)) er->error(NO_INDENT);
+    if (checkIndent(Indent::SAME)) Errors::instance().panic(NO_INDENT);
     uint cached = cache.size();
     if (checkIndent(Indent::MORE))
     {
         while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
-    else if (!expr()) er->error(NOT_AN_EXPRESSION);
+    else if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, params, orig);
@@ -463,7 +437,8 @@ bool Parser::value()
 
     if (string() || integer() || real() || boolean() || block()) // single value
     {
-        access();
+        // check for accessor
+        if (!access() && !inDot) dotaccess();
         oper();
         return true;
     }
@@ -472,17 +447,13 @@ bool Parser::value()
         checkIndent(Indent::MORE);
         while (true)
         {
-            if (checkIndent(Indent::MORE)) er->error(UNEXPECTED_INDENT);
+            if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
             if (name())
             {
-                if (lit(":"))
-                {
-                    nam = cache.back()->val;
-                    cache.pop_back();
-                }
+                if (lit(":")) nam = uncache()->val;
                 else
                 {
                     cache.pop_back();
@@ -490,28 +461,25 @@ bool Parser::value()
                 }
 
             }
-            if (!expr()) er->error(NOTHING_TO_SET);
+            if (!expr()) Errors::instance().panic(NOTHING_TO_SET);
 
             ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
-            tup->left = cache.back();
-            cache.pop_back();
+            tup->left = uncache();
             cache.push_back(tup);
 
             if (!lit(",")) break;
         }
         checkIndent(Indent::LESS);
-        if (!lit(")")) er->error(NO_CLOSING_BRACE);
+        if (!lit(")")) Errors::instance().panic(NO_CLOSING_BRACE);
 
         // assemble tuple
         ExprPtr tup = cache[cached];
-        for (uint i = cached; i < cache.size() - 1; ++i)
-        {
-            cache[i]->right = cache[i + 1];
-        }
+        for (uint i = cached; i < cache.size() - 1; ++i) cache[i]->right = cache[i + 1];
         cache.resize(cached);
         cache.push_back(tup);
 
-        access();
+        // check for accessor
+        if (!access() && !inDot) dotaccess();
         oper();
         return true;
     }
@@ -530,8 +498,7 @@ bool Parser::name()
 bool Parser::lit(const std::string& t)
 {
     if (get().val != t) return false;
-
-    index++;
+    ++index;
     return true;
 }
 

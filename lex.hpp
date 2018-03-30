@@ -28,13 +28,6 @@ public:
     void print();
 };
 
-class Lexer
-{
-    ErrorHandler* er;
-
-public:
-    Lexer(ErrorHandler* er);
-    void lex(const std::string& source, std::vector<Token>& tokens);
-};
+void lex(const std::string& source, std::vector<Token>& tokens);
 
 OCA_END

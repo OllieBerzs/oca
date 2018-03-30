@@ -76,6 +76,7 @@ public:
 
     Block(ExprPtr expr, Scope* parent);
     std::string toStr(bool debug);
+    ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block, Evaluator* e);
 };
 
 class Tuple : public Value
