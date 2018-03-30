@@ -37,7 +37,7 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
 {
     index = 0;
     indent = 0;
-    inAccess = false;
+    inDot = false;
 
     this->tokens = &tokens;
     while (index < tokens.size() - 1)
@@ -131,8 +131,9 @@ bool Parser::call()
     c->right = arg;
     cache.push_back(c);
 
-    // TODO: better access
-    if (!inAccess) access();
+    // check for accessors
+    if (!access() && !inDot) dotaccess();
+
     if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
@@ -150,37 +151,37 @@ bool Parser::call()
 bool Parser::access()
 {
     uint orig = index;
-    inAccess = true;
-    std::string mod = "";
-    if (lit("."))
-    {
-        if (!integer() && !call()) Errors::instance().panic(NO_ACCESS_KEY);
-    }
-    else if (lit("["))
-    {
-        mod = "[]";
-        if (!integer() && !string() && !call()) Errors::instance().panic(NO_ACCESS_KEY_CALL);
-        if (!lit("]")) Errors::instance().panic(NO_CLOSING_BRACE);
-    }
-    else
-    {
-        inAccess = false;
-        return false;
-    }
+    if (!lit("[")) return false;
+    if (!integer() && !string() && !call()) Errors::instance().panic(NO_ACCESS_KEY_CALL);
+    if (!lit("]")) Errors::instance().panic(NO_CLOSING_BRACE);
 
     // assemble access
-    ExprPtr next = cache.back();
-    cache.pop_back();
-    ExprPtr prev = cache.back();
-    cache.pop_back();
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, mod, orig);
-    a->left = prev;
-    a->right = next;
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "[]", orig);
+    a->right = uncache();
+    a->left = uncache();
     cache.push_back(a);
 
     // additional access
     access();
-    inAccess = false;
+
+    return true;
+}
+
+bool Parser::dotaccess()
+{
+    uint orig = index;
+    if (!lit(".")) return false;
+    inDot = true; // so the next call doesn't parse dotaccess
+    if (!call()) Errors::instance().panic(NO_ACCESS_KEY);
+
+    // assemble dot access
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);
+    a->right = uncache();
+    a->left = uncache();
+    cache.push_back(a);
+
+    // additional access
+    dotaccess();
 
     return true;
 }
@@ -430,7 +431,8 @@ bool Parser::value()
 
     if (string() || integer() || real() || boolean() || block()) // single value
     {
-        access();
+        // check for accessor
+        if (!access() && !inDot) dotaccess();
         oper();
         return true;
     }
@@ -470,7 +472,8 @@ bool Parser::value()
         cache.resize(cached);
         cache.push_back(tup);
 
-        access();
+        // check for accessor
+        if (!access() && !inDot) dotaccess();
         oper();
         return true;
     }
