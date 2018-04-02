@@ -44,6 +44,12 @@
         'name': 'entity.name.function.oca'
   }
 
+  # file evaluation
+  {
+    'match': '\\$.+'
+    'name': 'entity.name.function.oca'
+  }
+
   # operators
   {
     'match': '(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=)'
@@ -58,7 +64,7 @@
 
   # keywords
   {
-    'match': '\\b(do|if|then|else|return|break|with|yield)\\b'
+    'match': '\\b(do|if|then|else|return|break|with|yield|inject)\\b'
     'name': 'keyword.control.oca'
   }
 

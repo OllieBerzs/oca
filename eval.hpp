@@ -28,6 +28,7 @@ private:
     ValuePtr cond(ExprPtr expr, Scope& scope);
     ValuePtr access(ExprPtr expr, Scope& scope);
     ValuePtr file(ExprPtr expr, Scope& scope);
+    ValuePtr inject(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
 };
 

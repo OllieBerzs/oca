@@ -34,6 +34,13 @@ uint Errors::count()
     return files.size();
 }
 
+std::string Errors::folder()
+{
+    const std::string& filepath = *files.back().path;
+    uint pos = filepath.find_last_of('/');
+    return filepath.substr(0, pos + 1);
+}
+
 // ------------------------------------
 
 void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
@@ -55,6 +62,7 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
         "NO CONDITIONAL",
         "NO THEN",
         "NO RIGHT VALUE",
+        "NOTHING TO INJECT",
 
         "NEW TUPLE KEY",
         "CANNOT SPLIT",
@@ -179,6 +187,13 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
         pos = file.tokens->at(file.parser->index - 1).pos;
         width = file.tokens->at(file.parser->index - 1).val.size();
         message = "Missing right value for operator.";
+        break;
+
+    case NOTHING_TO_INJECT:
+        // previous token
+        pos = file.tokens->at(file.parser->index - 1).pos;
+        width = file.tokens->at(file.parser->index - 1).val.size();
+        message = "Missing file to inject.";
         break;
 
     case NEW_TUPLE_KEY:
