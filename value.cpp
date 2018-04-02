@@ -132,6 +132,20 @@ Integer::Integer(int val, Scope* parent, Evaluator* e) : val(val)
         return arg.state->cast(left == right);
     });
 
+    bind("__ran", "i", [](Arg arg) -> Ret
+    {
+        int begin = arg.caller->toi();
+        int end = arg.value->toi();
+        std::vector<int> vec(end - begin + 1);
+        int counter = 0;
+        for (int i = begin; i <= end; ++i)
+        {
+            vec[counter] = i;
+            ++counter;
+        }
+        return arg.state->cast(vec);
+    });
+
     bind("times", "", [](Arg arg) -> Ret
     {
         int times = arg.caller->toi();

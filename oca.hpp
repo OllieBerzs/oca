@@ -65,7 +65,8 @@ public:
     std::shared_ptr<Integer> cast(int val);
     std::shared_ptr<Real> cast(float val);
     std::shared_ptr<Bool> cast(bool val);
-    std::shared_ptr<String> cast(std::string val);
+    std::shared_ptr<String> cast(const std::string& val);
+    std::shared_ptr<Tuple> cast(const std::vector<int>& val);
 
     friend class Evaluator;
 };

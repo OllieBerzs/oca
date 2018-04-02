@@ -170,9 +170,21 @@ std::shared_ptr<Bool> State::cast(bool val)
     return std::make_shared<Bool>(val, nullptr, &evaler);
 }
 
-std::shared_ptr<String> State::cast(std::string val)
+std::shared_ptr<String> State::cast(const std::string& val)
 {
     return std::make_shared<String>(val, nullptr, &evaler);
+}
+
+std::shared_ptr<Tuple> State::cast(const std::vector<int>& val)
+{
+    auto tuple = std::make_shared<Tuple>(nullptr);
+    for (uint i = 0; i < val.size(); ++i)
+    {
+        ++static_cast<Tuple&>(*tuple).count;
+        tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
+            std::make_shared<Integer>(val[i], &tuple->scope, &evaler));
+    }
+    return tuple;
 }
 
 OCA_END
