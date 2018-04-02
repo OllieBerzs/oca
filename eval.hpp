@@ -15,6 +15,8 @@ class Evaluator
 {
 public:
     State* state;
+    ExprPtr current;
+
     Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 

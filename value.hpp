@@ -22,13 +22,20 @@ public:
     Scope scope = Scope(nullptr);
 
     virtual ~Value() = default;
-    virtual std::string toStr(bool debug) = 0;
+    virtual std::string tos(bool debug) = 0;
     virtual bool isNil();
 
-    int toInt();
-    float toFloat();
-    bool toBool();
+    int toi();
+    float tor();
+    bool tob();
 
+    bool isi();
+    bool isr();
+    bool isb();
+    bool iss();
+    bool ist();
+
+    void bind(const std::string& name, const std::string& args, CPPFunc func);
     ValueCast operator[](const std::string& name);
 };
 
@@ -39,7 +46,7 @@ public:
 
     Integer(ExprPtr expr, Scope* parent, Evaluator* e);
     Integer(int val, Scope* parent, Evaluator* e);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
 };
 
 class Real : public Value
@@ -49,7 +56,7 @@ public:
 
     Real(ExprPtr expr, Scope* parent, Evaluator* e);
     Real(float val, Scope* parent, Evaluator* e);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
 };
 
 class String : public Value
@@ -59,7 +66,7 @@ public:
 
     String(ExprPtr expr, Scope* parent, Evaluator* e);
     String(const std::string& val, Scope* parent, Evaluator* e);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
 };
 
 class Bool : public Value
@@ -69,7 +76,7 @@ public:
 
     Bool(ExprPtr expr, Scope* parent, Evaluator* e);
     Bool(bool val, Scope* parent, Evaluator* e);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
 };
 
 class Block : public Value
@@ -78,31 +85,35 @@ public:
     ExprPtr val;
 
     Block(ExprPtr expr, Scope* parent, Evaluator* e);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
 };
 
 class Tuple : public Value
 {
 public:
+    uint count = 0;
     Tuple(Scope* parent);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
 };
 
 class Func : public Value
 {
-public:
     CPPFunc val;
 
-    Func(CPPFunc func, Scope* parent);
-    std::string toStr(bool debug);
+public:
+    std::string params;
+
+    Func(CPPFunc func, const std::string& params, Scope* parent, Evaluator* e);
+    std::string tos(bool debug);
+    ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
 };
 
 class Nil : public Value
 {
 public:
     static std::shared_ptr<Nil> in(Scope* parent);
-    std::string toStr(bool debug);
+    std::string tos(bool debug);
     bool isNil();
 };
 

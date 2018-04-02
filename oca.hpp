@@ -29,7 +29,6 @@ public:
     void operator=(float v);
     void operator=(const std::string& v);
     void operator=(bool v);
-    void operator=(CPPFunc v);
 
     ValueCast operator[](const std::string& name);
 };
@@ -38,8 +37,10 @@ struct Arg
 {
     ValuePtr caller;
     ValuePtr value;
-    ValuePtr block;
+    ValuePtr yield;
     State* state;
+
+    ValuePtr operator[](uint i);
 };
 
 class State
@@ -58,6 +59,7 @@ public:
 
     void load(const std::string& lib);
 
+    void bind(const std::string& name, const std::string& params, CPPFunc func);
     ValueCast operator[](const std::string& name);
 
     std::shared_ptr<Integer> cast(int val);

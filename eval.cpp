@@ -13,10 +13,11 @@
 
 OCA_BEGIN
 
-Evaluator::Evaluator(State* state) : state(state) {}
+Evaluator::Evaluator(State* state) : state(state), current(nullptr) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     if (expr->type == Expression::SET) return set(expr, scope);
     else if (expr->type == Expression::CALL) return call(expr, Nil::in(&scope), scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
@@ -29,6 +30,7 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     std::vector<ExprPtr> lefts;
     ValuePtr rightVal = eval(expr->right, scope);
 
@@ -85,6 +87,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
+    current = expr;
     // TODO: check if requires argument
     ValuePtr func = Nil::in(&scope);
     ValuePtr arg = Nil::in(&scope);
@@ -110,13 +113,14 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 
     // call the function
     Value& f = *func;
-    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f).val({caller, arg, block, state});
+    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f)(caller, arg, block);
     if (TYPE_EQ(f, Block)) return static_cast<Block&>(f)(caller, arg, block);
     return func;
 }
 
 ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     std::map<std::string, std::string> operFuncs = {
         {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"},
         {"==", "__eq"}
@@ -126,16 +130,17 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val]);
     if (func->isNil()) Errors::instance().panic(UNDEFINED_OPERATOR, expr);
-
+    
     // call the operator
     Value& funcref = *func;
-    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func).val({left, right, Nil::in(&scope), state});
+    if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func)(left, right, Nil::in(&scope));
     if (TYPE_EQ(funcref, Block)) return static_cast<Block&>(*func)(left, right, Nil::in(&scope));
     return func;
 }
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     ValuePtr result = Nil::in(&scope);
     ValuePtr conditional = eval(expr->left, scope);
     ValuePtr branch = Nil::in(&scope);
@@ -164,6 +169,7 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = Nil::in(&scope);
     ValuePtr arg = Nil::in(&scope);
@@ -171,7 +177,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     std::string name = "";
 
     // get the entry name
-    if (expr->val == "[]") name = eval(expr->right, scope)->toStr(false);
+    if (expr->val == "[]") name = eval(expr->right, scope)->tos(false);
     else name = expr->right->val;
 
     // get the data member
@@ -185,18 +191,20 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 
     // call the data member
     Value& val = *right;
-    if (TYPE_EQ(val, Func)) return static_cast<Func&>(val).val({left, arg, block, state});
+    if (TYPE_EQ(val, Func)) return static_cast<Func&>(val)(left, arg, block);
     if (TYPE_EQ(val, Block)) return static_cast<Block&>(val)(left, arg, block);
     else return right; // if is not callable
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     return Nil::in(&scope);
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
 {
+    current = expr;
     ValuePtr result = Nil::in(&scope);
     if (expr->type == Expression::TUP)
     {
@@ -208,8 +216,12 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
         while(expr && expr->left)
         {
             // unnamed value
-            if (expr->val == "") expr->val = std::to_string(counter);
-            ++counter;
+            if (expr->val == "")
+            {
+                expr->val = std::to_string(counter);
+                ++counter;
+                ++static_cast<Tuple&>(*result).count;
+            }
 
             // add tuple value to object table
             result->scope.set(expr->val, eval(expr->left, result->scope));
