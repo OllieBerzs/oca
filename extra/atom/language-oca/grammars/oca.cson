@@ -25,11 +25,11 @@
 
   # comments
   {
-    'begin': '--'
+    'begin': '#'
     'captures':
       '0':
         'name': 'punctuation.definition.comment.oca'
-    'end': '--'
+    'end': '\\n'
     'name': 'comment.block.oca'
   }
 

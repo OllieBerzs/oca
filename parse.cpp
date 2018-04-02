@@ -40,6 +40,7 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
     indent = 0;
 
     this->tokens = &tokens;
+    while (checkIndent(Indent::SAME)) {}
     while (index < tokens.size() - 1)
     {
         if (expr())

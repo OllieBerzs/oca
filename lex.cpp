@@ -22,10 +22,10 @@ std::vector<std::pair<Token::Type, std::string>> syntax
     {Token::FILEPATH,        "()()$(.)+"},
     {Token::KEYWORD,         "()()\\b(do|if|then|else|return|break|with)\\b"},
     {Token::NAME,            "()([A-Za-z_])([A-Za-z_0-9]*)"},
-    {Token::COMMENT,         "()()--(.|\\n)*--"},
+    {Token::COMMENT,         "()(#(.)*)"},
     {Token::OPERATOR,        "()()(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=|\\.\\.)"},
     {Token::PUNCTUATION,     "()()(\\.|:|\\(|\\)|,|=|\\[|\\])"},
-    {Token::INDENT,          "()(\\n *)(?=\\S)"},
+    {Token::INDENT,          "()(\\n *)(?=[^\\s^#])"},
     {Token::WHITESPACE,      "()()(\\n *| +)"},
     {Token::INVALID,         "()()(.)+"}
 };
