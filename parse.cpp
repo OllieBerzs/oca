@@ -201,12 +201,10 @@ bool Parser::cond()
         {
             if (!checkIndent(Indent::SAME)) break;
         }
-        checkIndent(Indent::LESS);
     }
     else
     {
         if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
-        checkIndent(Indent::SAME);
     }
 
     uint elseCached = cache.size();
@@ -237,8 +235,7 @@ bool Parser::cond()
         curr->left = cache[i];
         if (i < cache.size() - 1)
         {
-            curr->right = std::make_shared<Expression>
-                (Expression::NEXT, "", orig);
+            curr->right = std::make_shared<Expression>(Expression::NEXT, "", orig);
             curr = curr->right;
         }
     }
@@ -252,8 +249,7 @@ bool Parser::cond()
         curr->left = cache[i];
         if (i < cache.size() - 1)
         {
-            curr->right = std::make_shared<Expression>
-                (Expression::NEXT, "", orig);
+            curr->right = std::make_shared<Expression>(Expression::NEXT, "", orig);
             curr = curr->right;
         }
     }

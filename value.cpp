@@ -299,6 +299,11 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         if (expr->left->type == Expression::RETURN) return evaler->eval(expr->left->right, temp);
         if (expr->left->type == Expression::BREAK) return result;
         result = evaler->eval(expr->left, temp);
+        if (evaler->returning)
+        {
+            evaler->returning = false;
+            return result;
+        }
         expr = expr->right;
     }
     return result;

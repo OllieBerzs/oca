@@ -16,6 +16,7 @@ class Evaluator
 public:
     State* state;
     ExprPtr current;
+    bool returning = false;
 
     Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);

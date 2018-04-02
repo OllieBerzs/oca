@@ -130,7 +130,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val]);
     if (func->isNil()) Errors::instance().panic(UNDEFINED_OPERATOR, expr);
-    
+
     // call the operator
     Value& funcref = *func;
     if (TYPE_EQ(funcref, Func)) return static_cast<Func&>(*func)(left, right, Nil::in(&scope));
@@ -156,10 +156,15 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
     else if (expr->right->right) branch = eval(expr->right->right, scope);
 
     // evaluate the branch
+    if (branch->isNil()) return branch;
     ExprPtr it = static_cast<Block&>(*branch).val;
     while (it && it->left)
     {
-        if (it->left->type == Expression::RETURN) return eval(it->left->right, scope);
+        if (it->left->type == Expression::RETURN)
+        {
+            returning = true;
+            return eval(it->left->right, scope);
+        }
         if (it->left->type == Expression::BREAK) return result;
         result = eval(it->left, scope);
         it = it->right;
