@@ -12,27 +12,29 @@ OCA_BEGIN
 
 std::vector<std::pair<Token::Type, std::string>> syntax
 {
-
-    {Token::STRING,          "()('[^']*')"},
-    {Token::REAL,            "()([0-9]+\\.[0-9]+)"},
-    {Token::INTEGER,         "()([0-9]+)"},
-    {Token::BOOLEAN,         "()\\b(true|false)\\b"},
-    {Token::FILEPATH,        "()$(.)+"},
-    {Token::KEYWORD,         "()\\b(do|if|then|else|return|break|with)\\b"},
-    {Token::NAME,            "([A-Za-z_])([A-Za-z_0-9]*)"},
-    {Token::COMMENT,         "()--(.|\\n)*--"},
-    {Token::OPERATOR,        "()(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=)"},
-    {Token::PUNCTUATION,     "()(\\.|:|\\(|\\)|,|=|\\[|\\])"},
-    {Token::INDENT,          "(\\n *)(?=\\S)"},
-    {Token::WHITESPACE,      "()(\\n *| +)"},
-    {Token::INVALID,         "()(.)+"}
+    {Token::STRING,          "()()('[^']*')"},
+    {Token::BINNUM,          "()()(0b[01]+)"},
+    {Token::HEXNUM,          "()()(0x[0-9A-Fa-f]+)"},
+    {Token::SCIENTNUM,       "([0-9]+(\\.[0-9]+)?[eE]-?[0-9]+(\\.[0-9]+)?)"},
+    {Token::REAL,            "()()([0-9]+\\.[0-9]+)"},
+    {Token::INTEGER,         "()()([0-9]+)"},
+    {Token::BOOLEAN,         "()()\\b(true|false)\\b"},
+    {Token::FILEPATH,        "()()$(.)+"},
+    {Token::KEYWORD,         "()()\\b(do|if|then|else|return|break|with)\\b"},
+    {Token::NAME,            "()([A-Za-z_])([A-Za-z_0-9]*)"},
+    {Token::COMMENT,         "()()--(.|\\n)*--"},
+    {Token::OPERATOR,        "()()(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=|\\.\\.)"},
+    {Token::PUNCTUATION,     "()()(\\.|:|\\(|\\)|,|=|\\[|\\])"},
+    {Token::INDENT,          "()(\\n *)(?=\\S)"},
+    {Token::WHITESPACE,      "()()(\\n *| +)"},
+    {Token::INVALID,         "()()(.)+"}
 };
 
 void Token::print() const
 {
     std::vector<std::string> types =
     {
-        "string", "real", "integer", "boolean", "filepath",
+        "string", "binnum", "hexnum", "scientnum", "real", "integer", "boolean", "filepath",
         "keyword", "name", "operator", "punctuation",
         "comment", "indent", "whitespace", "invalid", "last"
     };
@@ -60,7 +62,7 @@ void lex(const std::string& source, std::vector<Token>& tokens)
         for (uint i = 0; i < it->size(); ++i)
         {
             if (it->str(i + 1).empty()) continue;
-            uint index = i / 2;
+            uint index = i / 3;
             if (syntax[index].first == Token::WHITESPACE) continue;
             if (syntax[index].first == Token::COMMENT) continue;
             tokens.push_back({syntax[index].first, it->str(), pos});
