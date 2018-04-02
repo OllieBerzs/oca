@@ -90,18 +90,9 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     current = expr;
-    // TODO: check if requires argument
     ValuePtr func = Nil::in(&scope);
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
-
-    /*std::cout << "------ " << expr->val << " ------\n";
-    std::cout << "super: ";
-    caller->scope.print();
-    std::cout << "global: ";
-    state->global.print();
-    std::cout << "this: ";
-    scope.print();*/
 
     // get the function from one of the scopes
     if (caller) func = caller->scope.get(expr->val); // type specific
@@ -124,8 +115,9 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 {
     current = expr;
     std::map<std::string, std::string> operFuncs = {
-        {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"},
-        {"==", "__eq"}, {"..", "__ran"}
+        {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"}, {"%", "__mod"},
+        {"^", "__pow"}, {"==", "__eq"}, {">", "__gr"}, {"<", "__ls"}, {">=", "__geq"},
+        {"<=", "__leq"}, {"..", "__ran"}    
     };
 
     ValuePtr left = eval(expr->left, scope);

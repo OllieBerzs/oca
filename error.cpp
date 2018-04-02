@@ -260,6 +260,14 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
         break;
     }
 
+    // header
+    system("printf ''");
+    std::cout << "\033[38;5;14m";
+    std::cout << "-- " << typeStrings[type] << " -------------------- " << *file.path << "\n";
+    std::cout << "\033[0m";
+
+    if (*file.path == "") exit(1);
+
     // get error line and the previous line if exists
     std::string prevline = "";
     std::string errline = "";
@@ -294,12 +302,6 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
     std::string lineMid = errline.substr(colNum, width);
     std::string lineEnd = errline.substr(colNum + width, errline.size() - (colNum + width));
 
-    // header
-    system("printf ''");
-    std::cout << "\033[38;5;14m";
-    std::cout << "-- " << typeStrings[type] << " -------------------- " << *file.path << "\n";
-    std::cout << "\033[0m";
-
     // error lines
     if (lineNum > 1)
     {
@@ -318,7 +320,6 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
     // message and suggestions
     std::cout << message << "\n";
 
-    std::cin.get();
     exit(1);
 }
 

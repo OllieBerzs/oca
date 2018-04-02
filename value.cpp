@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <cmath>
 #include "value.hpp"
 #include "parse.hpp"
 #include "oca.hpp"
@@ -125,11 +126,65 @@ Integer::Integer(int val, Scope* parent, Evaluator* e) : val(val)
         return Nil::in(nullptr);
     });
 
+    bind("__div", "n", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left / arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left / arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__mod", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left % right);
+    });
+
+    bind("__pow", "n", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        ValuePtr right = arg.value;
+        if (right->isi()) return arg.state->cast(static_cast<int>(std::pow(left, right->toi())));
+        if (right->isr()) return arg.state->cast(static_cast<float>(std::pow(left, right->tor())));
+        return Nil::in(nullptr);
+    });
+
     bind("__eq", "i", [](Arg arg) -> Ret
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
         return arg.state->cast(left == right);
+    });
+
+    bind("__gr", "n", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left > arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left > arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__ls", "n", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left < arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left < arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__geq", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left >= right);
+    });
+
+    bind("__leq", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left <= right);
     });
 
     bind("__ran", "i", [](Arg arg) -> Ret
@@ -174,6 +229,64 @@ Real::Real(float val, Scope* parent, Evaluator* e) : val(val)
 {
     evaler = e;
     scope.parent = parent;
+
+    // functions
+    bind("__add", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left + arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left + arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__sub", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left - arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left - arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__mul", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left * arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left * arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__div", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left / arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left / arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__pow", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        ValuePtr right = arg.value;
+        if (right->isi()) return arg.state->cast(static_cast<float>(std::pow(left, right->toi())));
+        if (right->isr()) return arg.state->cast(static_cast<float>(std::pow(left, right->tor())));
+        return Nil::in(nullptr);
+    });
+
+    bind("__gr", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left > arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left > arg.value->tor());
+        return Nil::in(nullptr);
+    });
+
+    bind("__ls", "n", [](Arg arg) -> Ret
+    {
+        float left = arg.caller->tor();
+        if (arg.value->isi()) return arg.state->cast(left < arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left < arg.value->tor());
+        return Nil::in(nullptr);
+    });
 }
 
 std::string Real::tos(bool debug)
@@ -202,6 +315,13 @@ String::String(const std::string& val, Scope* parent, Evaluator* e) : val(val)
         std::string right = arg.value->tos(false);
         return arg.state->cast(left + right);
     });
+
+    bind("__eq", "s", [](Arg arg) -> Ret
+    {
+        std::string left = arg.caller->tos(false);
+        std::string right = arg.value->tos(false);
+        return arg.state->cast(left == right);
+    });
 }
 
 std::string String::tos(bool debug)
@@ -220,6 +340,13 @@ Bool::Bool(bool val, Scope* parent, Evaluator* e) : val(val)
 {
     evaler = e;
     scope.parent = parent;
+
+    bind("__eq", "b", [](Arg arg) -> Ret
+    {
+        bool left = arg.caller->tob();
+        bool right = arg.value->tob();
+        return arg.state->cast(left == right);
+    });
 }
 
 std::string Bool::tos(bool debug)

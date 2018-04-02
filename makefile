@@ -73,14 +73,17 @@ test: $(TEST)
 # dependencies (generated) -----------------------------------
 oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp \
   parse.hpp eval.hpp lex.hpp error.hpp
-lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp
-parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp error.hpp
+lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp value.hpp \
+  scope.hpp
+parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp error.hpp \
+  value.hpp scope.hpp
 value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp \
   oca.hpp eval.hpp error.hpp
 scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
   scope.hpp oca.hpp error.hpp
-error.o: error.cpp error.hpp common.hpp ocaconf.hpp lex.hpp parse.hpp
+error.o: error.cpp error.hpp common.hpp ocaconf.hpp value.hpp scope.hpp \
+  lex.hpp parse.hpp
 main.o: main.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp \
   parse.hpp eval.hpp
 tests.o: tests.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
