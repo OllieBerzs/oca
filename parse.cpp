@@ -351,18 +351,50 @@ bool Parser::string()
 
 bool Parser::integer()
 {
-    if (get().type != Token::INTEGER) return false;
+    // check if negative
+    bool minus = false;
+    if (get().val == "-")
+    {
+        const Token& prev = (index == 0) ? tokens->back() : tokens->at(index - 1);
+        if (prev.type == Token::INDENT || prev.val == "(" || prev.val == ":" || prev.val == "=")
+        {
+            ++index;
+            minus = true;
+        }
+    }
+    if (get().type != Token::INTEGER)
+    {
+        if (minus) --index;
+        return false;
+    }
 
-    cache.push_back(std::make_shared<Expression>(Expression::INT, get().val, index));
+    std::string val = minus ? "-" + get().val : get().val;
+    cache.push_back(std::make_shared<Expression>(Expression::INT, val, index));
     ++index;
     return true;
 }
 
 bool Parser::real()
 {
-    if (get().type != Token::REAL) return false;
+    // check if negative
+    bool minus = false;
+    if (get().val == "-")
+    {
+        const Token& prev = (index == 0) ? tokens->back() : tokens->at(index - 1);
+        if (prev.type == Token::INDENT || prev.val == "(" || prev.val == ":" || prev.val == "=")
+        {
+            ++index;
+            minus = true;
+        }
+    }
+    if (get().type != Token::REAL)
+    {
+        if (minus) --index;
+        return false;
+    }
 
-    cache.push_back(std::make_shared<Expression>(Expression::REAL, get().val, index));
+    std::string val = minus ? "-" + get().val : get().val;
+    cache.push_back(std::make_shared<Expression>(Expression::REAL, val, index));
     ++index;
     return true;
 }
