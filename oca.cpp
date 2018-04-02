@@ -42,12 +42,6 @@ void ValueCast::operator=(bool v)
     parent->set(name, std::make_shared<Bool>(v, parent, evaler));
 }
 
-void ValueCast::operator=(CPPFunc v)
-{
-    Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Func>(v, parent));
-}
-
 ValueCast ValueCast::operator[](const std::string& name)
 {
     ValuePtr var = val->scope.get(name);
@@ -59,16 +53,24 @@ ValueCast ValueCast::operator[](const std::string& name)
     return ValueCast(var, name, evaler);
 }
 
+
+// ---------------------------------------
+
+ValuePtr Arg::operator[](uint i)
+{
+    return value->scope.get(std::to_string(i));
+}
+
 // ---------------------------------------
 
 State::State() : evaler(this)
 {
     // add base functions
-    (*this)["print"] = [](Arg arg) -> Ret
+    bind("print", "a", [](Arg arg) -> Ret
     {
-        std::cout << arg.value->toStr(false) << "\n";
+        std::cout << arg.value->tos(false) << "\n";
         return NIL;
-    };
+    });
 }
 
 State::~State()
@@ -117,23 +119,28 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     std::cout << "------------ EVAL ------------\n";
     #endif
 
-    ValuePtr obj = nullptr;
+    ValuePtr val = nullptr;
     for (ExprPtr e : ast)
     {
-        obj = evaler.eval(e, scope);
+        val = evaler.eval(e, scope);
         #ifdef OUT_VALUES
-        if (obj == nullptr) std::cout << "->nil\n";
-        else std::cout << "->" << obj->toStr(true) << "\n";
+        if (val == nullptr) std::cout << "->nullptr\n";
+        else std::cout << "->" << val->tos(true) << "\n";
         #endif
     }
 
     // pop file
     if (path != "") Errors::instance().end();
 
-    return obj;
+    return val;
 }
 
 // ---------------------------------------
+
+void State::bind(const std::string& name, const std::string& params, CPPFunc func)
+{
+    global.set(name, std::make_shared<Func>(func, params, &global, &evaler));
+}
 
 ValueCast State::operator[](const std::string& name)
 {

@@ -36,7 +36,7 @@ uint Errors::count()
 
 // ------------------------------------
 
-void Errors::panic(ErrorType type, ExprPtr expr)
+void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add)
 {
     std::vector<std::string> typeStrings = {
         "UNKNOWN SYMBOL",
@@ -62,7 +62,9 @@ void Errors::panic(ErrorType type, ExprPtr expr)
         "IF BOOL",
         "UNDEFINED IN TUPLE",
         "NO ARGUMENT",
-        "UNDEFINED"
+        "SMALL TUPLE",
+        "UNDEFINED",
+        "TYPE MISMATCH"
     };
 
     File& file = files.back();
@@ -221,11 +223,25 @@ void Errors::panic(ErrorType type, ExprPtr expr)
         message = "This block requires an argument to be called.";
         break;
 
+    case SMALL_TUPLE:
+        // current expression
+        pos = file.tokens->at(expr->index).pos;
+        width = file.tokens->at(expr->index).val.size();
+        message = "The tuple is too small of an argument for function " + add;
+        break;
+
     case UNDEFINED:
         // current expression
         pos = file.tokens->at(expr->index).pos;
         width = file.tokens->at(expr->index).val.size();
         message = "Undefined variable.";
+        break;
+
+    case TYPE_MISMATCH:
+        // current expression
+        pos = file.tokens->at(expr->index).pos;
+        width = file.tokens->at(expr->index).val.size();
+        message = "This function got " + add;
         break;
     }
 

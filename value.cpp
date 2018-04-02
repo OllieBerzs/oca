@@ -18,6 +18,11 @@ bool Value::isNil()
     return false;
 }
 
+void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
+{
+    scope.set(name, std::make_shared<Func>(func, args, &scope, evaler));
+}
+
 ValueCast Value::operator[](const std::string& name)
 {
     ValuePtr var = scope.get(name);
@@ -29,7 +34,7 @@ ValueCast Value::operator[](const std::string& name)
     return ValueCast(var, name, evaler);
 }
 
-int Value::toInt()
+int Value::toi()
 {
     if (TYPE_EQ(*this, Integer))
     {
@@ -38,7 +43,7 @@ int Value::toInt()
     else return 0;
 }
 
-float Value::toFloat()
+float Value::tor()
 {
     if (TYPE_EQ(*this, Real))
     {
@@ -47,12 +52,42 @@ float Value::toFloat()
     else return 0.0f;
 }
 
-bool Value::toBool()
+bool Value::tob()
 {
     if (TYPE_EQ(*this, Bool))
     {
         return static_cast<Bool&>(*this).val;
     }
+    else return false;
+}
+
+bool Value::isi()
+{
+    if (TYPE_EQ(*this, Integer)) return true;
+    else return false;
+}
+
+bool Value::isr()
+{
+    if (TYPE_EQ(*this, Real)) return true;
+    else return false;
+}
+
+bool Value::isb()
+{
+    if (TYPE_EQ(*this, Bool)) return true;
+    else return false;
+}
+
+bool Value::iss()
+{
+    if (TYPE_EQ(*this, String)) return true;
+    else return false;
+}
+
+bool Value::ist()
+{
+    if (TYPE_EQ(*this, Tuple)) return true;
     else return false;
 }
 
@@ -66,47 +101,50 @@ Integer::Integer(int val, Scope* parent, Evaluator* e) : val(val)
     scope.parent = parent;
 
     // functions
-    (*this)["__add"] = [](Arg arg) -> Ret
+    bind("__add", "n", [](Arg arg) -> Ret
     {
-        int left = arg.caller->toInt();
-        int right = arg.value->toInt();
-        return arg.state->cast(left + right);
-    };
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left + arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left + arg.value->tor());
+        return Nil::in(nullptr);
+    });
 
-    (*this)["__sub"] = [](Arg arg) -> Ret
+    bind("__sub", "n", [](Arg arg) -> Ret
     {
-        int left = arg.caller->toInt();
-        int right = arg.value->toInt();
-        return arg.state->cast(left - right);
-    };
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left - arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left - arg.value->tor());
+        return Nil::in(nullptr);
+    });
 
-    (*this)["__mul"] = [](Arg arg) -> Ret
+    bind("__mul", "n", [](Arg arg) -> Ret
     {
-        int left = arg.caller->toInt();
-        int right = arg.value->toInt();
-        return arg.state->cast(left * right);
-    };
+        int left = arg.caller->toi();
+        if (arg.value->isi()) return arg.state->cast(left * arg.value->toi());
+        if (arg.value->isr()) return arg.state->cast(left * arg.value->tor());
+        return Nil::in(nullptr);
+    });
 
-    (*this)["__eq"] = [](Arg arg) -> Ret
+    bind("__eq", "i", [](Arg arg) -> Ret
     {
-        int left = arg.caller->toInt();
-        int right = arg.value->toInt();
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
         return arg.state->cast(left == right);
-    };
+    });
 
-    (*this)["times"] = [](Arg arg) -> Ret
+    bind("times", "", [](Arg arg) -> Ret
     {
-        int counter = arg.caller->toInt();
-        Block& yield = static_cast<Block&>(*arg.value);
-        for (int i = 0; i < counter; ++i)
+        int times = arg.caller->toi();
+        Block& yield = static_cast<Block&>(*arg.yield);
+        for (int i = 0; i < times; ++i)
         {
             yield(Nil::in(arg.caller->scope.parent), arg.state->cast(i), Nil::in(nullptr));
         }
         return Nil::in(nullptr);
-    };
+    });
 }
 
-std::string Integer::toStr(bool debug)
+std::string Integer::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<int>";
@@ -124,7 +162,7 @@ Real::Real(float val, Scope* parent, Evaluator* e) : val(val)
     scope.parent = parent;
 }
 
-std::string Real::toStr(bool debug)
+std::string Real::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<real>";
@@ -144,15 +182,15 @@ String::String(const std::string& val, Scope* parent, Evaluator* e) : val(val)
     scope.parent = parent;
 
     // functions
-    (*this)["__add"] = [](Arg arg) -> Ret
+    bind("__add", "a", [](Arg arg) -> Ret
     {
-        std::string left = arg.caller->toStr(false);
-        std::string right = arg.value->toStr(false);
+        std::string left = arg.caller->tos(false);
+        std::string right = arg.value->tos(false);
         return arg.state->cast(left + right);
-    };
+    });
 }
 
-std::string String::toStr(bool debug)
+std::string String::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<str>";
@@ -170,7 +208,7 @@ Bool::Bool(bool val, Scope* parent, Evaluator* e) : val(val)
     scope.parent = parent;
 }
 
-std::string Bool::toStr(bool debug)
+std::string Bool::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<bool>";
@@ -188,7 +226,7 @@ Block::Block(ExprPtr expr, Scope* parent, Evaluator* e)
     // add functions
 }
 
-std::string Block::toStr(bool debug)
+std::string Block::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<block>";
@@ -222,8 +260,20 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     if (!block->isNil()) temp.set("yield", block);
     temp.set("super", caller);
 
+    // get argument count
+    uint argc = 0;
+    if (arg->ist()) argc = static_cast<Tuple&>(*arg).count;
+    else if (!arg->isNil()) argc = 1;
+
+    // check argument count
+    if (argc == 0 && params.size() > 0) Errors::instance().panic(NO_ARGUMENT, val);
+    if (argc < params.size())
+    {
+        Errors::instance().panic(SMALL_TUPLE, val,
+            "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+    }
+
     // set parameters
-    if (params.size() != 0 && arg->isNil()) Errors::instance().panic(NO_ARGUMENT, val);
     if (params.size() == 1) temp.set(params[0], arg);
     else
     {
@@ -249,6 +299,11 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         if (expr->left->type == Expression::RETURN) return evaler->eval(expr->left->right, temp);
         if (expr->left->type == Expression::BREAK) return result;
         result = evaler->eval(expr->left, temp);
+        if (evaler->returning)
+        {
+            evaler->returning = false;
+            return result;
+        }
         expr = expr->right;
     }
     return result;
@@ -261,7 +316,7 @@ Tuple::Tuple(Scope* parent)
     scope.parent = parent;
 }
 
-std::string Tuple::toStr(bool debug)
+std::string Tuple::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<tup>";
@@ -269,7 +324,7 @@ std::string Tuple::toStr(bool debug)
     for (auto& i : scope.names)
     {
         if (debug) result += "[" + i.first + "]";
-        result += i.second->toStr(debug);
+        result += i.second->tos(debug);
         result += ", ";
     }
     result.pop_back();
@@ -280,14 +335,14 @@ std::string Tuple::toStr(bool debug)
 
 // ---------------------------------
 
-Func::Func(CPPFunc func, Scope* parent)
+Func::Func(CPPFunc func, const std::string& params, Scope* parent, Evaluator* e)
+    : val(func), params(params)
 {
+    evaler = e;
     scope.parent = parent;
-    val = func;
-    // add functions
 }
 
-std::string Func::toStr(bool debug)
+std::string Func::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<cppfunc>";
@@ -296,6 +351,59 @@ std::string Func::toStr(bool debug)
     ss << address;
     result += ss.str();
     return result;
+}
+
+ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
+{
+    // get argument count
+    uint argc = 0;
+    if (arg->ist()) argc = static_cast<Tuple&>(*arg).count;
+    else if (!arg->isNil()) argc = 1;
+
+    // check argument count
+    if (argc == 0 && params.size() > 0) Errors::instance().panic(NO_ARGUMENT, evaler->current);
+    if (argc < params.size())
+    {
+        Errors::instance().panic(SMALL_TUPLE, evaler->current,
+            "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+    }
+    // if argc >= args.size ok!
+
+    // check argument types
+    for (uint i = 0; i < params.size(); ++i)
+    {
+        ValuePtr v = arg;
+        if (argc > 1) v = arg->scope.get(std::to_string(i));
+        switch (params[i])
+        {
+        case 'i':
+            if (!v->isi()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                v->tos(true) + " wanted int.");
+            break;
+        case 'r':
+            if (!v->isr()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                v->tos(true) + " wanted real.");
+            break;
+        case 'n':
+            if (!v->isi() && !v->isr()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                v->tos(true) + " wanted int/real.");
+            break;
+        case 'b':
+            if (!v->isb()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                    v->tos(true) + " wanted bool.");
+            break;
+        case 's':
+            if (!v->iss()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                    v->tos(true) + " wanted str.");
+            break;
+        case 't':
+            if (!v->ist()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+                    v->tos(true) + " wanted tuple.");
+            break;
+        }
+    }
+
+    return val({caller, arg, block, evaler->state});
 }
 
 // ---------------------------------
@@ -307,7 +415,7 @@ std::shared_ptr<Nil> Nil::in(Scope* parent)
     return n;
 }
 
-std::string Nil::toStr(bool debug)
+std::string Nil::tos(bool debug)
 {
     return "nil";
 }

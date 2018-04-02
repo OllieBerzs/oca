@@ -3,7 +3,9 @@
 ** handle oca errors
 */
 
+#include <tuple>
 #include "common.hpp"
+#include "value.hpp"
 
 OCA_BEGIN
 
@@ -35,7 +37,17 @@ enum ErrorType
     IF_BOOL,
     UNDEFINED_IN_TUPLE,
     NO_ARGUMENT,
-    UNDEFINED
+    SMALL_TUPLE,
+    UNDEFINED,
+    TYPE_MISMATCH
+};
+
+enum ValueType
+{
+    INT = 0,
+    REAL,
+    STRING,
+    BOOL
 };
 
 class Errors
@@ -59,7 +71,7 @@ public:
     void end();
     uint count();
 
-    void panic(ErrorType type, ExprPtr expr = nullptr);
+    void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "");
 };
 
 OCA_END

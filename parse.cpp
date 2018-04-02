@@ -86,7 +86,7 @@ ExprPtr Parser::uncache()
 
 bool Parser::expr()
 {
-    if (call() || value() || cond() || keyword() || file()) return true;
+    if (call() || value() || block() || cond() || keyword() || file()) return true;
     return false;
 }
 
@@ -98,7 +98,7 @@ bool Parser::set()
     if (!lit("=")) return false;
 
     // has to have a value after
-    if (!call() && !value() &&
+    if (!call() && !value() && !block() &&
         !file() && !cond()) Errors::instance().panic(NOTHING_TO_SET);
 
     // assemble assignment
@@ -201,12 +201,10 @@ bool Parser::cond()
         {
             if (!checkIndent(Indent::SAME)) break;
         }
-        checkIndent(Indent::LESS);
     }
     else
     {
         if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
-        checkIndent(Indent::SAME);
     }
 
     uint elseCached = cache.size();
@@ -237,8 +235,7 @@ bool Parser::cond()
         curr->left = cache[i];
         if (i < cache.size() - 1)
         {
-            curr->right = std::make_shared<Expression>
-                (Expression::NEXT, "", orig);
+            curr->right = std::make_shared<Expression>(Expression::NEXT, "", orig);
             curr = curr->right;
         }
     }
@@ -252,8 +249,7 @@ bool Parser::cond()
         curr->left = cache[i];
         if (i < cache.size() - 1)
         {
-            curr->right = std::make_shared<Expression>
-                (Expression::NEXT, "", orig);
+            curr->right = std::make_shared<Expression>(Expression::NEXT, "", orig);
             curr = curr->right;
         }
     }
@@ -433,7 +429,7 @@ bool Parser::value()
 {
     uint cached = cache.size();
 
-    if (string() || integer() || real() || boolean() || block()) // single value
+    if (string() || integer() || real() || boolean()) // single value
     {
         // check for accessor
         if (!access()) dotaccess();
