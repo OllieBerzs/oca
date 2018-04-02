@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cmath>
 #include "parse.hpp"
 #include "lex.hpp"
 #include "error.hpp"
@@ -351,6 +352,29 @@ bool Parser::string()
 
 bool Parser::integer()
 {
+    // check for binary number
+    if (get().type == Token::BINNUM)
+    {
+        int num = 0;
+        std::string bin = get().val;
+        for (uint i = bin.size() - 1; i > 1; --i)
+        {
+            if (bin[i] == '1') num += std::pow(2, bin.size() - i - 1);
+        }
+        cache.push_back(std::make_shared<Expression>(Expression::INT, std::to_string(num), index));
+        ++index;
+        return true;
+    }
+
+    // check for hexadecimal number
+    if (get().type == Token::HEXNUM)
+    {
+        int num = std::stoi(get().val, 0, 16);
+        cache.push_back(std::make_shared<Expression>(Expression::INT, std::to_string(num), index));
+        ++index;
+        return true;
+    }
+
     // check if negative
     bool minus = false;
     if (get().val == "-")
@@ -387,6 +411,22 @@ bool Parser::real()
             minus = true;
         }
     }
+
+    // check scientific notation
+    if (get().type == Token::SCIENTNUM)
+    {
+        auto e = get().val.find("e");
+        if (e == std::string::npos) e = get().val.find("E");
+        float base = std::stof(get().val.substr(0, e));
+        float power = std::stof(get().val.substr(e + 1, get().val.size() - 1));
+        std::string num = std::to_string(base * std::pow(10, power));
+
+        std::string val = minus ? "-" + num : num;
+        cache.push_back(std::make_shared<Expression>(Expression::REAL, val, index));
+        ++index;
+        return true;
+    }
+
     if (get().type != Token::REAL)
     {
         if (minus) --index;
