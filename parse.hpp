@@ -21,7 +21,7 @@ public:
     {
         SET, CALL, ACCESS, IF, ELSE, NEXT, MAIN,
         BRANCHES, PART_OPER, OPER, RETURN, BREAK, FILE, STR,
-        INT, REAL, BOOL, BLOCK, TUP, NAME, CALLS
+        INT, REAL, BOOL, BLOCK, TUP, NAME, CALLS, INJECT
     };
 
     Type type;

@@ -21,7 +21,7 @@ void Expression::print(uint indent, char mod)
     {
         "set", "call", "access", "if", "else", "next", "main",
         "branches", "part oper", "oper", "return", "break", "file", "str",
-        "int", "real", "bool", "block", "tup", "name", "calls"
+        "int", "real", "bool", "block", "tup", "name", "calls", "inject"
     };
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
@@ -40,6 +40,7 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
     indent = 0;
 
     this->tokens = &tokens;
+    while (checkIndent(Indent::SAME)) {}
     while (index < tokens.size() - 1)
     {
         if (expr())
@@ -119,7 +120,7 @@ bool Parser::call(bool inDot)
     if (!name()) return false;
 
     // can have an argument and/or a yield block
-    bool hasArg = value() || call();
+    bool hasArg = value() || call() || file();
     bool hasYield = block();
 
     // assemble call
@@ -211,6 +212,7 @@ bool Parser::cond()
     uint elseCached = cache.size();
     bool hasElse = false;
     uint orige = index;
+    bool preelseIndent = checkIndent(Indent::SAME);
     if (lit("else"))
     {
         hasElse = true;
@@ -226,6 +228,7 @@ bool Parser::cond()
             if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
         }
     }
+    else if (preelseIndent) --index;
 
     // assemble conditional
     ExprPtr els = std::make_shared<Expression>(Expression::ELSE, "", orige);
@@ -324,6 +327,15 @@ bool Parser::keyword()
     {
         cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
         ++index;
+        return true;
+    }
+    else if (get().val == "inject")
+    {
+        ExprPtr i = std::make_shared<Expression>(Expression::INJECT, "", index);
+        ++index;
+        if (!file()) Errors::instance().panic(NOTHING_TO_INJECT);
+        i->right = uncache();
+        cache.push_back(i);
         return true;
     }
     return false;

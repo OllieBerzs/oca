@@ -78,7 +78,7 @@ State::~State()
     if (Errors::instance().count() == 1) Errors::instance().end();
 }
 
-ValuePtr State::script(const std::string& path)
+ValuePtr State::script(const std::string& path, bool asTuple)
 {
     std::ifstream file(path);
     if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
@@ -86,10 +86,10 @@ ValuePtr State::script(const std::string& path)
         (std::istreambuf_iterator<char>()));
     file.close();
 
-    return eval(source, path);
+    return eval(source, path, asTuple);
 }
 
-ValuePtr State::eval(const std::string& source, const std::string& path)
+ValuePtr State::eval(const std::string& source, const std::string& path, bool asTuple)
 {
     std::vector<Token> tokens;
     std::vector<ExprPtr> ast;
@@ -132,6 +132,15 @@ ValuePtr State::eval(const std::string& source, const std::string& path)
     // pop file
     if (path != "") Errors::instance().end();
 
+    // return as tuple
+    if (asTuple)
+    {
+        auto tuple = std::make_shared<Tuple>(nullptr);
+        tuple->scope = scope;
+        return tuple;
+    }
+
+    // return as last value
     return val;
 }
 

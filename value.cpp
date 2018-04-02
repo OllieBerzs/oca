@@ -373,6 +373,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     uint argc = 0;
     if (arg->ist()) argc = static_cast<Tuple&>(*arg).count;
     else if (!arg->isNil()) argc = 1;
+    if (arg->ist() && argc == 0) argc = 1;
 
     // check argument count
     if (argc == 0 && params.size() > 0) Errors::instance().panic(NO_ARGUMENT, evaler->current);

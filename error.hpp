@@ -29,6 +29,7 @@ enum ErrorType
     NO_CONDITIONAL,
     NO_THEN,
     NO_RIGHT_VALUE,
+    NOTHING_TO_INJECT,
 
     // Evaluating
     NEW_TUPLE_KEY,
@@ -70,6 +71,7 @@ public:
         const std::vector<Token>* t, const Parser* p);
     void end();
     uint count();
+    std::string folder();
 
     void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "");
 };

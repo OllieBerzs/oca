@@ -25,11 +25,11 @@
 
   # comments
   {
-    'begin': '--'
+    'begin': '#'
     'captures':
       '0':
         'name': 'punctuation.definition.comment.oca'
-    'end': '--'
+    'end': '\\n'
     'name': 'comment.block.oca'
   }
 
@@ -42,6 +42,12 @@
         'name': 'keyword.control.oca'
       '2':
         'name': 'entity.name.function.oca'
+  }
+
+  # file evaluation
+  {
+    'match': '\\$.+'
+    'name': 'entity.name.function.oca'
   }
 
   # operators
@@ -58,7 +64,7 @@
 
   # keywords
   {
-    'match': '\\b(do|if|then|else|return|break|with|yield)\\b'
+    'match': '\\b(do|if|then|else|return|break|with|yield|inject)\\b'
     'name': 'keyword.control.oca'
   }
 

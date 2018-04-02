@@ -54,8 +54,8 @@ class State
 public:
     State();
     ~State();
-    ValuePtr script(const std::string& path);
-    ValuePtr eval(const std::string& source, const std::string& path = "");
+    ValuePtr script(const std::string& path, bool asTuple = false);
+    ValuePtr eval(const std::string& source, const std::string& path = "", bool asTuple = false);
 
     void load(const std::string& lib);
 

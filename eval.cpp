@@ -23,6 +23,8 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
     else if (expr->type == Expression::OPER) return oper(expr, scope);
+    else if (expr->type == Expression::FILE) return file(expr, scope);
+    else if (expr->type == Expression::INJECT) return inject(expr, scope);
     else return value(expr, scope);
 }
 
@@ -204,6 +206,18 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
     current = expr;
+    std::string folder = Errors::instance().folder();
+    return state->script(folder + expr->val + ".oca", true);
+}
+
+ValuePtr Evaluator::inject(ExprPtr expr, Scope& scope)
+{
+    current = expr;
+    ValuePtr tuple = file(expr->right, scope);
+    for (auto var : tuple->scope.names)
+    {
+        scope.set(var.first, var.second);
+    }
     return Nil::in(&scope);
 }
 
