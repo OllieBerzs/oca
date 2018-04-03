@@ -25,7 +25,8 @@ TEST_CASE("Evaluation of basic types", "[types]")
     REQUIRE(state.eval("true")->tos(true) == "<bool>true");
 
     // tuple
-    REQUIRE(state.eval("(2, 3, (true, false))")->tos(true) == "<tup>([0]<int>2, [1]<int>3, [2]<tup>([0]<bool>true, [1]<bool>false))");
+    REQUIRE(state.eval("(2, 3, (true, false))")->tos(true)
+        == "<tup>([0]<int>2, [1]<int>3, [2]<tup>([0]<bool>true, [1]<bool>false))");
 }
 
 TEST_CASE("Variable setting and getting", "[variables]")
@@ -62,6 +63,25 @@ TEST_CASE("Variable setting and getting", "[variables]")
     // blocks
     state.eval("ret = do with val return val");
     REQUIRE(state.eval("ret 6")->tos(false) == "6");
+}
+
+TEST_CASE("Operators", "operators")
+{
+    oca::State state;
+
+    // int
+    REQUIRE(state.eval("2 + 3")->tos(false) == "5");
+    REQUIRE(state.eval("2 - 3")->tos(false) == "-1");
+    REQUIRE(state.eval("2 * 3")->tos(false) == "6");
+    REQUIRE(state.eval("6 / 3")->tos(false) == "2");
+    REQUIRE(state.eval("10 % 4")->tos(false) == "2");
+    REQUIRE(state.eval("2 ^ 3")->tos(false) == "8");
+    REQUIRE(state.eval("2 == 3")->tos(false) == "false");
+    REQUIRE(state.eval("2 < 3")->tos(false) == "true");
+    REQUIRE(state.eval("2 > 3")->tos(false) == "false");
+    REQUIRE(state.eval("2 <= 3")->tos(false) == "true");
+    REQUIRE(state.eval("2 >= 3")->tos(false) == "false");
+    REQUIRE(state.eval("2 .. 4")->tos(false) == "(2, 3, 4)");
 }
 
 TEST_CASE("Conditional evaluation", "[conditionals]")
