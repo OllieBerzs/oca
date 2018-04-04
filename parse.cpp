@@ -6,9 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include "parse.hpp"
-#include "lex.hpp"
-#include "error.hpp"
+#include "oca.hpp"
 
 OCA_BEGIN
 
@@ -34,6 +32,8 @@ void Expression::print(uint indent, char mod)
 
 // ----------------------------
 
+Parser::Parser(State* state) : state(state) {}
+
 void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs)
 {
     index = 0;
@@ -48,10 +48,10 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
             exprs.push_back(cache.back());
             cache.pop_back();
         }
-        else Errors::instance().panic(NOT_AN_EXPRESSION);
+        else state->err.panic(NOT_AN_EXPRESSION);
         if (get().type == Token::LAST) break;
-        if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
-        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) Errors::instance().panic(NO_NEWLINE);
+        if (checkIndent(Indent::MORE)) state->err.panic(UNEXPECTED_INDENT);
+        if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS)) state->err.panic(NO_NEWLINE);
     }
 }
 
@@ -101,7 +101,7 @@ bool Parser::set()
 
     // has to have a value after
     if (!call() && !value() && !block() &&
-        !file() && !cond()) Errors::instance().panic(NOTHING_TO_SET);
+        !file() && !cond()) state->err.panic(NOTHING_TO_SET);
 
     // assemble assignment
     ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
@@ -138,7 +138,7 @@ bool Parser::call(bool inDot)
     if (cache.size() == 1 && lit(","))
     {
         uint origc = index;
-        if (!call()) Errors::instance().panic(NO_NAME);
+        if (!call()) state->err.panic(NO_NAME);
         ExprPtr calls = std::make_shared<Expression>(Expression::CALLS, "", origc);
         calls->right = uncache();
         calls->left = uncache();
@@ -153,8 +153,8 @@ bool Parser::access()
 {
     uint orig = index;
     if (!lit("[")) return false;
-    if (!integer() && !string() && !call()) Errors::instance().panic(NO_ACCESS_KEY_CALL);
-    if (!lit("]")) Errors::instance().panic(NO_CLOSING_BRACE);
+    if (!integer() && !string() && !call()) state->err.panic(NO_ACCESS_KEY_CALL);
+    if (!lit("]")) state->err.panic(NO_CLOSING_BRACE);
 
     // assemble access
     ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "[]", orig);
@@ -173,7 +173,7 @@ bool Parser::dotaccess()
     uint orig = index;
     if (!lit(".")) return false;
     // pass true, so the next call doesn't parse dotaccess
-    if (!call(true) && !integer()) Errors::instance().panic(NO_ACCESS_KEY);
+    if (!call(true) && !integer()) state->err.panic(NO_ACCESS_KEY);
 
     // assemble dot access
     ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);
@@ -192,8 +192,8 @@ bool Parser::cond()
     uint orig = index;
     if (!lit("if")) return false;
 
-    if (!set() && !call() && !value()) Errors::instance().panic(NO_CONDITIONAL);
-    if (!lit("then")) Errors::instance().panic(NO_THEN);
+    if (!set() && !call() && !value()) state->err.panic(NO_CONDITIONAL);
+    if (!lit("then")) state->err.panic(NO_THEN);
 
     uint origt = index;
     uint cached = cache.size();
@@ -206,7 +206,7 @@ bool Parser::cond()
     }
     else
     {
-        if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
+        if (!expr()) state->err.panic(NOT_AN_EXPRESSION);
     }
 
     uint elseCached = cache.size();
@@ -225,7 +225,7 @@ bool Parser::cond()
         }
         else
         {
-            if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
+            if (!expr()) state->err.panic(NOT_AN_EXPRESSION);
         }
     }
     else if (preelseIndent) --index;
@@ -280,7 +280,7 @@ bool Parser::oper()
 
     cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
     ++index;
-    if (!value() && !call()) Errors::instance().panic(NO_RIGHT_VALUE);
+    if (!value() && !call()) state->err.panic(NO_RIGHT_VALUE);
     oper();
 
     if (!first) return true;
@@ -333,7 +333,7 @@ bool Parser::keyword()
     {
         ExprPtr i = std::make_shared<Expression>(Expression::INJECT, "", index);
         ++index;
-        if (!file()) Errors::instance().panic(NOTHING_TO_INJECT);
+        if (!file()) state->err.panic(NOTHING_TO_INJECT);
         i->right = uncache();
         cache.push_back(i);
         return true;
@@ -475,17 +475,17 @@ bool Parser::block()
             if (!lit(",")) break;
         }
         params.pop_back();
-        if (params == "") Errors::instance().panic(NO_PARAMETER);
+        if (params == "") state->err.panic(NO_PARAMETER);
     }
 
     // getting the expression block
-    if (checkIndent(Indent::SAME)) Errors::instance().panic(NO_INDENT);
+    if (checkIndent(Indent::SAME)) state->err.panic(NO_INDENT);
     uint cached = cache.size();
     if (checkIndent(Indent::MORE))
     {
         while (expr()) if (!checkIndent(Indent::SAME)) break;
     }
-    else if (!expr()) Errors::instance().panic(NOT_AN_EXPRESSION);
+    else if (!expr()) state->err.panic(NOT_AN_EXPRESSION);
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, params, orig);
@@ -525,7 +525,7 @@ bool Parser::value()
         checkIndent(Indent::MORE);
         while (true)
         {
-            if (checkIndent(Indent::MORE)) Errors::instance().panic(UNEXPECTED_INDENT);
+            if (checkIndent(Indent::MORE)) state->err.panic(UNEXPECTED_INDENT);
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
@@ -539,7 +539,7 @@ bool Parser::value()
                 }
 
             }
-            if (!expr()) Errors::instance().panic(NOTHING_TO_SET);
+            if (!expr()) state->err.panic(NOTHING_TO_SET);
 
             ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
             tup->left = uncache();
@@ -548,7 +548,7 @@ bool Parser::value()
             if (!lit(",")) break;
         }
         checkIndent(Indent::LESS);
-        if (!lit(")")) Errors::instance().panic(NO_CLOSING_BRACE);
+        if (!lit(")")) state->err.panic(NO_CLOSING_BRACE);
 
         // assemble tuple
         ExprPtr tup = cache[cached];

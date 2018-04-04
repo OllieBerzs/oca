@@ -6,10 +6,12 @@
 #pragma once
 
 #include "common.hpp"
+#include "lex.hpp"
 #include "scope.hpp"
 #include "value.hpp"
 #include "parse.hpp"
 #include "eval.hpp"
+#include "error.hpp"
 
 #define NIL oca::Nil::in(nullptr)
 
@@ -19,10 +21,10 @@ class ValueCast
 {
     ValuePtr val;
     std::string name;
-    Evaluator* evaler;
+    State* state;
 
 public:
-    ValueCast(ValuePtr val, const std::string& name, Evaluator* e);
+    ValueCast(ValuePtr val, const std::string& name, State* state);
 
     // api casting
     void operator=(int v);
@@ -48,12 +50,13 @@ class State
     Scope scope = Scope(nullptr);
     Scope global = Scope(nullptr);
 
+    Lexer lexer;
     Parser parser;
     Evaluator evaler;
+    Errors err;
 
 public:
     State();
-    ~State();
     ValuePtr script(const std::string& path, bool asTuple = false);
     ValuePtr eval(const std::string& source, const std::string& path = "", bool asTuple = false);
 
@@ -68,7 +71,18 @@ public:
     std::shared_ptr<String> cast(const std::string& val);
     std::shared_ptr<Tuple> cast(const std::vector<int>& val);
 
+    friend class Lexer;
+    friend class Parser;
     friend class Evaluator;
+    friend class Value;
+    friend class Errors;
+    friend class Integer;
+    friend class Real;
+    friend class String;
+    friend class Bool;
+    friend class Tuple;
+    friend class Block;
+    friend class Func;
 };
 
 

@@ -28,6 +28,13 @@ public:
     void print() const;
 };
 
-void lex(const std::string& source, std::vector<Token>& tokens);
+class Lexer
+{
+    State* state;
+
+public:
+    Lexer(State* state);
+    void lex(const std::string& source, std::vector<Token>& tokens);
+};
 
 OCA_END

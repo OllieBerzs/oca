@@ -16,7 +16,7 @@ OCA_BEGIN
 class Value
 {
 protected:
-    Evaluator* evaler = nullptr;
+    State* state = nullptr;
 
 public:
     Scope scope = Scope(nullptr);
@@ -44,8 +44,8 @@ class Integer : public Value
 public:
     int val;
 
-    Integer(ExprPtr expr, Scope* parent, Evaluator* e);
-    Integer(int val, Scope* parent, Evaluator* e);
+    Integer(ExprPtr expr, Scope* parent, State* state);
+    Integer(int val, Scope* parent, State* state);
     std::string tos(bool debug);
 };
 
@@ -54,8 +54,8 @@ class Real : public Value
 public:
     float val;
 
-    Real(ExprPtr expr, Scope* parent, Evaluator* e);
-    Real(float val, Scope* parent, Evaluator* e);
+    Real(ExprPtr expr, Scope* parent, State* state);
+    Real(float val, Scope* parent, State* state);
     std::string tos(bool debug);
 };
 
@@ -64,8 +64,8 @@ class String : public Value
 public:
     std::string val;
 
-    String(ExprPtr expr, Scope* parent, Evaluator* e);
-    String(const std::string& val, Scope* parent, Evaluator* e);
+    String(ExprPtr expr, Scope* parent, State* state);
+    String(const std::string& val, Scope* parent, State* state);
     std::string tos(bool debug);
 };
 
@@ -74,8 +74,8 @@ class Bool : public Value
 public:
     bool val;
 
-    Bool(ExprPtr expr, Scope* parent, Evaluator* e);
-    Bool(bool val, Scope* parent, Evaluator* e);
+    Bool(ExprPtr expr, Scope* parent, State* state);
+    Bool(bool val, Scope* parent, State* state);
     std::string tos(bool debug);
 };
 
@@ -84,7 +84,7 @@ class Block : public Value
 public:
     ExprPtr val;
 
-    Block(ExprPtr expr, Scope* parent, Evaluator* e);
+    Block(ExprPtr expr, Scope* parent, State* state);
     std::string tos(bool debug);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
 };
@@ -104,7 +104,7 @@ class Func : public Value
 public:
     std::string params;
 
-    Func(CPPFunc func, const std::string& params, Scope* parent, Evaluator* e);
+    Func(CPPFunc func, const std::string& params, Scope* parent, State* state);
     std::string tos(bool debug);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
 };

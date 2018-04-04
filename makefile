@@ -38,7 +38,6 @@ all: $(BIN)
 %.o:
 	@echo [Compile] $<
 	@$(CXX) $(CPPFLAGS) -c -o $@ $<
-	@$(RM) *.o-*
 
 # binaries
 $(BIN): $(BINOBJ) $(OBJ)
