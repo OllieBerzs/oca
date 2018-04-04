@@ -6,10 +6,6 @@
 #include <iostream>
 #include <fstream>
 #include "oca.hpp"
-#include "lex.hpp"
-#include "parse.hpp"
-#include "eval.hpp"
-#include "error.hpp"
 
 OCA_BEGIN
 
@@ -63,7 +59,9 @@ ValuePtr Arg::operator[](uint i)
 
 // ---------------------------------------
 
-State::State() : lexer(this), parser(this), evaler(this), err(this)
+State::State()
+    : scope(nullptr), global(nullptr), lexer(this), parser(this)
+    , evaler(this), err(this), lextime(0), parsetime(0), evaltime(0)
 {
     // add base functions
     bind("print", "a", [](Arg arg) -> Ret
@@ -71,6 +69,31 @@ State::State() : lexer(this), parser(this), evaler(this), err(this)
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
+}
+
+State::~State()
+{
+    // output times
+    system("printf ''");
+    std::cout << "\033[38;5;15m";
+    std::cout << "Interpreter time: " << (lextime + parsetime + evaltime).count() << "ms";
+    std::cout << " (L:";
+    if (lextime.count() >= parsetime.count() &&
+        lextime.count() >= evaltime.count()) std::cout << "\033[38;5;11m";
+    std::cout << lextime.count() << "ms";
+    std::cout << "\033[38;5;15m";
+    std::cout << ", P:";
+    if (parsetime.count() >= lextime.count() &&
+        parsetime.count() >= evaltime.count()) std::cout << "\033[38;5;11m";
+    std::cout << parsetime.count() << "ms";
+    std::cout << "\033[38;5;15m";
+    std::cout << ", E:";
+    if (evaltime.count() >= parsetime.count() &&
+        evaltime.count() >= lextime.count()) std::cout << "\033[38;5;11m";
+    std::cout << evaltime.count() << "ms";
+    std::cout << "\033[38;5;15m";
+    std::cout << ")\n";
+    std::cout << "\033[0m";
 }
 
 ValuePtr State::script(const std::string& path, bool asTuple)
@@ -95,7 +118,15 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     err.tokens = &tokens;
 
     // Lexing
+    #ifdef OUT_TIMES
+    auto lstart = std::chrono::high_resolution_clock::now();
+    #endif
     lexer.lex(source, tokens);
+    #ifdef OUT_TIMES
+    auto lend = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> lduration = lend - lstart;
+    lextime += std::chrono::duration_cast<std::chrono::milliseconds>(lduration);
+    #endif
 
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
@@ -103,7 +134,15 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     #endif
 
     // Parsing
+    #ifdef OUT_TIMES
+    auto pstart = std::chrono::high_resolution_clock::now();
+    #endif
     parser.parse(tokens, ast);
+    #ifdef OUT_TIMES
+    auto pend = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> pduration = pend - pstart;
+    parsetime += std::chrono::duration_cast<std::chrono::milliseconds>(pduration);
+    #endif
 
     #ifdef OUT_AST
     std::cout << "------------ AST -------------\n";
@@ -115,6 +154,9 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     std::cout << "------------ EVAL ------------\n";
     #endif
 
+    #ifdef OUT_TIMES
+    auto estart = std::chrono::high_resolution_clock::now();
+    #endif
     ValuePtr val = nullptr;
     for (ExprPtr e : ast)
     {
@@ -124,6 +166,11 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
         else std::cout << "->" << val->tos(true) << "\n";
         #endif
     }
+    #ifdef OUT_TIMES
+    auto eend = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> eduration = eend - estart;
+    evaltime += std::chrono::duration_cast<std::chrono::milliseconds>(eduration);
+    #endif
 
     // return as tuple
     if (asTuple)

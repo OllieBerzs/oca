@@ -232,8 +232,6 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
     std::cout << "-- " << typeStrings[type] << " -------------------- " << *path << "\n";
     std::cout << "\033[0m";
 
-    if (*path == "") exit(1);
-
     // get error line and the previous line if exists
     std::string prevline = "";
     std::string errline = "";
@@ -244,10 +242,10 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
     char c = ' ';
     bool found = false;
 
-    while (c != '\n' || !found)
+    while ((c != '\n' && index < (*source).size()) || !found)
     {
         c = (*source)[index];
-        if (c == '\n' && !found)
+        if ((c == '\n' || index == (*source).size() - 1) && !found)
         {
             ++lineNum;
             prevline = errline;

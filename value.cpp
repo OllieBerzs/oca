@@ -94,7 +94,8 @@ bool Value::ist()
 
 // ---------------------------------
 
-Integer::Integer(ExprPtr expr, Scope* parent, State* state) : Integer(std::stoi(expr->val), parent, state) {}
+Integer::Integer(ExprPtr expr, Scope* parent, State* state)
+    : Integer(std::stoi(expr->val), parent, state) {}
 
 Integer::Integer(int val, Scope* parent, State* state) : val(val)
 {
@@ -155,6 +156,13 @@ Integer::Integer(int val, Scope* parent, State* state) : val(val)
         int left = arg.caller->toi();
         int right = arg.value->toi();
         return arg.state->cast(left == right);
+    });
+
+    bind("__neq", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left != right);
     });
 
     bind("__gr", "n", [](Arg arg) -> Ret
@@ -293,9 +301,13 @@ std::string Real::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<real>";
-    std::stringstream ss;
-    ss << val;
-    result += ss.str();
+
+    // format real
+    std::string str = std::to_string (val);
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    if (str.back() == '.') str += '0';
+
+    result += str;
     return result;
 }
 
@@ -322,6 +334,13 @@ String::String(const std::string& val, Scope* parent, State* state) : val(val)
         std::string right = arg.value->tos(false);
         return arg.state->cast(left == right);
     });
+
+    bind("__neq", "s", [](Arg arg) -> Ret
+    {
+        std::string left = arg.caller->tos(false);
+        std::string right = arg.value->tos(false);
+        return arg.state->cast(left != right);
+    });
 }
 
 std::string String::tos(bool debug)
@@ -346,6 +365,13 @@ Bool::Bool(bool val, Scope* parent, State* state) : val(val)
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
         return arg.state->cast(left == right);
+    });
+
+    bind("__neq", "b", [](Arg arg) -> Ret
+    {
+        bool left = arg.caller->tob();
+        bool right = arg.value->tob();
+        return arg.state->cast(left != right);
     });
 }
 

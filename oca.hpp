@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <chrono>
 #include "common.hpp"
 #include "lex.hpp"
 #include "scope.hpp"
@@ -47,16 +48,22 @@ struct Arg
 
 class State
 {
-    Scope scope = Scope(nullptr);
-    Scope global = Scope(nullptr);
+    Scope scope;
+    Scope global;
 
     Lexer lexer;
     Parser parser;
     Evaluator evaler;
     Errors err;
 
+    std::chrono::milliseconds lextime;
+    std::chrono::milliseconds parsetime;
+    std::chrono::milliseconds evaltime;
+
 public:
     State();
+    ~State();
+
     ValuePtr script(const std::string& path, bool asTuple = false);
     ValuePtr eval(const std::string& source, const std::string& path = "", bool asTuple = false);
 
