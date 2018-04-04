@@ -77,6 +77,7 @@ TEST_CASE("Operators", "operators")
     REQUIRE(state.eval("10 % 4")->tos(false) == "2");
     REQUIRE(state.eval("2 ^ 3")->tos(false) == "8");
     REQUIRE(state.eval("2 == 3")->tos(false) == "false");
+    REQUIRE(state.eval("2 != 3")->tos(false) == "true");
     REQUIRE(state.eval("2 < 3")->tos(false) == "true");
     REQUIRE(state.eval("2 > 3")->tos(false) == "false");
     REQUIRE(state.eval("2 <= 3")->tos(false) == "true");
@@ -112,12 +113,14 @@ TEST_CASE("Operators", "operators")
 
     // str and str
     REQUIRE(state.eval("'hi' == 'hello'")->tos(false) == "false");
+    REQUIRE(state.eval("'hi' != 'hello'")->tos(false) == "true");
 
     // str and any
     REQUIRE(state.eval("'hi' + 5")->tos(false) == "hi5");
 
     // bool and bool
     REQUIRE(state.eval("true == false")->tos(false) == "false");
+    REQUIRE(state.eval("true != false")->tos(false) == "true");
 }
 
 TEST_CASE("Conditional evaluation", "[conditionals]")
