@@ -74,6 +74,7 @@ State::State()
 State::~State()
 {
     // output times
+    #ifdef OUT_TIMES
     system("printf ''");
     std::cout << "\033[38;5;15m";
     std::cout << "Interpreter time: " << (lextime + parsetime + evaltime).count() << "ms";
@@ -94,6 +95,7 @@ State::~State()
     std::cout << "\033[38;5;15m";
     std::cout << ")\n";
     std::cout << "\033[0m";
+    #endif
 }
 
 ValuePtr State::script(const std::string& path, bool asTuple)

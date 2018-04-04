@@ -117,7 +117,8 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     std::map<std::string, std::string> operFuncs = {
         {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"}, {"%", "__mod"},
         {"^", "__pow"}, {"==", "__eq"}, {"!=", "__neq"}, {">", "__gr"}, {"<", "__ls"},
-        {">=", "__geq"}, {"<=", "__leq"}, {"..", "__ran"}
+        {">=", "__geq"}, {"<=", "__leq"}, {"..", "__ran"}, {"and", "__and"}, {"or", "__or"},
+        {"xor", "__xor"}, {"lsh", "__lsh"}, {"rsh", "__rsh"}
     };
 
     ValuePtr left = eval(expr->left, scope);

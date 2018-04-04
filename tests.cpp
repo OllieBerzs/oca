@@ -14,9 +14,12 @@ TEST_CASE("Evaluation of basic types", "[types]")
 
     // int
     REQUIRE(state.eval("820")->tos(true) == "<int>820");
+    REQUIRE(state.eval("0b0110")->tos(true) == "<int>6");
+    REQUIRE(state.eval("0xFF")->tos(true) == "<int>255");
 
     // real
     REQUIRE(state.eval("45.5")->tos(true) == "<real>45.5");
+    REQUIRE(state.eval("2e2")->tos(true) == "<real>200.0");
 
     // str
     REQUIRE(state.eval("'This is a string!'")->tos(true) == "<str>This is a string!");
@@ -83,6 +86,11 @@ TEST_CASE("Operators", "operators")
     REQUIRE(state.eval("2 <= 3")->tos(false) == "true");
     REQUIRE(state.eval("2 >= 3")->tos(false) == "false");
     REQUIRE(state.eval("2 .. 4")->tos(false) == "(2, 3, 4)");
+    REQUIRE(state.eval("0b0101 and 0b0110")->tos(false) == "4");
+    REQUIRE(state.eval("0b0101 or 0b0110")->tos(false) == "7");
+    REQUIRE(state.eval("0b0101 xor 0b0110")->tos(false) == "3");
+    REQUIRE(state.eval("0b0101 lsh 1")->tos(false) == "10");
+    REQUIRE(state.eval("0b0100 rsh 1")->tos(false) == "2");
 
     // int and real
     REQUIRE(state.eval("2 + 3.5")->tos(false) == "5.5");
@@ -121,6 +129,8 @@ TEST_CASE("Operators", "operators")
     // bool and bool
     REQUIRE(state.eval("true == false")->tos(false) == "false");
     REQUIRE(state.eval("true != false")->tos(false) == "true");
+    REQUIRE(state.eval("true and false")->tos(false) == "false");
+    REQUIRE(state.eval("true or false")->tos(false) == "true");
 }
 
 TEST_CASE("Conditional evaluation", "[conditionals]")
