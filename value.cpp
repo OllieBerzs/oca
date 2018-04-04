@@ -21,7 +21,7 @@ bool Value::isNil()
 
 void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
 {
-    scope.set(name, std::make_shared<Func>(func, args, &scope, evaler));
+    scope.set(name, std::make_shared<Func>(func, args, &scope, state));
 }
 
 ValueCast Value::operator[](const std::string& name)
@@ -30,9 +30,9 @@ ValueCast Value::operator[](const std::string& name)
     if (var->isNil())
     {
         scope.set(name, Nil::in(&scope));
-        return ValueCast(scope.get(name), name, evaler);
+        return ValueCast(scope.get(name), name, state);
     }
-    return ValueCast(var, name, evaler);
+    return ValueCast(var, name, state);
 }
 
 int Value::toi()
@@ -94,11 +94,11 @@ bool Value::ist()
 
 // ---------------------------------
 
-Integer::Integer(ExprPtr expr, Scope* parent, Evaluator* e) : Integer(std::stoi(expr->val), parent, e) {}
+Integer::Integer(ExprPtr expr, Scope* parent, State* state) : Integer(std::stoi(expr->val), parent, state) {}
 
-Integer::Integer(int val, Scope* parent, Evaluator* e) : val(val)
+Integer::Integer(int val, Scope* parent, State* state) : val(val)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
 
     // functions
@@ -223,11 +223,11 @@ std::string Integer::tos(bool debug)
 
 // ----------------------------------
 
-Real::Real(ExprPtr expr, Scope* parent, Evaluator* e) : Real(std::stof(expr->val), parent, e) {}
+Real::Real(ExprPtr expr, Scope* parent, State* state) : Real(std::stof(expr->val), parent, state) {}
 
-Real::Real(float val, Scope* parent, Evaluator* e) : val(val)
+Real::Real(float val, Scope* parent, State* state) : val(val)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
 
     // functions
@@ -301,11 +301,11 @@ std::string Real::tos(bool debug)
 
 // ---------------------------------
 
-String::String(ExprPtr expr, Scope* parent, Evaluator* e) : String(expr->val, parent, e) {}
+String::String(ExprPtr expr, Scope* parent, State* state) : String(expr->val, parent, state) {}
 
-String::String(const std::string& val, Scope* parent, Evaluator* e) : val(val)
+String::String(const std::string& val, Scope* parent, State* state) : val(val)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
 
     // functions
@@ -334,11 +334,11 @@ std::string String::tos(bool debug)
 
 // ---------------------------------
 
-Bool::Bool(ExprPtr expr, Scope* parent, Evaluator* e) : Bool((expr->val == "true"), parent, e) {}
+Bool::Bool(ExprPtr expr, Scope* parent, State* state) : Bool((expr->val == "true"), parent, state) {}
 
-Bool::Bool(bool val, Scope* parent, Evaluator* e) : val(val)
+Bool::Bool(bool val, Scope* parent, State* state) : val(val)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
 
     bind("__eq", "b", [](Arg arg) -> Ret
@@ -359,9 +359,9 @@ std::string Bool::tos(bool debug)
 
 // ---------------------------------
 
-Block::Block(ExprPtr expr, Scope* parent, Evaluator* e)
+Block::Block(ExprPtr expr, Scope* parent, State* state)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
     val = expr;
     // add functions
@@ -407,10 +407,10 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     else if (!arg->isNil()) argc = 1;
 
     // check argument count
-    if (argc == 0 && params.size() > 0) Errors::instance().panic(NO_ARGUMENT, val);
+    if (argc == 0 && params.size() > 0) state->err.panic(NO_ARGUMENT, val);
     if (argc < params.size())
     {
-        Errors::instance().panic(SMALL_TUPLE, val,
+        state->err.panic(SMALL_TUPLE, val,
             "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
     }
 
@@ -427,7 +427,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
                 item = arg->scope.get(std::to_string(counter));
                 ++counter;
             }
-            if (item->isNil()) Errors::instance().panic(CANNOT_SPLIT, val);
+            if (item->isNil()) state->err.panic(CANNOT_SPLIT, val);
 
             temp.set(param, item);
         }
@@ -437,12 +437,12 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     ExprPtr expr = val;
     while (expr)
     {
-        if (expr->left->type == Expression::RETURN) return evaler->eval(expr->left->right, temp);
+        if (expr->left->type == Expression::RETURN) return state->evaler.eval(expr->left->right, temp);
         if (expr->left->type == Expression::BREAK) return result;
-        result = evaler->eval(expr->left, temp);
-        if (evaler->returning)
+        result = state->evaler.eval(expr->left, temp);
+        if (state->evaler.returning)
         {
-            evaler->returning = false;
+            state->evaler.returning = false;
             return result;
         }
         expr = expr->right;
@@ -476,10 +476,10 @@ std::string Tuple::tos(bool debug)
 
 // ---------------------------------
 
-Func::Func(CPPFunc func, const std::string& params, Scope* parent, Evaluator* e)
+Func::Func(CPPFunc func, const std::string& params, Scope* parent, State* state)
     : val(func), params(params)
 {
-    evaler = e;
+    this->state = state;
     scope.parent = parent;
 }
 
@@ -503,10 +503,10 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     if (arg->ist() && argc == 0) argc = 1;
 
     // check argument count
-    if (argc == 0 && params.size() > 0) Errors::instance().panic(NO_ARGUMENT, evaler->current);
+    if (argc == 0 && params.size() > 0) state->err.panic(NO_ARGUMENT, state->evaler.current);
     if (argc < params.size())
     {
-        Errors::instance().panic(SMALL_TUPLE, evaler->current,
+        state->err.panic(SMALL_TUPLE, state->evaler.current,
             "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
     }
     // if argc >= args.size ok!
@@ -519,33 +519,33 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         switch (params[i])
         {
         case 'i':
-            if (!v->isi()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->isi()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                 v->tos(true) + " wanted int.");
             break;
         case 'r':
-            if (!v->isr()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->isr()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                 v->tos(true) + " wanted real.");
             break;
         case 'n':
-            if (!v->isi() && !v->isr()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->isi() && !v->isr()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                 v->tos(true) + " wanted int/real.");
             break;
         case 'b':
-            if (!v->isb()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->isb()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                     v->tos(true) + " wanted bool.");
             break;
         case 's':
-            if (!v->iss()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->iss()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                     v->tos(true) + " wanted str.");
             break;
         case 't':
-            if (!v->ist()) Errors::instance().panic(TYPE_MISMATCH, evaler->current,
+            if (!v->ist()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
                     v->tos(true) + " wanted tuple.");
             break;
         }
     }
 
-    return val({caller, arg, block, evaler->state});
+    return val({caller, arg, block, state->evaler.state});
 }
 
 // ---------------------------------

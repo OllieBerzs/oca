@@ -13,33 +13,33 @@
 
 OCA_BEGIN
 
-ValueCast::ValueCast(ValuePtr val, const std::string& name, Evaluator* e)
-    : val(val), name(name), evaler(e) {}
+ValueCast::ValueCast(ValuePtr val, const std::string& name, State* state)
+    : val(val), name(name), state(state) {}
 
 // ---------------------------------------
 
 void ValueCast::operator=(int v)
 {
     Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Integer>(v, parent, evaler));
+    parent->set(name, std::make_shared<Integer>(v, parent, state));
 }
 
 void ValueCast::operator=(float v)
 {
     Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Real>(v, parent, evaler));
+    parent->set(name, std::make_shared<Real>(v, parent, state));
 }
 
 void ValueCast::operator=(const std::string& v)
 {
     Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<String>(v, parent, evaler));
+    parent->set(name, std::make_shared<String>(v, parent, state));
 }
 
 void ValueCast::operator=(bool v)
 {
     Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Bool>(v, parent, evaler));
+    parent->set(name, std::make_shared<Bool>(v, parent, state));
 }
 
 ValueCast ValueCast::operator[](const std::string& name)
@@ -48,9 +48,9 @@ ValueCast ValueCast::operator[](const std::string& name)
     if (var->isNil())
     {
         val->scope.set(name, Nil::in(&val->scope));
-        return ValueCast(val->scope.get(name), name, evaler);
+        return ValueCast(val->scope.get(name), name, state);
     }
-    return ValueCast(var, name, evaler);
+    return ValueCast(var, name, state);
 }
 
 
@@ -63,7 +63,7 @@ ValuePtr Arg::operator[](uint i)
 
 // ---------------------------------------
 
-State::State() : evaler(this)
+State::State() : lexer(this), parser(this), evaler(this), err(this)
 {
     // add base functions
     bind("print", "a", [](Arg arg) -> Ret
@@ -71,11 +71,6 @@ State::State() : evaler(this)
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
-}
-
-State::~State()
-{
-    if (Errors::instance().count() == 1) Errors::instance().end();
 }
 
 ValuePtr State::script(const std::string& path, bool asTuple)
@@ -95,11 +90,12 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     std::vector<ExprPtr> ast;
 
     // error handling
-    if (path != "" || Errors::instance().count() == 0)
-        Errors::instance().begin(&path, &source, &tokens, &parser);
+    err.path = &path;
+    err.source = &source;
+    err.tokens = &tokens;
 
     // Lexing
-    lex(source, tokens);
+    lexer.lex(source, tokens);
 
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
@@ -129,9 +125,6 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
         #endif
     }
 
-    // pop file
-    if (path != "") Errors::instance().end();
-
     // return as tuple
     if (asTuple)
     {
@@ -148,7 +141,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
 void State::bind(const std::string& name, const std::string& params, CPPFunc func)
 {
-    global.set(name, std::make_shared<Func>(func, params, &global, &evaler));
+    global.set(name, std::make_shared<Func>(func, params, &global, this));
 }
 
 ValueCast State::operator[](const std::string& name)
@@ -157,31 +150,31 @@ ValueCast State::operator[](const std::string& name)
     if (var->isNil())
     {
         global.set(name, Nil::in(&global));
-        return ValueCast(global.get(name), name, &evaler);
+        return ValueCast(global.get(name), name, this);
     }
-    return ValueCast(var, name, &evaler);
+    return ValueCast(var, name, this);
 }
 
 // ---------------------------------------
 
 std::shared_ptr<Integer> State::cast(int val)
 {
-    return std::make_shared<Integer>(val, nullptr, &evaler);
+    return std::make_shared<Integer>(val, nullptr, this);
 }
 
 std::shared_ptr<Real> State::cast(float val)
 {
-    return std::make_shared<Real>(val, nullptr, &evaler);
+    return std::make_shared<Real>(val, nullptr, this);
 }
 
 std::shared_ptr<Bool> State::cast(bool val)
 {
-    return std::make_shared<Bool>(val, nullptr, &evaler);
+    return std::make_shared<Bool>(val, nullptr, this);
 }
 
 std::shared_ptr<String> State::cast(const std::string& val)
 {
-    return std::make_shared<String>(val, nullptr, &evaler);
+    return std::make_shared<String>(val, nullptr, this);
 }
 
 std::shared_ptr<Tuple> State::cast(const std::vector<int>& val)
@@ -191,7 +184,7 @@ std::shared_ptr<Tuple> State::cast(const std::vector<int>& val)
     {
         ++static_cast<Tuple&>(*tuple).count;
         tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
-            std::make_shared<Integer>(val[i], &tuple->scope, &evaler));
+            std::make_shared<Integer>(val[i], &tuple->scope, this));
     }
     return tuple;
 }

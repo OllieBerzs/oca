@@ -5,8 +5,7 @@
 
 #include <iostream>
 #include <regex>
-#include "lex.hpp"
-#include "error.hpp"
+#include "oca.hpp"
 
 OCA_BEGIN
 
@@ -45,9 +44,11 @@ void Token::print() const
 
 //-----------------------------
 
-void lex(const std::string& source, std::vector<Token>& tokens)
+Lexer::Lexer(State* state) : state(state) {}
+
+void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
 {
-    if (source[0] == ' ') Errors::instance().panic(INDENTED_FILE);
+    if (source[0] == ' ') state->err.panic(INDENTED_FILE);
 
     std::string reg;
     for (const auto& r : syntax) reg += r.second + "|";
@@ -66,10 +67,7 @@ void lex(const std::string& source, std::vector<Token>& tokens)
             if (syntax[index].first == Token::WHITESPACE) continue;
             if (syntax[index].first == Token::COMMENT) continue;
             tokens.push_back({syntax[index].first, it->str(), pos});
-            if (syntax[index].first == Token::INVALID)
-            {
-                Errors::instance().panic(UNKNOWN_SYMBOL);
-            }
+            if (syntax[index].first == Token::INVALID) state->err.panic(UNKNOWN_SYMBOL);
             break;
         }
     }

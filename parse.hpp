@@ -36,12 +36,14 @@ public:
 
 class Parser
 {
+    State* state;
     const std::vector<Token>* tokens;
     std::vector<ExprPtr> cache;
     uint index;
     uint indent;
 
 public:
+    Parser(State* state);
     void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
 
 private:

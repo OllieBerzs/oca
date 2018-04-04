@@ -60,7 +60,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         if (leftExpr->type == Expression::ACCESS)
         {
             leftVal = eval(leftExpr, scope);
-            if (leftVal->isNil()) Errors::instance().panic(NEW_TUPLE_KEY, leftExpr);
+            if (leftVal->isNil()) state->err.panic(NEW_TUPLE_KEY, leftExpr);
 
             // find the variable in parent scope
             for (auto& var : leftVal->scope.parent->names)
@@ -78,7 +78,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             // get the right value based on the index
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter));
             ++counter;
-            if (rightValPart->isNil()) Errors::instance().panic(CANNOT_SPLIT, expr->right);
+            if (rightValPart->isNil()) state->err.panic(CANNOT_SPLIT, expr->right);
 
             leftVal->scope.parent->set(name, rightValPart);
         }
@@ -98,7 +98,7 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     if (caller) func = caller->scope.get(expr->val); // type specific
     if (func->isNil()) func = state->global.get(expr->val); // global
     if (func->isNil()) func = scope.get(expr->val); // in this scope
-    if (func->isNil() && expr->val != "super") Errors::instance().panic(UNDEFINED, expr);
+    if (func->isNil() && expr->val != "super") state->err.panic(UNDEFINED, expr);
 
     // get the argument and yield block
     if (expr->right) arg = eval(expr->right, scope);
@@ -117,13 +117,13 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
     std::map<std::string, std::string> operFuncs = {
         {"+", "__add"}, {"-", "__sub"}, {"*", "__mul"}, {"/", "__div"}, {"%", "__mod"},
         {"^", "__pow"}, {"==", "__eq"}, {">", "__gr"}, {"<", "__ls"}, {">=", "__geq"},
-        {"<=", "__leq"}, {"..", "__ran"}    
+        {"<=", "__leq"}, {"..", "__ran"}
     };
 
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val]);
-    if (func->isNil()) Errors::instance().panic(UNDEFINED_OPERATOR, expr);
+    if (func->isNil()) state->err.panic(UNDEFINED_OPERATOR, expr);
 
     // call the operator
     Value& funcref = *func;
@@ -142,7 +142,7 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 
     // evaluate the conditional
     Value& c = *conditional;
-    if (!(TYPE_EQ(c, Bool))) Errors::instance().panic(IF_BOOL, expr->left);
+    if (!(TYPE_EQ(c, Bool))) state->err.panic(IF_BOOL, expr->left);
     trueness = static_cast<Bool&>(c).val;
 
     // set the appropriate branch based on the conditional
@@ -182,7 +182,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     // get the data member
     right = left->scope.get(name);
     if (expr->left->val == "super" && right->isNil()) right = left->scope.parent->get(name);
-    if (right->isNil()) Errors::instance().panic(UNDEFINED_IN_TUPLE, expr->right);
+    if (right->isNil()) state->err.panic(UNDEFINED_IN_TUPLE, expr->right);
 
     // get the argument and yield block
     if (expr->right->right) arg = eval(expr->right->right, scope);
@@ -198,7 +198,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
     current = expr;
-    std::string folder = Errors::instance().folder();
+    uint slash = state->err.path->find_last_of("/");
+    std::string folder = state->err.path->substr(0, slash + 1);
     return state->script(folder + expr->val + ".oca", true);
 }
 
@@ -242,23 +243,23 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::BLOCK || expr->type == Expression::MAIN
         || expr->type == Expression::ELSE)
     {
-        result = std::make_shared<Block>(expr, &scope, this);
+        result = std::make_shared<Block>(expr, &scope, state);
     }
     else if (expr->type == Expression::STR)
     {
-        result = std::make_shared<String>(expr, &scope, this);
+        result = std::make_shared<String>(expr, &scope, state);
     }
     else if (expr->type == Expression::INT)
     {
-        result = std::make_shared<Integer>(expr, &scope, this);
+        result = std::make_shared<Integer>(expr, &scope, state);
     }
     else if (expr->type == Expression::REAL)
     {
-        result = std::make_shared<Real>(expr, &scope, this);
+        result = std::make_shared<Real>(expr, &scope, state);
     }
     else if (expr->type == Expression::BOOL)
     {
-        result = std::make_shared<Bool>(expr, &scope, this);
+        result = std::make_shared<Bool>(expr, &scope, state);
     }
     return result;
 }

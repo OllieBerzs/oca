@@ -3,6 +3,8 @@
 ** handle oca errors
 */
 
+#pragma once
+
 #include <tuple>
 #include "common.hpp"
 #include "value.hpp"
@@ -53,27 +55,14 @@ enum ValueType
 
 class Errors
 {
-    struct File
-    {
-        const std::string* path;
-        const std::string* source;
-        const std::vector<Token>* tokens;
-        const Parser* parser;
-    };
-    std::vector<File> files;
-
-    Errors() = default;
-
 public:
-    static Errors& instance();
+    const State* state;
+    const std::string* path;
+    const std::string* source;
+    const std::vector<Token>* tokens;
 
-    void begin(const std::string* path, const std::string* s,
-        const std::vector<Token>* t, const Parser* p);
-    void end();
-    uint count();
-    std::string folder();
-
-    void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "");
+    Errors(const State* state);
+    void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "") const;
 };
 
 OCA_END
