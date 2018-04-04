@@ -293,9 +293,13 @@ std::string Real::tos(bool debug)
 {
     std::string result = "";
     if (debug) result += "<real>";
-    std::stringstream ss;
-    ss << val;
-    result += ss.str();
+
+    // format real
+    std::string str = std::to_string (val);
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    if (str.back() == '.') str += '0';
+
+    result += str;
     return result;
 }
 
