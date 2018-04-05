@@ -69,11 +69,40 @@ State::State()
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
+
+    bind("input", "", [](Arg arg) -> Ret
+    {
+        std::string result;
+        std::cin >> result;
+        return arg.state->cast(result);
+    });
+
+    bind("pause", "", [](Arg arg) -> Ret
+    {
+        std::cin.get();
+        return NIL;
+    });
+
+    bind("assert", "bs", [](Arg arg) -> Ret
+    {
+        bool cond = arg[0]->tob();
+        std::string message = arg[1]->tos(false);
+        if (!cond) arg.state->err.panic(ERROR, arg.state->evaler.current, message);
+        return NIL;
+    });
+
+    bind("type", "a", [](Arg arg) -> Ret
+    {
+        std::string str = arg.value->tos(true);
+        auto end = str.find(">");
+        return arg.state->cast(str.substr(1, end - 1));
+    });
 }
 
 State::~State()
 {
     // output times
+    #ifdef OUT_TIMES
     system("printf ''");
     std::cout << "\033[38;5;15m";
     std::cout << "Interpreter time: " << (lextime + parsetime + evaltime).count() << "ms";
@@ -94,6 +123,7 @@ State::~State()
     std::cout << "\033[38;5;15m";
     std::cout << ")\n";
     std::cout << "\033[0m";
+    #endif
 }
 
 ValuePtr State::script(const std::string& path, bool asTuple)

@@ -63,6 +63,10 @@ script: $(BIN)
 	@echo [Run] script.oca
 	@./$(BIN) examples/script.oca
 
+repl: $(BIN)
+	@echo [Repl]
+	@./$(BIN)
+
 test: $(TEST)
 	@echo [Test]
 	@./$(TEST)
@@ -70,20 +74,20 @@ test: $(TEST)
 .PHONY: test script clean deps
 
 # dependencies (generated) -----------------------------------
-oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp \
-  parse.hpp eval.hpp lex.hpp error.hpp
-lex.o: lex.cpp lex.hpp common.hpp ocaconf.hpp error.hpp value.hpp \
-  scope.hpp
-parse.o: parse.cpp parse.hpp common.hpp ocaconf.hpp lex.hpp error.hpp \
-  value.hpp scope.hpp
+oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
+  parse.hpp eval.hpp error.hpp
+lex.o: lex.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
+  parse.hpp eval.hpp error.hpp
+parse.o: parse.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
+  value.hpp parse.hpp eval.hpp error.hpp
 value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp \
-  oca.hpp eval.hpp error.hpp
+  oca.hpp lex.hpp eval.hpp error.hpp
 scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
-  scope.hpp oca.hpp error.hpp
+  scope.hpp oca.hpp lex.hpp error.hpp
 error.o: error.cpp error.hpp common.hpp ocaconf.hpp value.hpp scope.hpp \
-  lex.hpp parse.hpp
-main.o: main.cpp oca.hpp common.hpp ocaconf.hpp scope.hpp value.hpp \
-  parse.hpp eval.hpp
+  oca.hpp lex.hpp parse.hpp eval.hpp
+main.o: main.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
+  value.hpp parse.hpp eval.hpp error.hpp
 tests.o: tests.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
-  scope.hpp value.hpp parse.hpp eval.hpp
+  lex.hpp scope.hpp value.hpp parse.hpp eval.hpp error.hpp

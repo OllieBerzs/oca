@@ -209,6 +209,41 @@ Integer::Integer(int val, Scope* parent, State* state) : val(val)
         return arg.state->cast(vec);
     });
 
+    bind("__and", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left & right);
+    });
+
+    bind("__or", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left | right);
+    });
+
+    bind("__xor", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left ^ right);
+    });
+
+    bind("__lsh", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left << right);
+    });
+
+    bind("__rsh", "i", [](Arg arg) -> Ret
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return arg.state->cast(left >> right);
+    });
+
     bind("times", "", [](Arg arg) -> Ret
     {
         int times = arg.caller->toi();
@@ -341,6 +376,24 @@ String::String(const std::string& val, Scope* parent, State* state) : val(val)
         std::string right = arg.value->tos(false);
         return arg.state->cast(left != right);
     });
+
+    bind("len", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(static_cast<int>(str.size()));
+    });
+
+    bind("int", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(std::stoi(str));
+    });
+
+    bind("real", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(std::stof(str));
+    });
 }
 
 std::string String::tos(bool debug)
@@ -372,6 +425,20 @@ Bool::Bool(bool val, Scope* parent, State* state) : val(val)
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
         return arg.state->cast(left != right);
+    });
+
+    bind("__and", "b", [](Arg arg) -> Ret
+    {
+        bool left = arg.caller->tob();
+        bool right = arg.value->tob();
+        return arg.state->cast(left && right);
+    });
+
+    bind("__or", "b", [](Arg arg) -> Ret
+    {
+        bool left = arg.caller->tob();
+        bool right = arg.value->tob();
+        return arg.state->cast(left || right);
     });
 }
 
