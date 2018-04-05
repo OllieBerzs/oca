@@ -376,6 +376,24 @@ String::String(const std::string& val, Scope* parent, State* state) : val(val)
         std::string right = arg.value->tos(false);
         return arg.state->cast(left != right);
     });
+
+    bind("len", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(static_cast<int>(str.size()));
+    });
+
+    bind("int", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(std::stoi(str));
+    });
+
+    bind("real", "", [](Arg arg) -> Ret
+    {
+        std::string str = arg.caller->tos(false);
+        return arg.state->cast(std::stof(str));
+    });
 }
 
 std::string String::tos(bool debug)

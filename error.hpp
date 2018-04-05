@@ -42,7 +42,8 @@ enum ErrorType
     NO_ARGUMENT,
     SMALL_TUPLE,
     UNDEFINED,
-    TYPE_MISMATCH
+    TYPE_MISMATCH,
+    ERROR
 };
 
 enum ValueType

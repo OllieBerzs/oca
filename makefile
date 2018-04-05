@@ -63,6 +63,10 @@ script: $(BIN)
 	@echo [Run] script.oca
 	@./$(BIN) examples/script.oca
 
+repl: $(BIN)
+	@echo [Repl]
+	@./$(BIN)
+
 test: $(TEST)
 	@echo [Test]
 	@./$(TEST)

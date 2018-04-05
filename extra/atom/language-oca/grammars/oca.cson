@@ -82,7 +82,7 @@
 
   # functions
   {
-    'match': '\\b(print)\\b'
+    'match': '\\b(print|input|pause|assert|type)|\\.(times|len|int|real)\\b'
     'name': 'support.function.oca'
   }
 ]

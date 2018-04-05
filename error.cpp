@@ -40,7 +40,8 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         "NO ARGUMENT",
         "SMALL TUPLE",
         "UNDEFINED",
-        "TYPE MISMATCH"
+        "TYPE MISMATCH",
+        "ERROR"
     };
 
     // error message config
@@ -223,6 +224,13 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         pos = tokens->at(expr->index).pos;
         width = tokens->at(expr->index).val.size();
         message = "This function got " + add;
+        break;
+
+    case ERROR:
+        // current expression
+        pos = tokens->at(expr->index).pos;
+        width = tokens->at(expr->index).val.size();
+        message = add;
         break;
     }
 
