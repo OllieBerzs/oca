@@ -222,7 +222,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     if (expr->type == Expression::TUP)
     {
         // if tuple has only one member, open it up
-        if (expr->right == nullptr) return eval(expr->left, scope);
+        if (expr->right == nullptr && expr->val == "") return eval(expr->left, scope);
 
         result = std::make_shared<Tuple>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
@@ -248,19 +248,19 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     }
     else if (expr->type == Expression::STR)
     {
-        result = std::make_shared<String>(expr, &scope, state);
+        result = std::make_shared<String>(expr->val, &scope, state);
     }
     else if (expr->type == Expression::INT)
     {
-        result = std::make_shared<Integer>(expr, &scope, state);
+        result = std::make_shared<Integer>(std::stoi(expr->val), &scope, state);
     }
     else if (expr->type == Expression::REAL)
     {
-        result = std::make_shared<Real>(expr, &scope, state);
+        result = std::make_shared<Real>(std::stof(expr->val), &scope, state);
     }
     else if (expr->type == Expression::BOOL)
     {
-        result = std::make_shared<Bool>(expr, &scope, state);
+        result = std::make_shared<Bool>(expr->val == "true", &scope, state);
     }
     return result;
 }

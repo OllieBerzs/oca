@@ -145,7 +145,7 @@ bool Parser::call(bool inDot)
         cache.push_back(calls);
     }
 
-    if (!set()) oper();
+    if (!inDot && !set()) oper();
     return true;
 }
 

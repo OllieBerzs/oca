@@ -9,49 +9,6 @@
 
 OCA_BEGIN
 
-ValueCast::ValueCast(ValuePtr val, const std::string& name, State* state)
-    : val(val), name(name), state(state) {}
-
-// ---------------------------------------
-
-void ValueCast::operator=(int v)
-{
-    Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Integer>(v, parent, state));
-}
-
-void ValueCast::operator=(float v)
-{
-    Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Real>(v, parent, state));
-}
-
-void ValueCast::operator=(const std::string& v)
-{
-    Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<String>(v, parent, state));
-}
-
-void ValueCast::operator=(bool v)
-{
-    Scope* parent = val->scope.parent;
-    parent->set(name, std::make_shared<Bool>(v, parent, state));
-}
-
-ValueCast ValueCast::operator[](const std::string& name)
-{
-    ValuePtr var = val->scope.get(name);
-    if (var->isNil())
-    {
-        val->scope.set(name, Nil::in(&val->scope));
-        return ValueCast(val->scope.get(name), name, state);
-    }
-    return ValueCast(var, name, state);
-}
-
-
-// ---------------------------------------
-
 ValuePtr Arg::operator[](uint i)
 {
     return value->scope.get(std::to_string(i));
@@ -64,38 +21,38 @@ State::State()
     , evaler(this), err(this), lextime(0), parsetime(0), evaltime(0)
 {
     // add base functions
-    bind("print", "a", [](Arg arg) -> Ret
+    bind("print", "a", CPPFUNC
     {
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
 
-    bind("input", "", [](Arg arg) -> Ret
+    bind("input", "", CPPFUNC
     {
         std::string result;
         std::cin >> result;
-        return arg.state->cast(result);
+        return cast(result);
     });
 
-    bind("pause", "", [](Arg arg) -> Ret
+    bind("pause", "", CPPFUNC
     {
         std::cin.get();
         return NIL;
     });
 
-    bind("assert", "bs", [](Arg arg) -> Ret
+    bind("assert", "bs", CPPFUNC
     {
         bool cond = arg[0]->tob();
         std::string message = arg[1]->tos(false);
-        if (!cond) arg.state->err.panic(ERROR, arg.state->evaler.current, message);
+        if (!cond) err.panic(ERROR, evaler.current, message);
         return NIL;
     });
 
-    bind("type", "a", [](Arg arg) -> Ret
+    bind("type", "a", CPPFUNC
     {
         std::string str = arg.value->tos(true);
         auto end = str.find(">");
-        return arg.state->cast(str.substr(1, end - 1));
+        return cast(str.substr(1, end - 1));
     });
 }
 
@@ -221,49 +178,39 @@ void State::bind(const std::string& name, const std::string& params, CPPFunc fun
     global.set(name, std::make_shared<Func>(func, params, &global, this));
 }
 
-ValueCast State::operator[](const std::string& name)
-{
-    ValuePtr var = global.get(name);
-    if (var->isNil())
-    {
-        global.set(name, Nil::in(&global));
-        return ValueCast(global.get(name), name, this);
-    }
-    return ValueCast(var, name, this);
-}
-
 // ---------------------------------------
 
-std::shared_ptr<Integer> State::cast(int val)
+ValuePtr State::cast(std::any val)
 {
-    return std::make_shared<Integer>(val, nullptr, this);
-}
-
-std::shared_ptr<Real> State::cast(float val)
-{
-    return std::make_shared<Real>(val, nullptr, this);
-}
-
-std::shared_ptr<Bool> State::cast(bool val)
-{
-    return std::make_shared<Bool>(val, nullptr, this);
-}
-
-std::shared_ptr<String> State::cast(const std::string& val)
-{
-    return std::make_shared<String>(val, nullptr, this);
-}
-
-std::shared_ptr<Tuple> State::cast(const std::vector<int>& val)
-{
-    auto tuple = std::make_shared<Tuple>(nullptr);
-    for (uint i = 0; i < val.size(); ++i)
+    if (val.type() == typeid(int))
     {
-        ++static_cast<Tuple&>(*tuple).count;
-        tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
-            std::make_shared<Integer>(val[i], &tuple->scope, this));
+        return std::make_shared<Integer>(std::any_cast<int>(val), nullptr, this);
     }
-    return tuple;
+    else if (val.type() == typeid(float))
+    {
+        return std::make_shared<Real>(std::any_cast<float>(val), nullptr, this);
+    }
+    else if (val.type() == typeid(bool))
+    {
+        return std::make_shared<Bool>(std::any_cast<bool>(val), nullptr, this);
+    }
+    else if (val.type() == typeid(std::string))
+    {
+        return std::make_shared<String>(std::any_cast<std::string>(val), nullptr, this);
+    }
+    else if (val.type() == typeid(std::vector<int>))
+    {
+        auto vec = std::any_cast<std::vector<int>>(val);
+        auto tuple = std::make_shared<Tuple>(nullptr);
+        for (uint i = 0; i < vec.size(); ++i)
+        {
+            ++static_cast<Tuple&>(*tuple).count;
+            tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
+                std::make_shared<Integer>(vec[i], &tuple->scope, this));
+        }
+        return tuple;
+    }
+    else return NIL;
 }
 
 OCA_END

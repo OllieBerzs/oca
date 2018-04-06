@@ -134,6 +134,9 @@ TEST_CASE("Operators", "operators")
     REQUIRE(oca.eval("'hi' == 'hello'")->tos(false) == "false");
     REQUIRE(oca.eval("'hi' != 'hello'")->tos(false) == "true");
 
+    // str and int
+    REQUIRE(oca.eval("'hi ' * 3")->tos(false) == "hi hi hi");
+
     // str and any
     REQUIRE(oca.eval("'hi' + 5")->tos(false) == "hi5");
 

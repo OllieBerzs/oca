@@ -14,7 +14,7 @@
 #define OCA_BEGIN namespace oca {
 #define OCA_END }
 #define DLLEXPORT __declspec(dllexport) void
-#define TYPE_EQ(a, b) (std::type_index(typeid(a)).name() == std::type_index(typeid(b)).name())
+#define TYPE_EQ(a, b) (typeid(a) == typeid(b))
 
 OCA_BEGIN
 
@@ -31,11 +31,12 @@ struct Arg;
 class ValueCast;
 
 typedef unsigned int uint;
-
 typedef std::shared_ptr<Expression> ExprPtr;
 typedef std::shared_ptr<Value> ValuePtr;
 typedef void(*DLLfunc)(Scope&);
 typedef ValuePtr Ret;
-typedef Ret(*CPPFunc)(Arg);
+typedef std::function<Ret(Arg)> CPPFunc;
+
+#define CPPFUNC [*this](oca::Arg arg) mutable -> oca::Ret
 
 OCA_END
