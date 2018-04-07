@@ -19,7 +19,7 @@ protected:
     State* state = nullptr;
 
 public:
-    Scope scope = Scope(nullptr);
+    Scope scope = Scope(nullptr, nullptr);
 
     virtual ~Value() = default;
     virtual std::string tos(bool debug) = 0;
@@ -85,7 +85,9 @@ class Tuple : public Value
 {
 public:
     uint count = 0;
-    Tuple(Scope* parent);
+    Tuple(Scope* parent, State* state);
+    static std::shared_ptr<Tuple> make(Scope* parent, State* state);
+    void add(const std::string& name, std::any val);
     std::string tos(bool debug);
 };
 

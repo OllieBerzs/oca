@@ -4,32 +4,52 @@
 */
 
 #include <iostream>
-#include "scope.hpp"
-#include "value.hpp"
+#include "oca.hpp"
 
 OCA_BEGIN
 
-Scope::Scope(Scope* parent) : parent(parent) {}
+Scope::Scope(Scope* parent, State* state) : parent(parent), state(state) {}
 
 // ----------------------------
 
 void Scope::clean()
 {
-    names.clear();
+    vars.clear();
 }
 
-void Scope::set(const std::string& name, ValuePtr value)
+void Scope::set(const std::string& name, ValuePtr value, bool pub)
 {
-    if (names.find(name) == names.end())
-        names.emplace(name, value);
-    else names[name] = value;
+    ValuePtr val = nullptr;
+    uint index;
+    for (index = 0; index < vars.size(); ++index)
+    {
+        auto var = vars.at(index);
+        if (var.first.second == name)
+        {
+            val = var.second;
+            break;
+        }
+    }
+
+    if (val) vars[index] = std::make_pair(std::make_pair(pub, name), value);
+    else vars.emplace_back(std::make_pair(pub, name), value);
 }
 
-ValuePtr Scope::get(const std::string& name)
+ValuePtr Scope::get(const std::string& name, bool super)
 {
-    auto val = names.find(name);
-    if (val == names.end()) return Nil::in(this);
-    return val->second;
+    ValuePtr val = nullptr;
+    for (auto var : vars)
+    {
+        if (var.first.second == name)
+        {
+            val = var.second;
+            if (!super && !var.first.first) state->err.panic(NOT_PUBLIC);
+            break;
+        }
+    }
+
+    if (val) return val;
+    else return Nil::in(this);
 }
 
 // -----------------------------
@@ -37,7 +57,11 @@ ValuePtr Scope::get(const std::string& name)
 void Scope::print()
 {
     std::string out = "{";
-    for (auto& name : names) out += name.first + " ";
+    for (auto var : vars)
+    {
+        if (var.first.first) out += "[p]";
+        out += var.first.second + " ";
+    }
     if (out.size() > 1) out.pop_back();
     out += "}";
     std::cout << out << "\n";

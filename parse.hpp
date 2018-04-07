@@ -55,7 +55,6 @@ private:
     bool set();
     bool call(bool inDot = false);
     bool access();
-    bool dotaccess();
     bool cond();
     bool oper();
     bool keyword();

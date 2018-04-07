@@ -17,7 +17,7 @@ ValuePtr Arg::operator[](uint i)
 // ---------------------------------------
 
 State::State()
-    : scope(nullptr), global(nullptr), lexer(this), parser(this)
+    : scope(nullptr, this), global(nullptr, this), lexer(this), parser(this)
     , evaler(this), err(this), lextime(0), parsetime(0), evaltime(0)
 {
     // add base functions
@@ -44,7 +44,7 @@ State::State()
     {
         bool cond = arg[0]->tob();
         std::string message = arg[1]->tos(false);
-        if (!cond) err.panic(ERROR, evaler.current, message);
+        if (!cond) err.panic(CUSTOM_ERROR, evaler.current, message);
         return NIL;
     });
 
@@ -54,6 +54,23 @@ State::State()
         auto end = str.find(">");
         return cast(str.substr(1, end - 1));
     });
+
+    /*bind("List", "t", CPPFUNC
+    {
+        auto list = Tuple::make(&arg.caller->scope, this);
+        list->scope = arg.value->scope;
+        list->count = static_cast<Tuple&>(*arg.value).count;
+        list->bind("push", "a", CPPFUNC
+        {
+            arg.value->scope.parent = &list->scope;
+            std::string name = std::to_string(list->count);
+            ValuePtr val = arg.value;
+            list->scope.set(name, val); // segfault
+            ++list->count;
+            return arg.value;
+        });
+        return list;
+    });*/
 }
 
 State::~State()
@@ -162,7 +179,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     // return as tuple
     if (asTuple)
     {
-        auto tuple = std::make_shared<Tuple>(nullptr);
+        auto tuple = std::make_shared<Tuple>(nullptr, this);
         tuple->scope = scope;
         return tuple;
     }
@@ -201,7 +218,7 @@ ValuePtr State::cast(std::any val)
     else if (val.type() == typeid(std::vector<int>))
     {
         auto vec = std::any_cast<std::vector<int>>(val);
-        auto tuple = std::make_shared<Tuple>(nullptr);
+        auto tuple = std::make_shared<Tuple>(nullptr, this);
         for (uint i = 0; i < vec.size(); ++i)
         {
             ++static_cast<Tuple&>(*tuple).count;

@@ -58,7 +58,7 @@
 
   # variables
   {
-    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *=(?![=<>])'
+    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *(pub)? *[=:](?![=<>])'
     'name': 'storage.type.oca'
   }
 

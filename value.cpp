@@ -88,6 +88,7 @@ bool Value::ist()
 Integer::Integer(int val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
@@ -257,6 +258,7 @@ std::string Integer::tos(bool debug)
 Real::Real(float val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
@@ -337,6 +339,7 @@ std::string Real::tos(bool debug)
 String::String(const std::string& val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
@@ -422,6 +425,7 @@ std::string String::tos(bool debug)
 Bool::Bool(bool val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     bind("__eq", "b", CPPFUNC
@@ -466,6 +470,7 @@ std::string Bool::tos(bool debug)
 Block::Block(ExprPtr expr, Scope* parent, State* state)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
     val = expr;
     // add functions
@@ -484,7 +489,7 @@ std::string Block::tos(bool debug)
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 {
-    Scope temp(&scope);
+    Scope temp(&scope, state);
     std::vector<std::string> params;
     ValuePtr result = Nil::in(&scope);
 
@@ -556,9 +561,23 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 
 // ---------------------------------
 
-Tuple::Tuple(Scope* parent)
+Tuple::Tuple(Scope* parent, State* state)
 {
+    this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
+}
+
+std::shared_ptr<Tuple> Tuple::make(Scope* parent, State* state)
+{
+    return std::make_shared<Tuple>(parent, state);
+}
+
+void Tuple::add(const std::string& name, std::any val)
+{
+    auto vptr = cast(val);
+    vptr->scope.parent = &scope;
+    scope.set(name, vptr);
 }
 
 std::string Tuple::tos(bool debug)
@@ -566,9 +585,9 @@ std::string Tuple::tos(bool debug)
     std::string result = "";
     if (debug) result += "<tup>";
     result += "(";
-    for (auto& i : scope.names)
+    for (auto& i : scope.vars)
     {
-        if (debug) result += "[" + i.first + "]";
+        if (debug) result += "[" + i.first.second + "]";
         result += i.second->tos(debug);
         result += ", ";
     }
@@ -584,6 +603,7 @@ Func::Func(CPPFunc func, const std::string& params, Scope* parent, State* state)
     : val(func), params(params)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 }
 
@@ -619,7 +639,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     for (uint i = 0; i < params.size(); ++i)
     {
         ValuePtr v = arg;
-        if (argc > 1) v = arg->scope.get(std::to_string(i));
+        if (argc > 1 && params.size() > 1) v = arg->scope.get(std::to_string(i));
         switch (params[i])
         {
         case 'i':
@@ -657,6 +677,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 std::shared_ptr<Nil> Nil::in(Scope* parent)
 {
     auto n = std::make_shared<Nil>();
+    if (parent) n->scope.vars = parent->vars;
     n->scope.parent = parent;
     return n;
 }

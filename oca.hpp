@@ -65,6 +65,7 @@ public:
     friend class Tuple;
     friend class Block;
     friend class Func;
+    friend class Scope;
 };
 
 
