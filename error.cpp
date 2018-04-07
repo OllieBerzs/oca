@@ -41,6 +41,7 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         "SMALL TUPLE",
         "UNDEFINED",
         "TYPE MISMATCH",
+        "NOT PUBLIC",
         "ERROR"
     };
 
@@ -226,7 +227,13 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         message = "This function got " + add;
         break;
 
-    case ERROR:
+    case NOT_PUBLIC:
+        pos = tokens->at(state->evaler.current->index).pos;
+        width = tokens->at(state->evaler.current->index).val.size();
+        message = "This is not a public member.";
+        break;
+
+    case CUSTOM_ERROR:
         // current expression
         pos = tokens->at(expr->index).pos;
         width = tokens->at(expr->index).val.size();

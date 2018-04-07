@@ -5,9 +5,6 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-
 #include "common.hpp"
 
 OCA_BEGIN
@@ -15,14 +12,15 @@ OCA_BEGIN
 class Scope
 {
 public:
-    std::map<std::string, ValuePtr> names;
+    std::vector<std::pair<std::pair<bool, std::string>, ValuePtr>> vars;
     Scope* parent;
+    State* state;
 
-    Scope(Scope* parent);
+    Scope(Scope* parent, State* state);
 
     void clean();
-    void set(const std::string& name, ValuePtr value);
-    ValuePtr get(const std::string& name);
+    void set(const std::string& name, ValuePtr value, bool pub = true);
+    ValuePtr get(const std::string& name, bool super = false);
 
     void print();
 };

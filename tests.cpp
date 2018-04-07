@@ -44,22 +44,14 @@ TEST_CASE("Variable setting and getting", "[variables]")
 
     // simple tuples
     oca.eval("b = (1, 2, 3, 4)");
-    oca.eval("b[0] = 6");
-    oca.eval("bi = 3");
     REQUIRE(oca.eval("b.2")->tos(false) == "3");
-    REQUIRE(oca.eval("b[1]")->tos(false) == "2");
-    REQUIRE(oca.eval("b[bi]")->tos(false) == "4");
-    REQUIRE(oca.eval("b.0")->tos(false) == "6");
 
     // named tuples
-    oca.eval("c = (x: 5, y: 6, z: 10)");
-    oca.eval("ci = 'y'");
+    oca.eval("c = (x pub: 5, y pub: 6, z pub: 10)");
     REQUIRE(oca.eval("c.x")->tos(false) == "5");
-    REQUIRE(oca.eval("c['z']")->tos(false) == "10");
-    REQUIRE(oca.eval("c[ci]")->tos(false) == "6");
 
     // complex tuples
-    oca.eval("complex = (x: (1, 2, 3), y: 'hi')");
+    oca.eval("complex = (x pub: (1, 2, 3), y pub: 'hi')");
     oca.eval("complex.x.1 = 6");
     REQUIRE(oca.eval("complex.x.1")->tos(false) == "6");
 
@@ -133,6 +125,9 @@ TEST_CASE("Operators", "operators")
     // str and str
     REQUIRE(oca.eval("'hi' == 'hello'")->tos(false) == "false");
     REQUIRE(oca.eval("'hi' != 'hello'")->tos(false) == "true");
+
+    // str and int
+    REQUIRE(oca.eval("'hi ' * 3")->tos(false) == "hi hi hi ");
 
     // str and any
     REQUIRE(oca.eval("'hi' + 5")->tos(false) == "hi5");

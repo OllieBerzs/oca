@@ -6,11 +6,8 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
-#include "value.hpp"
-#include "parse.hpp"
+#include <cctype>
 #include "oca.hpp"
-#include "error.hpp"
-#include "eval.hpp"
 
 OCA_BEGIN
 
@@ -19,20 +16,14 @@ bool Value::isNil()
     return false;
 }
 
+ValuePtr Value::cast(std::any val)
+{
+    return state->cast(val);
+}
+
 void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
 {
     scope.set(name, std::make_shared<Func>(func, args, &scope, state));
-}
-
-ValueCast Value::operator[](const std::string& name)
-{
-    ValuePtr var = scope.get(name);
-    if (var->isNil())
-    {
-        scope.set(name, Nil::in(&scope));
-        return ValueCast(scope.get(name), name, state);
-    }
-    return ValueCast(var, name, state);
 }
 
 int Value::toi()
@@ -94,108 +85,106 @@ bool Value::ist()
 
 // ---------------------------------
 
-Integer::Integer(ExprPtr expr, Scope* parent, State* state)
-    : Integer(std::stoi(expr->val), parent, state) {}
-
 Integer::Integer(int val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
-    bind("__add", "n", [](Arg arg) -> Ret
+    bind("__add", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left + arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left + arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left + arg.value->toi());
+        if (arg.value->isr()) return cast(left + arg.value->tor());
+        return NIL;
     });
 
-    bind("__sub", "n", [](Arg arg) -> Ret
+    bind("__sub", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left - arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left - arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left - arg.value->toi());
+        if (arg.value->isr()) return cast(left - arg.value->tor());
+        return NIL;
     });
 
-    bind("__mul", "n", [](Arg arg) -> Ret
+    bind("__mul", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left * arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left * arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left * arg.value->toi());
+        if (arg.value->isr()) return cast(left * arg.value->tor());
+        return NIL;
     });
 
-    bind("__div", "n", [](Arg arg) -> Ret
+    bind("__div", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left / arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left / arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left / arg.value->toi());
+        if (arg.value->isr()) return cast(left / arg.value->tor());
+        return NIL;
     });
 
-    bind("__mod", "i", [](Arg arg) -> Ret
+    bind("__mod", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left % right);
+        return cast(left % right);
     });
 
-    bind("__pow", "n", [](Arg arg) -> Ret
+    bind("__pow", "n", CPPFUNC
     {
         int left = arg.caller->toi();
         ValuePtr right = arg.value;
-        if (right->isi()) return arg.state->cast(static_cast<int>(std::pow(left, right->toi())));
-        if (right->isr()) return arg.state->cast(static_cast<float>(std::pow(left, right->tor())));
-        return Nil::in(nullptr);
+        if (right->isi()) return cast(static_cast<int>(std::pow(left, right->toi())));
+        if (right->isr()) return cast(static_cast<float>(std::pow(left, right->tor())));
+        return NIL;
     });
 
-    bind("__eq", "i", [](Arg arg) -> Ret
+    bind("__eq", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left == right);
+        return cast(left == right);
     });
 
-    bind("__neq", "i", [](Arg arg) -> Ret
+    bind("__neq", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left != right);
+        return cast(left != right);
     });
 
-    bind("__gr", "n", [](Arg arg) -> Ret
+    bind("__gr", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left > arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left > arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left > arg.value->toi());
+        if (arg.value->isr()) return cast(left > arg.value->tor());
+        return NIL;
     });
 
-    bind("__ls", "n", [](Arg arg) -> Ret
+    bind("__ls", "n", CPPFUNC
     {
         int left = arg.caller->toi();
-        if (arg.value->isi()) return arg.state->cast(left < arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left < arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left < arg.value->toi());
+        if (arg.value->isr()) return cast(left < arg.value->tor());
+        return NIL;
     });
 
-    bind("__geq", "i", [](Arg arg) -> Ret
-    {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
-        return arg.state->cast(left >= right);
-    });
-
-    bind("__leq", "i", [](Arg arg) -> Ret
+    bind("__geq", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left <= right);
+        return cast(left >= right);
     });
 
-    bind("__ran", "i", [](Arg arg) -> Ret
+    bind("__leq", "i", CPPFUNC
+    {
+        int left = arg.caller->toi();
+        int right = arg.value->toi();
+        return cast(left <= right);
+    });
+
+    bind("__ran", "i", CPPFUNC
     {
         int begin = arg.caller->toi();
         int end = arg.value->toi();
@@ -206,53 +195,53 @@ Integer::Integer(int val, Scope* parent, State* state) : val(val)
             vec[counter] = i;
             ++counter;
         }
-        return arg.state->cast(vec);
+        return cast(vec);
     });
 
-    bind("__and", "i", [](Arg arg) -> Ret
+    bind("__and", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left & right);
+        return cast(left & right);
     });
 
-    bind("__or", "i", [](Arg arg) -> Ret
+    bind("__or", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left | right);
+        return cast(left | right);
     });
 
-    bind("__xor", "i", [](Arg arg) -> Ret
+    bind("__xor", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left ^ right);
+        return cast(left ^ right);
     });
 
-    bind("__lsh", "i", [](Arg arg) -> Ret
+    bind("__lsh", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left << right);
+        return cast(left << right);
     });
 
-    bind("__rsh", "i", [](Arg arg) -> Ret
+    bind("__rsh", "i", CPPFUNC
     {
         int left = arg.caller->toi();
         int right = arg.value->toi();
-        return arg.state->cast(left >> right);
+        return cast(left >> right);
     });
 
-    bind("times", "", [](Arg arg) -> Ret
+    bind("times", "", CPPFUNC
     {
         int times = arg.caller->toi();
         Block& yield = static_cast<Block&>(*arg.yield);
         for (int i = 0; i < times; ++i)
         {
-            yield(Nil::in(arg.caller->scope.parent), arg.state->cast(i), Nil::in(nullptr));
+            yield(Nil::in(arg.caller->scope.parent), cast(i), NIL);
         }
-        return Nil::in(nullptr);
+        return NIL;
     });
 }
 
@@ -266,69 +255,68 @@ std::string Integer::tos(bool debug)
 
 // ----------------------------------
 
-Real::Real(ExprPtr expr, Scope* parent, State* state) : Real(std::stof(expr->val), parent, state) {}
-
 Real::Real(float val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
-    bind("__add", "n", [](Arg arg) -> Ret
+    bind("__add", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left + arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left + arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left + arg.value->toi());
+        if (arg.value->isr()) return cast(left + arg.value->tor());
+        return NIL;
     });
 
-    bind("__sub", "n", [](Arg arg) -> Ret
+    bind("__sub", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left - arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left - arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left - arg.value->toi());
+        if (arg.value->isr()) return cast(left - arg.value->tor());
+        return NIL;
     });
 
-    bind("__mul", "n", [](Arg arg) -> Ret
+    bind("__mul", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left * arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left * arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left * arg.value->toi());
+        if (arg.value->isr()) return cast(left * arg.value->tor());
+        return NIL;
     });
 
-    bind("__div", "n", [](Arg arg) -> Ret
+    bind("__div", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left / arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left / arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left / arg.value->toi());
+        if (arg.value->isr()) return cast(left / arg.value->tor());
+        return NIL;
     });
 
-    bind("__pow", "n", [](Arg arg) -> Ret
+    bind("__pow", "n", CPPFUNC
     {
         float left = arg.caller->tor();
         ValuePtr right = arg.value;
-        if (right->isi()) return arg.state->cast(static_cast<float>(std::pow(left, right->toi())));
-        if (right->isr()) return arg.state->cast(static_cast<float>(std::pow(left, right->tor())));
-        return Nil::in(nullptr);
+        if (right->isi()) return cast(static_cast<float>(std::pow(left, right->toi())));
+        if (right->isr()) return cast(static_cast<float>(std::pow(left, right->tor())));
+        return NIL;
     });
 
-    bind("__gr", "n", [](Arg arg) -> Ret
+    bind("__gr", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left > arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left > arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left > arg.value->toi());
+        if (arg.value->isr()) return cast(left > arg.value->tor());
+        return NIL;
     });
 
-    bind("__ls", "n", [](Arg arg) -> Ret
+    bind("__ls", "n", CPPFUNC
     {
         float left = arg.caller->tor();
-        if (arg.value->isi()) return arg.state->cast(left < arg.value->toi());
-        if (arg.value->isr()) return arg.state->cast(left < arg.value->tor());
-        return Nil::in(nullptr);
+        if (arg.value->isi()) return cast(left < arg.value->toi());
+        if (arg.value->isr()) return cast(left < arg.value->tor());
+        return NIL;
     });
 }
 
@@ -348,51 +336,79 @@ std::string Real::tos(bool debug)
 
 // ---------------------------------
 
-String::String(ExprPtr expr, Scope* parent, State* state) : String(expr->val, parent, state) {}
-
 String::String(const std::string& val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
     // functions
-    bind("__add", "a", [](Arg arg) -> Ret
+    bind("__add", "a", CPPFUNC
     {
         std::string left = arg.caller->tos(false);
         std::string right = arg.value->tos(false);
-        return arg.state->cast(left + right);
+        return cast(left + right);
     });
 
-    bind("__eq", "s", [](Arg arg) -> Ret
+    bind("__mul", "i", CPPFUNC
+    {
+        std::string left = arg.caller->tos(false);
+        int right = arg.value->toi();
+        std::string result = "";
+        if (right <= 0) return cast(result); // TODO: should error
+        for (int i = 0; i < right; ++i)
+        {
+            result += left;
+        }
+        return cast(result);
+    });
+
+    bind("__eq", "s", CPPFUNC
     {
         std::string left = arg.caller->tos(false);
         std::string right = arg.value->tos(false);
-        return arg.state->cast(left == right);
+        return cast(left == right);
     });
 
-    bind("__neq", "s", [](Arg arg) -> Ret
+    bind("__neq", "s", CPPFUNC
     {
         std::string left = arg.caller->tos(false);
         std::string right = arg.value->tos(false);
-        return arg.state->cast(left != right);
+        return cast(left != right);
     });
 
-    bind("len", "", [](Arg arg) -> Ret
+    bind("len", "", CPPFUNC
     {
         std::string str = arg.caller->tos(false);
-        return arg.state->cast(static_cast<int>(str.size()));
+        return cast(static_cast<int>(str.size()));
     });
 
-    bind("int", "", [](Arg arg) -> Ret
+    bind("upcase", "", CPPFUNC
     {
         std::string str = arg.caller->tos(false);
-        return arg.state->cast(std::stoi(str));
+        std::string result;
+        for (char c : str) result += std::toupper(c);
+        return cast(result);
     });
 
-    bind("real", "", [](Arg arg) -> Ret
+    bind("lowcase", "", CPPFUNC
     {
         std::string str = arg.caller->tos(false);
-        return arg.state->cast(std::stof(str));
+        std::string result;
+        for (char c : str) result += std::tolower(c);
+        return cast(result);
+    });
+
+    bind("int", "", CPPFUNC
+    {
+        std::string str = arg.caller->tos(false);
+        return cast(std::stoi(str));
+    });
+
+    bind("real", "", CPPFUNC
+    {
+        std::string str = arg.caller->tos(false);
+        return cast(std::stof(str));
     });
 }
 
@@ -406,39 +422,38 @@ std::string String::tos(bool debug)
 
 // ---------------------------------
 
-Bool::Bool(ExprPtr expr, Scope* parent, State* state) : Bool((expr->val == "true"), parent, state) {}
-
 Bool::Bool(bool val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 
-    bind("__eq", "b", [](Arg arg) -> Ret
+    bind("__eq", "b", CPPFUNC
     {
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
-        return arg.state->cast(left == right);
+        return cast(left == right);
     });
 
-    bind("__neq", "b", [](Arg arg) -> Ret
+    bind("__neq", "b", CPPFUNC
     {
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
-        return arg.state->cast(left != right);
+        return cast(left != right);
     });
 
-    bind("__and", "b", [](Arg arg) -> Ret
+    bind("__and", "b", CPPFUNC
     {
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
-        return arg.state->cast(left && right);
+        return cast(left && right);
     });
 
-    bind("__or", "b", [](Arg arg) -> Ret
+    bind("__or", "b", CPPFUNC
     {
         bool left = arg.caller->tob();
         bool right = arg.value->tob();
-        return arg.state->cast(left || right);
+        return cast(left || right);
     });
 }
 
@@ -455,6 +470,7 @@ std::string Bool::tos(bool debug)
 Block::Block(ExprPtr expr, Scope* parent, State* state)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
     val = expr;
     // add functions
@@ -473,7 +489,7 @@ std::string Block::tos(bool debug)
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 {
-    Scope temp(&scope);
+    Scope temp(&scope, state);
     std::vector<std::string> params;
     ValuePtr result = Nil::in(&scope);
 
@@ -545,9 +561,23 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 
 // ---------------------------------
 
-Tuple::Tuple(Scope* parent)
+Tuple::Tuple(Scope* parent, State* state)
 {
+    this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
+}
+
+std::shared_ptr<Tuple> Tuple::make(Scope* parent, State* state)
+{
+    return std::make_shared<Tuple>(parent, state);
+}
+
+void Tuple::add(const std::string& name, std::any val)
+{
+    auto vptr = cast(val);
+    vptr->scope.parent = &scope;
+    scope.set(name, vptr);
 }
 
 std::string Tuple::tos(bool debug)
@@ -555,9 +585,9 @@ std::string Tuple::tos(bool debug)
     std::string result = "";
     if (debug) result += "<tup>";
     result += "(";
-    for (auto& i : scope.names)
+    for (auto& i : scope.vars)
     {
-        if (debug) result += "[" + i.first + "]";
+        if (debug) result += "[" + i.first.second + "]";
         result += i.second->tos(debug);
         result += ", ";
     }
@@ -573,6 +603,7 @@ Func::Func(CPPFunc func, const std::string& params, Scope* parent, State* state)
     : val(func), params(params)
 {
     this->state = state;
+    scope = Scope(nullptr, state);
     scope.parent = parent;
 }
 
@@ -608,7 +639,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     for (uint i = 0; i < params.size(); ++i)
     {
         ValuePtr v = arg;
-        if (argc > 1) v = arg->scope.get(std::to_string(i));
+        if (argc > 1 && params.size() > 1) v = arg->scope.get(std::to_string(i));
         switch (params[i])
         {
         case 'i':
@@ -638,7 +669,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         }
     }
 
-    return val({caller, arg, block, state->evaler.state});
+    return val({caller, arg, block});
 }
 
 // ---------------------------------
@@ -646,6 +677,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 std::shared_ptr<Nil> Nil::in(Scope* parent)
 {
     auto n = std::make_shared<Nil>();
+    if (parent) n->scope.vars = parent->vars;
     n->scope.parent = parent;
     return n;
 }

@@ -96,15 +96,13 @@ bool Parser::set()
 {
     uint orig = index;
 
-    // assignment starts with '='
+    bool pub = lit("pub");
     if (!lit("=")) return false;
-
-    // has to have a value after
     if (!call() && !value() && !block() &&
         !file() && !cond()) state->err.panic(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
+    ExprPtr s = std::make_shared<Expression>(Expression::SET, pub ? "pub" : "", orig);
     s->right = uncache();
     s->left = uncache();
     cache.push_back(s);
@@ -132,8 +130,8 @@ bool Parser::call(bool inDot)
     c->right = arg;
     cache.push_back(c);
 
-    // check for accessors
-    if (!access() && !inDot) dotaccess();
+    // check for accessor
+    if (!inDot) access();
 
     if (cache.size() == 1 && lit(","))
     {
@@ -145,30 +143,11 @@ bool Parser::call(bool inDot)
         cache.push_back(calls);
     }
 
-    if (!set()) oper();
+    if (!inDot && !set()) oper();
     return true;
 }
 
 bool Parser::access()
-{
-    uint orig = index;
-    if (!lit("[")) return false;
-    if (!integer() && !string() && !call()) state->err.panic(NO_ACCESS_KEY_CALL);
-    if (!lit("]")) state->err.panic(NO_CLOSING_BRACE);
-
-    // assemble access
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "[]", orig);
-    a->right = uncache();
-    a->left = uncache();
-    cache.push_back(a);
-
-    // additional access
-    access();
-
-    return true;
-}
-
-bool Parser::dotaccess()
 {
     uint orig = index;
     if (!lit(".")) return false;
@@ -176,13 +155,13 @@ bool Parser::dotaccess()
     if (!call(true) && !integer()) state->err.panic(NO_ACCESS_KEY);
 
     // assemble dot access
-    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, ".", orig);
+    ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "", orig);
     a->right = uncache();
     a->left = uncache();
     cache.push_back(a);
 
     // additional access
-    dotaccess();
+    access();
 
     return true;
 }
@@ -516,7 +495,7 @@ bool Parser::value()
     if (string() || integer() || real() || boolean()) // single value
     {
         // check for accessor
-        if (!access()) dotaccess();
+        access();
         oper();
         return true;
     }
@@ -531,11 +510,13 @@ bool Parser::value()
             std::string nam = "";
             if (name())
             {
-                if (lit(":")) nam = uncache()->val;
+                bool pub = lit("pub");
+                if (lit(":")) nam = (pub?"pub ":"") + uncache()->val;
                 else
                 {
                     cache.pop_back();
                     --index;
+                    if (pub) --index;
                 }
 
             }
@@ -557,7 +538,7 @@ bool Parser::value()
         cache.push_back(tup);
 
         // check for accessor
-        if (!access()) dotaccess();
+        access();
         oper();
         return true;
     }

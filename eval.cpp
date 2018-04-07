@@ -63,16 +63,16 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             if (leftVal->isNil()) state->err.panic(NEW_TUPLE_KEY, leftExpr);
 
             // find the variable in parent scope
-            for (auto& var : leftVal->scope.parent->names)
+            for (auto& var : leftVal->scope.parent->vars)
             {
                 if (var.second.get() != leftVal.get()) continue;
-                name = var.first;
+                name = var.first.second;
                 break;
             }
         }
 
         // set the left variable to the right value
-        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal);
+        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal, expr->val == "pub");
         else
         {
             // get the right value based on the index
@@ -80,7 +80,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
             ++counter;
             if (rightValPart->isNil()) state->err.panic(CANNOT_SPLIT, expr->right);
 
-            leftVal->scope.parent->set(name, rightValPart);
+            leftVal->scope.parent->set(name, rightValPart, expr->val == "pub");
         }
     }
 
@@ -90,17 +90,17 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
 {
     current = expr;
-    ValuePtr func = Nil::in(&scope);
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
 
     // get the function from one of the scopes
-    if (caller) func = caller->scope.get(expr->val); // type specific
-    if (func->isNil()) func = state->global.get(expr->val); // global
-    if (func->isNil()) func = scope.get(expr->val); // in this scope
+    ValuePtr func = Nil::in(&scope);
+    if (caller) func = caller->scope.get(expr->val, true); // type specific
+    if (func->isNil()) func = state->global.get(expr->val, true); // global
+    if (func->isNil()) func = scope.get(expr->val, true); // in this scope
     if (func->isNil() && expr->val != "super") state->err.panic(UNDEFINED, expr);
 
     // get the argument and yield block
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
     if (expr->right) arg = eval(expr->right, scope);
     if (expr->left) block = eval(expr->left, scope);
 
@@ -170,22 +170,19 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 {
     current = expr;
-    ValuePtr left = eval(expr->left, scope);
-    ValuePtr right = Nil::in(&scope);
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
-    std::string name = "";
-
-    // get the entry name
-    if (expr->val == "[]") name = eval(expr->right, scope)->tos(false);
-    else name = expr->right->val;
 
     // get the data member
-    right = left->scope.get(name);
-    if (expr->left->val == "super" && right->isNil()) right = left->scope.parent->get(name);
+    std::string name = expr->right->val;
+    ValuePtr left = eval(expr->left, scope);
+    ValuePtr right = nullptr;
+    if (expr->left->val == "super") right = left->scope.get(name, true);
+    else right = left->scope.get(name);
+
     if (right->isNil()) state->err.panic(UNDEFINED_IN_TUPLE, expr->right);
 
     // get the argument and yield block
+    ValuePtr arg = Nil::in(&scope);
+    ValuePtr block = Nil::in(&scope);
     if (expr->right->right) arg = eval(expr->right->right, scope);
     if (expr->right->left) block = eval(expr->right->left, scope);
 
@@ -208,9 +205,9 @@ ValuePtr Evaluator::inject(ExprPtr expr, Scope& scope)
 {
     current = expr;
     ValuePtr tuple = file(expr->right, scope);
-    for (auto var : tuple->scope.names)
+    for (auto var : tuple->scope.vars)
     {
-        scope.set(var.first, var.second);
+        scope.set(var.first.second, var.second, var.first.first);
     }
     return Nil::in(&scope);
 }
@@ -222,22 +219,28 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     if (expr->type == Expression::TUP)
     {
         // if tuple has only one member, open it up
-        if (expr->right == nullptr) return eval(expr->left, scope);
+        if (expr->right == nullptr && expr->val == "") return eval(expr->left, scope);
 
-        result = std::make_shared<Tuple>(&scope);
+        result = std::make_shared<Tuple>(&scope, state);
         uint counter = ARRAY_BEGIN_INDEX;
         while(expr && expr->left)
         {
+            std::string nam = "";
+            bool pub = (expr->val.find("pub ") != std::string::npos);
+
             // unnamed value
             if (expr->val == "")
             {
-                expr->val = std::to_string(counter);
+                pub = true;
+                nam = std::to_string(counter);
                 ++counter;
                 ++static_cast<Tuple&>(*result).count;
             }
+            if (pub && expr->val != "") nam = expr->val.substr(4);
+            if (nam == "") nam = expr->val;
 
             // add tuple value to object table
-            result->scope.set(expr->val, eval(expr->left, result->scope));
+            result->scope.set(nam, eval(expr->left, result->scope), pub);
             expr = expr->right;
         }
     }
@@ -248,19 +251,19 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)
     }
     else if (expr->type == Expression::STR)
     {
-        result = std::make_shared<String>(expr, &scope, state);
+        result = std::make_shared<String>(expr->val, &scope, state);
     }
     else if (expr->type == Expression::INT)
     {
-        result = std::make_shared<Integer>(expr, &scope, state);
+        result = std::make_shared<Integer>(std::stoi(expr->val), &scope, state);
     }
     else if (expr->type == Expression::REAL)
     {
-        result = std::make_shared<Real>(expr, &scope, state);
+        result = std::make_shared<Real>(std::stof(expr->val), &scope, state);
     }
     else if (expr->type == Expression::BOOL)
     {
-        result = std::make_shared<Bool>(expr, &scope, state);
+        result = std::make_shared<Bool>(expr->val == "true", &scope, state);
     }
     return result;
 }

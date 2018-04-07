@@ -43,7 +43,8 @@ enum ErrorType
     SMALL_TUPLE,
     UNDEFINED,
     TYPE_MISMATCH,
-    ERROR
+    NOT_PUBLIC,
+    CUSTOM_ERROR
 };
 
 enum ValueType

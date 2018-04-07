@@ -52,13 +52,13 @@
 
   # operators
   {
-    'match': '(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=)'
+    'match': '(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=|!=|\\.\\.|and|or|xor|lsh|rsh)'
     'name': 'keyword.operator.oca'
   }
 
   # variables
   {
-    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *=(?![=<>])'
+    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *(pub)? *[=:](?![=<>])'
     'name': 'storage.type.oca'
   }
 
@@ -82,7 +82,7 @@
 
   # functions
   {
-    'match': '\\b(print|input|pause|assert|type)|\\.(times|len|int|real)\\b'
+    'match': '\\b(print|input|pause|assert|type|each)|\\.(times|len|int|real|upcase|lowcase|chars)\\b'
     'name': 'support.function.oca'
   }
 ]
