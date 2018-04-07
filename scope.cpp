@@ -20,6 +20,7 @@ void Scope::clean()
 void Scope::set(const std::string& name, ValuePtr value, bool pub)
 {
     ValuePtr val = nullptr;
+    bool valPub;
     uint index;
     for (index = 0; index < vars.size(); ++index)
     {
@@ -27,11 +28,12 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub)
         if (var.first.second == name)
         {
             val = var.second;
+            valPub = var.first.first;
             break;
         }
     }
 
-    if (val) vars[index] = std::make_pair(std::make_pair(pub, name), value);
+    if (val) vars[index] = std::make_pair(std::make_pair(valPub, name), value);
     else vars.emplace_back(std::make_pair(pub, name), value);
 }
 
