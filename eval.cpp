@@ -19,7 +19,7 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
 {
     current = expr;
     if (expr->type == Expression::SET) return set(expr, scope);
-    else if (expr->type == Expression::CALL) return call(expr, Nil::in(&scope), scope);
+    else if (expr->type == Expression::CALL) return call(expr, scope);
     else if (expr->type == Expression::IF) return cond(expr, scope);
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
     else if (expr->type == Expression::OPER) return oper(expr, scope);
@@ -87,16 +87,22 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
     return rightVal;
 }
 
-ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
+ValuePtr Evaluator::call(ExprPtr expr, Scope& scope)
 {
     current = expr;
 
-    // get the function from one of the scopes
-    ValuePtr func = Nil::in(&scope);
-    if (caller) func = caller->scope.get(expr->val, true); // type specific
-    if (func->isNil()) func = state->global.get(expr->val, true); // global
-    if (func->isNil()) func = scope.get(expr->val, true); // in this scope
-    if (func->isNil() && expr->val != "super") state->err.panic(UNDEFINED, expr);
+    #ifdef OUT_SCOPES
+    std::cout << "Call '" << expr->val << "' scopes:\n";
+    std::cout << "-- function scope ";
+    scope.print();
+    std::cout << "-- global scope ";
+    state->global.print();
+    #endif
+
+    // get the variable from one of the scopes
+    ValuePtr val = scope.get(expr->val, true); // function scope 
+    if (val->isNil()) val = state->global.get(expr->val, true); // global scope
+    if (val->isNil()) state->err.panic(UNDEFINED, expr);
 
     // get the argument and yield block
     ValuePtr arg = Nil::in(&scope);
@@ -104,11 +110,13 @@ ValuePtr Evaluator::call(ExprPtr expr, ValuePtr caller, Scope& scope)
     if (expr->right) arg = eval(expr->right, scope);
     if (expr->left) block = eval(expr->left, scope);
 
-    // call the function
-    Value& f = *func;
-    if (TYPE_EQ(f, Func)) return static_cast<Func&>(f)(caller, arg, block);
-    if (TYPE_EQ(f, Block)) return static_cast<Block&>(f)(caller, arg, block);
-    return func;
+    // call if variable is a function/block
+    Value& vref = *val;
+    if (TYPE_EQ(vref, Func))
+        return static_cast<Func&>(vref)(Tuple::from(scope, state), arg, block);
+    if (TYPE_EQ(vref, Block))
+        return static_cast<Block&>(vref)(Tuple::from(scope, state), arg, block);
+    return val;
 }
 
 ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
@@ -136,22 +144,21 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope)
 {
     current = expr;
-    ValuePtr result = Nil::in(&scope);
-    ValuePtr conditional = eval(expr->left, scope);
-    ValuePtr branch = Nil::in(&scope);
-    bool trueness;
 
     // evaluate the conditional
-    Value& c = *conditional;
-    if (!(TYPE_EQ(c, Bool))) state->err.panic(IF_BOOL, expr->left);
-    trueness = static_cast<Bool&>(c).val;
+    ValuePtr conditional = eval(expr->left, scope);
+    Value& cref = *conditional;
+    if (!(TYPE_EQ(cref, Bool))) state->err.panic(IF_BOOL, expr->left);
+    bool trueness = static_cast<Bool&>(cref).val;
 
     // set the appropriate branch based on the conditional
+    ValuePtr branch = Nil::in(&scope);
     if (trueness) branch = eval(expr->right->left, scope);
     else if (expr->right->right) branch = eval(expr->right->right, scope);
 
     // evaluate the branch
     if (branch->isNil()) return branch;
+    ValuePtr result = Nil::in(&scope);
     ExprPtr it = static_cast<Block&>(*branch).val;
     while (it && it->left)
     {
@@ -177,6 +184,12 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     ValuePtr right = nullptr;
     if (expr->left->val == "super") right = left->scope.get(name, true);
     else right = left->scope.get(name);
+
+    #ifdef OUT_SCOPES
+    std::cout << "Access '" << expr->right->val << "' scopes:\n";
+    std::cout << "-- left scope ";
+    left->scope.print();
+    #endif
 
     if (right->isNil()) state->err.panic(UNDEFINED_IN_TUPLE, expr->right);
 

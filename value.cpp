@@ -88,8 +88,7 @@ bool Value::ist()
 Integer::Integer(int val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
-    scope = Scope(nullptr, state);
-    scope.parent = parent;
+    scope = Scope(parent, state);
 
     // functions
     bind("__add", "n", CPPFUNC
@@ -339,8 +338,7 @@ std::string Real::tos(bool debug)
 String::String(const std::string& val, Scope* parent, State* state) : val(val)
 {
     this->state = state;
-    scope = Scope(nullptr, state);
-    scope.parent = parent;
+    scope = Scope(parent, state);
 
     // functions
     bind("__add", "a", CPPFUNC
@@ -470,8 +468,7 @@ std::string Bool::tos(bool debug)
 Block::Block(ExprPtr expr, Scope* parent, State* state)
 {
     this->state = state;
-    scope = Scope(nullptr, state);
-    scope.parent = parent;
+    scope = Scope(parent, state);
     val = expr;
     // add functions
 }
@@ -564,13 +561,14 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 Tuple::Tuple(Scope* parent, State* state)
 {
     this->state = state;
-    scope = Scope(nullptr, state);
-    scope.parent = parent;
+    scope = Scope(parent, state);
 }
 
-std::shared_ptr<Tuple> Tuple::make(Scope* parent, State* state)
+std::shared_ptr<Tuple> Tuple::from(Scope& scope, State* state)
 {
-    return std::make_shared<Tuple>(parent, state);
+    auto t = std::make_shared<Tuple>(nullptr, state);
+    t->scope = scope;
+    return t;
 }
 
 void Tuple::add(const std::string& name, std::any val)
@@ -677,7 +675,6 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 std::shared_ptr<Nil> Nil::in(Scope* parent)
 {
     auto n = std::make_shared<Nil>();
-    if (parent) n->scope.vars = parent->vars;
     n->scope.parent = parent;
     return n;
 }

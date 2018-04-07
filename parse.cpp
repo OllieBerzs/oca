@@ -96,13 +96,12 @@ bool Parser::set()
 {
     uint orig = index;
 
-    bool pub = lit("pub");
     if (!lit("=")) return false;
     if (!call() && !value() && !block() &&
         !file() && !cond()) state->err.panic(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr s = std::make_shared<Expression>(Expression::SET, pub ? "pub" : "", orig);
+    ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
     s->right = uncache();
     s->left = uncache();
     cache.push_back(s);
@@ -114,10 +113,8 @@ bool Parser::call(bool inDot)
 {
     uint orig = index;
 
-    // call has to start with a name
+    bool pub = lit("public");
     if (!name()) return false;
-
-    // can have an argument and/or a yield block
     bool hasArg = value() || call() || file();
     bool hasYield = block();
 
@@ -144,6 +141,9 @@ bool Parser::call(bool inDot)
     }
 
     if (!inDot && !set()) oper();
+
+    if (cache.back()->type == Expression::SET && pub) cache.back()->val = "pub";
+
     return true;
 }
 
@@ -508,9 +508,9 @@ bool Parser::value()
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
+            bool pub = lit("public");
             if (name())
             {
-                bool pub = lit("pub");
                 if (lit(":")) nam = (pub?"pub ":"") + uncache()->val;
                 else
                 {

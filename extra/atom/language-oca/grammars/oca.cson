@@ -58,13 +58,13 @@
 
   # variables
   {
-    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *(pub)? *[=:](?![=<>])'
+    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *[=:](?![=<>])'
     'name': 'storage.type.oca'
   }
 
   # keywords
   {
-    'match': '\\b(do|if|then|else|return|break|with|yield|inject)\\b'
+    'match': '\\b(do|if|then|else|return|break|with|yield|inject|public)\\b'
     'name': 'keyword.control.oca'
   }
 

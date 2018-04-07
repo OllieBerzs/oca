@@ -23,7 +23,7 @@ public:
 
 private:
     ValuePtr set(ExprPtr expr, Scope& scope);
-    ValuePtr call(ExprPtr expr, ValuePtr caller, Scope& scope);
+    ValuePtr call(ExprPtr expr, Scope& scope);
     ValuePtr oper(ExprPtr expr, Scope& scope);
     ValuePtr cond(ExprPtr expr, Scope& scope);
     ValuePtr access(ExprPtr expr, Scope& scope);

@@ -86,7 +86,7 @@ class Tuple : public Value
 public:
     uint count = 0;
     Tuple(Scope* parent, State* state);
-    static std::shared_ptr<Tuple> make(Scope* parent, State* state);
+    static std::shared_ptr<Tuple> from(Scope& scope, State* state);
     void add(const std::string& name, std::any val);
     std::string tos(bool debug);
 };
