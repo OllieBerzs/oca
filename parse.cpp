@@ -113,7 +113,6 @@ bool Parser::call(bool inDot)
 {
     uint orig = index;
 
-    bool pub = lit("public");
     if (!name()) return false;
     bool hasArg = value() || call() || file();
     bool hasYield = block();
@@ -141,8 +140,6 @@ bool Parser::call(bool inDot)
     }
 
     if (!inDot && !set()) oper();
-
-    if (cache.back()->type == Expression::SET && pub) cache.back()->val = "pub";
 
     return true;
 }
@@ -508,7 +505,7 @@ bool Parser::value()
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
-            bool pub = lit("public");
+            bool pub = lit("pub");
             if (name())
             {
                 if (lit(":")) nam = (pub?"pub ":"") + uncache()->val;

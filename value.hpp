@@ -76,6 +76,7 @@ class Block : public Value
 {
 public:
     ExprPtr val;
+    std::vector<std::string> params;
     Block(ExprPtr expr, Scope* parent, State* state);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
     std::string tos(bool debug);

@@ -64,7 +64,7 @@
 
   # keywords
   {
-    'match': '\\b(do|if|then|else|return|break|with|yield|inject|public)\\b'
+    'match': '\\b(do|if|then|else|return|break|with|yield|inject|pub)\\b'
     'name': 'keyword.control.oca'
   }
 

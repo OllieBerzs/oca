@@ -29,27 +29,21 @@ void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
 int Value::toi()
 {
     if (TYPE_EQ(*this, Integer))
-    {
         return static_cast<Integer&>(*this).val;
-    }
     else return 0;
 }
 
 float Value::tor()
 {
     if (TYPE_EQ(*this, Real))
-    {
         return static_cast<Real&>(*this).val;
-    }
     else return 0.0f;
 }
 
 bool Value::tob()
 {
     if (TYPE_EQ(*this, Bool))
-    {
         return static_cast<Bool&>(*this).val;
-    }
     else return false;
 }
 
@@ -470,7 +464,19 @@ Block::Block(ExprPtr expr, Scope* parent, State* state)
     this->state = state;
     scope = Scope(parent, state);
     val = expr;
-    // add functions
+
+    // set parameters
+    std::string param = "";
+    for (char c : expr->val)
+    {
+        if (c == ' ')
+        {
+            params.push_back(param);
+            param = "";
+        }
+        else param += c;
+    }
+    if (param != "") params.push_back(param);
 }
 
 std::string Block::tos(bool debug)
@@ -486,27 +492,6 @@ std::string Block::tos(bool debug)
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 {
-    Scope temp(&scope, state);
-    std::vector<std::string> params;
-    ValuePtr result = Nil::in(&scope);
-
-    // get parameters
-    std::string word = "";
-    for (auto& c : val->val)
-    {
-        if (c == ' ')
-        {
-            params.push_back(word);
-            word = "";
-        }
-        else word += c;
-    }
-    if (word != "") params.push_back(word);
-
-    // set super and yield in scope
-    if (!block->isNil()) temp.set("yield", block);
-    temp.set("super", caller);
-
     // get argument count
     uint argc = 0;
     if (arg->ist()) argc = static_cast<Tuple&>(*arg).count;
@@ -514,11 +499,13 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 
     // check argument count
     if (argc == 0 && params.size() > 0) state->err.panic(NO_ARGUMENT, val);
-    if (argc < params.size())
-    {
-        state->err.panic(SMALL_TUPLE, val,
-            "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
-    }
+    if (argc < params.size()) state->err.panic(SMALL_TUPLE, val,
+        "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+
+    // set super and yield in scope
+    Scope temp(&scope, state);
+    temp.set("yield", block);
+    temp.set("super", caller);
 
     // set parameters
     if (params.size() == 1) temp.set(params[0], arg);
@@ -527,19 +514,16 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         uint counter = ARRAY_BEGIN_INDEX;
         for (auto& param : params)
         {
-            ValuePtr item = arg->scope.get(param);
-            if (item->isNil())
-            {
-                item = arg->scope.get(std::to_string(counter));
-                ++counter;
-            }
+            ValuePtr item = arg->scope.get(std::to_string(counter));
             if (item->isNil()) state->err.panic(CANNOT_SPLIT, val);
+            ++counter;
 
             temp.set(param, item);
         }
     }
 
     // evaluate the block's value
+    ValuePtr result = Nil::in(&scope);
     ExprPtr expr = val;
     while (expr)
     {
@@ -601,8 +585,7 @@ Func::Func(CPPFunc func, const std::string& params, Scope* parent, State* state)
     : val(func), params(params)
 {
     this->state = state;
-    scope = Scope(nullptr, state);
-    scope.parent = parent;
+    scope = Scope(parent, state);
 }
 
 std::string Func::tos(bool debug)
@@ -626,14 +609,11 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 
     // check argument count
     if (argc == 0 && params.size() > 0) state->err.panic(NO_ARGUMENT, state->evaler.current);
-    if (argc < params.size())
-    {
-        state->err.panic(SMALL_TUPLE, state->evaler.current,
-            "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
-    }
-    // if argc >= args.size ok!
+    if (argc < params.size())state->err.panic(SMALL_TUPLE, state->evaler.current,
+        "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // check argument types
+    ExprPtr callExpr = state->evaler.current;
     for (uint i = 0; i < params.size(); ++i)
     {
         ValuePtr v = arg;
@@ -641,28 +621,28 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
         switch (params[i])
         {
         case 'i':
-            if (!v->isi()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                v->tos(true) + " wanted int.");
+            if (!v->isi())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted int.");
             break;
         case 'r':
-            if (!v->isr()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                v->tos(true) + " wanted real.");
+            if (!v->isr())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted real.");
             break;
         case 'n':
-            if (!v->isi() && !v->isr()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                v->tos(true) + " wanted int/real.");
+            if (!v->isi() && !v->isr())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted int/real.");
             break;
         case 'b':
-            if (!v->isb()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                    v->tos(true) + " wanted bool.");
+            if (!v->isb())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted bool.");
             break;
         case 's':
-            if (!v->iss()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                    v->tos(true) + " wanted str.");
+            if (!v->iss())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted str.");
             break;
         case 't':
-            if (!v->ist()) state->err.panic(TYPE_MISMATCH, state->evaler.current,
-                    v->tos(true) + " wanted tuple.");
+            if (!v->ist())
+                state->err.panic(TYPE_MISMATCH, callExpr, v->tos(true) + " wanted tuple.");
             break;
         }
     }

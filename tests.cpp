@@ -47,11 +47,11 @@ TEST_CASE("Variable setting and getting", "[variables]")
     REQUIRE(oca.eval("b.2")->tos(false) == "3");
 
     // named tuples
-    oca.eval("c = (public x: 5, public y: 6, public z: 10)");
+    oca.eval("c = (pub x: 5, pub y: 6, pub z: 10)");
     REQUIRE(oca.eval("c.x")->tos(false) == "5");
 
     // complex tuples
-    oca.eval("complex = (public x: (1, 2, 3), public y: 'hi')");
+    oca.eval("complex = (pub x: (1, 2, 3), pub y: 'hi')");
     oca.eval("complex.x.1 = 6");
     REQUIRE(oca.eval("complex.x.1")->tos(false) == "6");
 
