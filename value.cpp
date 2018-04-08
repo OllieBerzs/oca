@@ -23,7 +23,7 @@ ValuePtr Value::cast(std::any val)
 
 void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
 {
-    scope.set(name, std::make_shared<Func>(func, args, &scope, state));
+    scope.set(name, std::make_shared<Func>(func, args, &scope, state), true);
 }
 
 int Value::toi()
@@ -504,21 +504,21 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
 
     // set super and yield in scope
     Scope temp(&scope, state);
-    temp.set("yield", block);
-    temp.set("super", caller);
+    temp.set("yield", block, true);
+    temp.set("super", caller, true);
 
     // set parameters
-    if (params.size() == 1) temp.set(params[0], arg);
+    if (params.size() == 1) temp.set(params[0], arg, true);
     else
     {
         uint counter = ARRAY_BEGIN_INDEX;
         for (auto& param : params)
         {
-            ValuePtr item = arg->scope.get(std::to_string(counter));
+            ValuePtr item = arg->scope.get(std::to_string(counter), false);
             if (item->isNil()) state->err.panic(CANNOT_SPLIT, val);
             ++counter;
 
-            temp.set(param, item);
+            temp.set(param, item, true);
         }
     }
 
@@ -559,7 +559,7 @@ void Tuple::add(const std::string& name, std::any val)
 {
     auto vptr = cast(val);
     vptr->scope.parent = &scope;
-    scope.set(name, vptr);
+    scope.set(name, vptr, true);
 }
 
 std::string Tuple::tos(bool debug)
@@ -567,10 +567,10 @@ std::string Tuple::tos(bool debug)
     std::string result = "";
     if (debug) result += "<tup>";
     result += "(";
-    for (auto& i : scope.vars)
+    for (auto var : scope.vars)
     {
-        if (debug) result += "[" + i.first.second + "]";
-        result += i.second->tos(debug);
+        if (debug) result += "[" + std::get<1>(var) + "]";
+        result += std::get<2>(var)->tos(debug);
         result += ", ";
     }
     result.pop_back();
@@ -617,7 +617,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block)
     for (uint i = 0; i < params.size(); ++i)
     {
         ValuePtr v = arg;
-        if (argc > 1 && params.size() > 1) v = arg->scope.get(std::to_string(i));
+        if (argc > 1 && params.size() > 1) v = arg->scope.get(std::to_string(i), false);
         switch (params[i])
         {
         case 'i':

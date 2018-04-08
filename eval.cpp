@@ -24,7 +24,6 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope)
     else if (expr->type == Expression::ACCESS) return access(expr, scope);
     else if (expr->type == Expression::OPER) return oper(expr, scope);
     else if (expr->type == Expression::FILE) return file(expr, scope);
-    else if (expr->type == Expression::INJECT) return inject(expr, scope);
     else return value(expr, scope);
 }
 
@@ -61,26 +60,19 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope)
         {
             leftVal = eval(leftExpr, scope);
             if (leftVal->isNil()) state->err.panic(NEW_TUPLE_KEY, leftExpr);
-
-            // find the variable in parent scope
-            for (auto& var : leftVal->scope.parent->vars)
-            {
-                if (var.second.get() != leftVal.get()) continue;
-                name = var.first.second;
-                break;
-            }
+            name = leftVal->scope.parent->find(leftVal);
         }
 
         // set the left variable to the right value
-        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal, expr->val == "pub");
+        if (lefts.size() == 1) leftVal->scope.parent->set(name, rightVal, true);
         else
         {
             // get the right value based on the index
-            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter));
+            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
             ++counter;
             if (rightValPart->isNil()) state->err.panic(CANNOT_SPLIT, expr->right);
 
-            leftVal->scope.parent->set(name, rightValPart, expr->val == "pub");
+            leftVal->scope.parent->set(name, rightValPart, true);
         }
     }
 
@@ -100,7 +92,7 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope)
     #endif
 
     // get the variable from one of the scopes
-    ValuePtr val = scope.get(expr->val, true); // function scope 
+    ValuePtr val = scope.get(expr->val, true); // function scope
     if (val->isNil()) val = state->global.get(expr->val, true); // global scope
     if (val->isNil()) state->err.panic(UNDEFINED, expr);
 
@@ -131,7 +123,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope)
 
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = eval(expr->right, scope);
-    ValuePtr func = left->scope.get(operFuncs[expr->val]);
+    ValuePtr func = left->scope.get(operFuncs[expr->val], false);
     if (func->isNil()) state->err.panic(UNDEFINED_OPERATOR, expr);
 
     // call the operator
@@ -183,7 +175,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = nullptr;
     if (expr->left->val == "super") right = left->scope.get(name, true);
-    else right = left->scope.get(name);
+    else right = left->scope.get(name, false);
 
     #ifdef OUT_SCOPES
     std::cout << "Access '" << expr->right->val << "' scopes:\n";
@@ -209,20 +201,16 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope)
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope)
 {
     current = expr;
+    auto temp = state->err.path;
+
     uint slash = state->err.path->find_last_of("/");
     std::string folder = state->err.path->substr(0, slash + 1);
-    return state->script(folder + expr->val + ".oca", true);
-}
+    ValuePtr val = state->script(folder + expr->val + ".oca", true);
 
-ValuePtr Evaluator::inject(ExprPtr expr, Scope& scope)
-{
-    current = expr;
-    ValuePtr tuple = file(expr->right, scope);
-    for (auto var : tuple->scope.vars)
-    {
-        scope.set(var.first.second, var.second, var.first.first);
-    }
-    return Nil::in(&scope);
+    // set back old path
+    state->err.path = temp;
+
+    return val;
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope)

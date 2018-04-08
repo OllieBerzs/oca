@@ -38,7 +38,7 @@ void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
         {Token::INTEGER,         "()()([0-9]+)"},
         {Token::BOOLEAN,         "()()\\b(true|false)\\b"},
         {Token::FILEPATH,        "()()(\\$.+)"},
-        {Token::KEYWORD,         "()()\\b(do|if|then|else|return|break|with|inject|pub)\\b"},
+        {Token::KEYWORD,         "()()\\b(do|if|then|else|return|break|with|pub)\\b"},
         {Token::OPERATOR,        "()()(\\+|-|\\*|\\/|%|\\^|<=|>=|==|!=|<|>|\\.\\.|and|or|xor|lsh|rsh)"},
         {Token::COMMENT,         "()(#(.)*)"},
         {Token::NAME,            "()([A-Za-z_])([A-Za-z_0-9]*)"},

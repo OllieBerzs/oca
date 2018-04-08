@@ -64,7 +64,7 @@
 
   # keywords
   {
-    'match': '\\b(do|if|then|else|return|break|with|yield|inject|pub)\\b'
+    'match': '\\b(do|if|then|else|return|break|with|yield|pub)\\b'
     'name': 'keyword.control.oca'
   }
 
@@ -82,7 +82,7 @@
 
   # functions
   {
-    'match': '\\b(print|input|pause|assert|type|each)|\\.(times|len|int|real|upcase|lowcase|chars)\\b'
+    'match': '\\b(print|input|pause|assert|type|each|inject)|\\.(times|len|int|real|upcase|lowcase|chars)\\b'
     'name': 'support.function.oca'
   }
 ]

@@ -11,7 +11,7 @@ OCA_BEGIN
 
 ValuePtr Arg::operator[](uint i)
 {
-    return value->scope.get(std::to_string(i));
+    return value->scope.get(std::to_string(i), false);
 }
 
 // ---------------------------------------
@@ -53,6 +53,12 @@ State::State()
         std::string str = arg.value->tos(true);
         auto end = str.find(">");
         return cast(str.substr(1, end - 1));
+    });
+
+    bind("inject", "t", CPPFUNC
+    {
+        arg.caller->scope.add(static_cast<Tuple&>(*arg.value).scope);
+        return NIL;
     });
 
     /*bind("List", "t", CPPFUNC
@@ -192,7 +198,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
 void State::bind(const std::string& name, const std::string& params, CPPFunc func)
 {
-    global.set(name, std::make_shared<Func>(func, params, &global, this));
+    global.set(name, std::make_shared<Func>(func, params, &global, this), true);
 }
 
 // ---------------------------------------
@@ -223,7 +229,7 @@ ValuePtr State::cast(std::any val)
         {
             ++static_cast<Tuple&>(*tuple).count;
             tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
-                std::make_shared<Integer>(vec[i], &tuple->scope, this));
+                std::make_shared<Integer>(vec[i], &tuple->scope, this), true);
         }
         return tuple;
     }

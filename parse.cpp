@@ -19,7 +19,7 @@ void Expression::print(uint indent, char mod)
     {
         "set", "call", "access", "if", "else", "next", "main",
         "branches", "part oper", "oper", "return", "break", "file", "str",
-        "int", "real", "bool", "block", "tup", "name", "calls", "inject"
+        "int", "real", "bool", "block", "tup", "name", "calls"
     };
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
@@ -303,15 +303,6 @@ bool Parser::keyword()
     {
         cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
         ++index;
-        return true;
-    }
-    else if (get().val == "inject")
-    {
-        ExprPtr i = std::make_shared<Expression>(Expression::INJECT, "", index);
-        ++index;
-        if (!file()) state->err.panic(NOTHING_TO_INJECT);
-        i->right = uncache();
-        cache.push_back(i);
         return true;
     }
     return false;
