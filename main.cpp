@@ -1,6 +1,12 @@
 #include <iostream>
 #include "oca.hpp"
 
+#if _WIN32 || _WIN64
+#include <windows.h>
+#endif
+
+#define ESC "\033["
+
 int main(int argc, char** argv)
 {
     oca::State oca;
@@ -11,10 +17,17 @@ int main(int argc, char** argv)
     }
     else
     {
+        // set console mode for ansi
+        #if _WIN32 || _WIN64
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD dwMode = 0;
+        GetConsoleMode(hOut, &dwMode);
+        dwMode |= 0x0004;
+        SetConsoleMode(hOut, dwMode);
+        #endif
+
         // start a REPL
-        system("printf ''");
-        bool running = true;
-        while (running)
+        while (true)
         {
             // prompt
             std::cout << "\033[38;5;15m" << ":: " << "\033[0m";

@@ -18,7 +18,7 @@ public:
     ExprPtr current;
     bool returning = false;
 
-    Evaluator(State* state);
+    explicit Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:

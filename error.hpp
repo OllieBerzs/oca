@@ -59,11 +59,11 @@ class Errors
 {
 public:
     const State* state;
-    const std::string* path;
-    const std::string* source;
-    const std::vector<Token>* tokens;
+    const std::string* path{};
+    const std::string* source{};
+    const std::vector<Token>* tokens{};
 
-    Errors(const State* state);
+    explicit Errors(const State* state);
     void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "") const;
 };
 
