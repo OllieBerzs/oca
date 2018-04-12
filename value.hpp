@@ -76,6 +76,7 @@ class Block : public Value
 {
 public:
     ExprPtr val;
+    std::vector<std::string> params;
     Block(ExprPtr expr, Scope* parent, State* state);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
     std::string tos(bool debug);
@@ -86,7 +87,7 @@ class Tuple : public Value
 public:
     uint count = 0;
     Tuple(Scope* parent, State* state);
-    static std::shared_ptr<Tuple> make(Scope* parent, State* state);
+    static std::shared_ptr<Tuple> from(Scope& scope, State* state);
     void add(const std::string& name, std::any val);
     std::string tos(bool debug);
 };

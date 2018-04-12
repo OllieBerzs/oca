@@ -19,7 +19,7 @@ void Expression::print(uint indent, char mod)
     {
         "set", "call", "access", "if", "else", "next", "main",
         "branches", "part oper", "oper", "return", "break", "file", "str",
-        "int", "real", "bool", "block", "tup", "name", "calls", "inject"
+        "int", "real", "bool", "block", "tup", "name", "calls"
     };
 
     for (uint i = 0; i < indent; i++) std::cout << "  ";
@@ -96,13 +96,12 @@ bool Parser::set()
 {
     uint orig = index;
 
-    bool pub = lit("pub");
     if (!lit("=")) return false;
     if (!call() && !value() && !block() &&
         !file() && !cond()) state->err.panic(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr s = std::make_shared<Expression>(Expression::SET, pub ? "pub" : "", orig);
+    ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
     s->right = uncache();
     s->left = uncache();
     cache.push_back(s);
@@ -114,10 +113,7 @@ bool Parser::call(bool inDot)
 {
     uint orig = index;
 
-    // call has to start with a name
     if (!name()) return false;
-
-    // can have an argument and/or a yield block
     bool hasArg = value() || call() || file();
     bool hasYield = block();
 
@@ -144,6 +140,7 @@ bool Parser::call(bool inDot)
     }
 
     if (!inDot && !set()) oper();
+
     return true;
 }
 
@@ -306,15 +303,6 @@ bool Parser::keyword()
     {
         cache.push_back(std::make_shared<Expression>(Expression::BREAK, "", index));
         ++index;
-        return true;
-    }
-    else if (get().val == "inject")
-    {
-        ExprPtr i = std::make_shared<Expression>(Expression::INJECT, "", index);
-        ++index;
-        if (!file()) state->err.panic(NOTHING_TO_INJECT);
-        i->right = uncache();
-        cache.push_back(i);
         return true;
     }
     return false;
@@ -508,9 +496,9 @@ bool Parser::value()
             checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
+            bool pub = lit("pub");
             if (name())
             {
-                bool pub = lit("pub");
                 if (lit(":")) nam = (pub?"pub ":"") + uncache()->val;
                 else
                 {

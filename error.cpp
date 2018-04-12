@@ -7,6 +7,12 @@
 #include "error.hpp"
 #include "oca.hpp"
 
+#if _WIN32 || _WIN64
+#include <windows.h>
+#endif
+
+#define ESC "\033["
+
 OCA_BEGIN
 
 Errors::Errors(const State* state) : state(state) {}
@@ -241,11 +247,19 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         break;
     }
 
+    // set console mode for ansi
+    #if _WIN32 || _WIN64
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= 0x0004;
+    SetConsoleMode(hOut, dwMode);
+    #endif
+
     // header
-    system("printf ''");
-    std::cout << "\033[38;5;14m";
+    std::cout << ESC "38;5;14m";
     std::cout << "-- " << typeStrings[type] << " -------------------- " << *path << "\n";
-    std::cout << "\033[0m";
+    std::cout << ESC "0m";
 
     // get error line and the previous line if exists
     std::string prevline = "";
@@ -287,14 +301,14 @@ void Errors::panic(ErrorType type, ExprPtr expr, const std::string& add) const
         std::cout << lineNum - 1 << "| " << prevline << "\n";
     }
     std::cout << lineNum << "| ";
-    std::cout << "\033[38;5;15m";
+    std::cout << ESC "38;5;15m";
     std::cout << lineBeg;
-    std::cout << "\033[48;5;9m";
+    std::cout << ESC "48;5;9m";
     std::cout << lineMid;
-    std::cout << "\033[0m";
-    std::cout << "\033[38;5;15m";
+    std::cout << ESC "0m";
+    std::cout << ESC "38;5;15m";
     std::cout << lineEnd << "\n";
-    std::cout << "\033[0m";
+    std::cout << ESC "0m";
 
     // message and suggestions
     std::cout << message << "\n";

@@ -50,6 +50,9 @@ $(TEST): $(TESTOBJ) $(OBJ)
 	@$(CXX) $(CPPFLAGS) -o $(TEST) $^
 	@$(RM) *.o-*
 
+check:
+	@cppcheck --enable=all --force $(OBJ:.o=.cpp) $(BINOBJ:.o=.cpp)
+
 deps:
 	@echo [Gen dependencies]
 	@$(CXX) -MM $(OBJ:.o=.cpp) $(BINOBJ:.o=.cpp) $(TESTOBJ:.o=.cpp) >> makefile

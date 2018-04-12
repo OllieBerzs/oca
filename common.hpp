@@ -8,7 +8,6 @@
 #include <vector>
 #include <functional>
 #include <memory>
-#include <typeindex>
 #include "ocaconf.hpp"
 
 #define OCA_BEGIN namespace oca {
@@ -37,6 +36,6 @@ typedef void(*DLLfunc)(Scope&);
 typedef ValuePtr Ret;
 typedef std::function<Ret(Arg)> CPPFunc;
 
-#define CPPFUNC [&,*this](oca::Arg arg) mutable -> oca::Ret
+#define CPPFUNC (oca::Arg arg) mutable -> oca::Ret
 
 OCA_END

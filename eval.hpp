@@ -18,17 +18,16 @@ public:
     ExprPtr current;
     bool returning = false;
 
-    Evaluator(State* state);
+    explicit Evaluator(State* state);
     ValuePtr eval(ExprPtr expr, Scope& scope);
 
 private:
     ValuePtr set(ExprPtr expr, Scope& scope);
-    ValuePtr call(ExprPtr expr, ValuePtr caller, Scope& scope);
+    ValuePtr call(ExprPtr expr, Scope& scope);
     ValuePtr oper(ExprPtr expr, Scope& scope);
     ValuePtr cond(ExprPtr expr, Scope& scope);
     ValuePtr access(ExprPtr expr, Scope& scope);
     ValuePtr file(ExprPtr expr, Scope& scope);
-    ValuePtr inject(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
 };
 

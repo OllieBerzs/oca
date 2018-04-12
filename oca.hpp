@@ -45,7 +45,10 @@ class State
 public:
     State();
     ~State();
+    State(const State&) = delete;
+    State& operator=(const State&) = delete;
 
+public:
     ValuePtr script(const std::string& path, bool asTuple = false);
     ValuePtr eval(const std::string& source, const std::string& path = "", bool asTuple = false);
     ValuePtr cast(std::any val);

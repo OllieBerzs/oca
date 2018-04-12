@@ -12,15 +12,16 @@ OCA_BEGIN
 class Scope
 {
 public:
-    std::vector<std::pair<std::pair<bool, std::string>, ValuePtr>> vars;
+    std::vector<std::tuple<bool, std::string, ValuePtr>> vars;
     Scope* parent;
     State* state;
 
     Scope(Scope* parent, State* state);
 
-    void clean();
-    void set(const std::string& name, ValuePtr value, bool pub = true);
-    ValuePtr get(const std::string& name, bool super = false);
+    void set(const std::string& name, ValuePtr value, bool pub);
+    void add(const Scope& scope);
+    ValuePtr get(const std::string& name, bool super);
+    std::string find(ValuePtr value);
 
     void print();
 };

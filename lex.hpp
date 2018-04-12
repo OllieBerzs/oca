@@ -33,7 +33,7 @@ class Lexer
     State* state;
 
 public:
-    Lexer(State* state);
+    explicit Lexer(State* state);
     void lex(const std::string& source, std::vector<Token>& tokens);
 };
 

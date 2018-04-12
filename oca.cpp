@@ -3,15 +3,21 @@
 ** oca api
 */
 
-#include <iostream>
-#include <fstream>
 #include "oca.hpp"
+#include <fstream>
+#include <iostream>
+
+#if _WIN32 || _WIN64
+#include <windows.h>
+#endif
+
+#define ESC "\033["
 
 OCA_BEGIN
 
 ValuePtr Arg::operator[](uint i)
 {
-    return value->scope.get(std::to_string(i));
+    return value->scope.get(std::to_string(i), false);
 }
 
 // ---------------------------------------
@@ -21,26 +27,26 @@ State::State()
     , evaler(this), err(this), lextime(0), parsetime(0), evaltime(0)
 {
     // add base functions
-    bind("print", "a", CPPFUNC
+    bind("print", "a", [&]CPPFUNC
     {
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
 
-    bind("input", "", CPPFUNC
+    bind("input", "", [&,this]CPPFUNC
     {
         std::string result;
         std::cin >> result;
         return cast(result);
     });
 
-    bind("pause", "", CPPFUNC
+    bind("pause", "", [&]CPPFUNC
     {
         std::cin.get();
         return NIL;
     });
 
-    bind("assert", "bs", CPPFUNC
+    bind("assert", "bs", [&,this]CPPFUNC
     {
         bool cond = arg[0]->tob();
         std::string message = arg[1]->tos(false);
@@ -48,55 +54,53 @@ State::State()
         return NIL;
     });
 
-    bind("type", "a", CPPFUNC
+    bind("type", "a", [&,this]CPPFUNC
     {
         std::string str = arg.value->tos(true);
-        auto end = str.find(">");
+        auto end = str.find('>');
         return cast(str.substr(1, end - 1));
     });
 
-    /*bind("List", "t", CPPFUNC
+    bind("inject", "t", [&]CPPFUNC
     {
-        auto list = Tuple::make(&arg.caller->scope, this);
-        list->scope = arg.value->scope;
-        list->count = static_cast<Tuple&>(*arg.value).count;
-        list->bind("push", "a", CPPFUNC
-        {
-            arg.value->scope.parent = &list->scope;
-            std::string name = std::to_string(list->count);
-            ValuePtr val = arg.value;
-            list->scope.set(name, val); // segfault
-            ++list->count;
-            return arg.value;
-        });
-        return list;
-    });*/
+        arg.caller->scope.add(dynamic_cast<Tuple&>(*arg.value).scope);
+        return NIL;
+    });
 }
 
 State::~State()
 {
     // output times
     #ifdef OUT_TIMES
-    system("printf ''");
-    std::cout << "\033[38;5;15m";
+
+    // set console mode for ansi
+    #if _WIN32 || _WIN64
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= 0x0004;
+    SetConsoleMode(hOut, dwMode);
+    #endif
+
+    std::cout << ESC "38;5;15m";
     std::cout << "Interpreter time: " << (lextime + parsetime + evaltime).count() << "ms";
     std::cout << " (L:";
     if (lextime.count() >= parsetime.count() &&
-        lextime.count() >= evaltime.count()) std::cout << "\033[38;5;11m";
+        lextime.count() >= evaltime.count()) std::cout << ESC "38;5;11m";
     std::cout << lextime.count() << "ms";
-    std::cout << "\033[38;5;15m";
+    std::cout << ESC "38;5;15m";
     std::cout << ", P:";
     if (parsetime.count() >= lextime.count() &&
-        parsetime.count() >= evaltime.count()) std::cout << "\033[38;5;11m";
+        parsetime.count() >= evaltime.count()) std::cout << ESC "38;5;11m";
     std::cout << parsetime.count() << "ms";
-    std::cout << "\033[38;5;15m";
+    std::cout << ESC "38;5;15m";
     std::cout << ", E:";
     if (evaltime.count() >= parsetime.count() &&
-        evaltime.count() >= lextime.count()) std::cout << "\033[38;5;11m";
+        evaltime.count() >= lextime.count()) std::cout << ESC "38;5;11m";
     std::cout << evaltime.count() << "ms";
-    std::cout << "\033[38;5;15m";
+    std::cout << ESC "38;5;15m";
     std::cout << ")\n";
-    std::cout << "\033[0m";
+    std::cout << ESC "0m";
     #endif
 }
 
@@ -192,7 +196,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
 void State::bind(const std::string& name, const std::string& params, CPPFunc func)
 {
-    global.set(name, std::make_shared<Func>(func, params, &global, this));
+    global.set(name, std::make_shared<Func>(func, params, &global, this), true);
 }
 
 // ---------------------------------------
@@ -223,7 +227,7 @@ ValuePtr State::cast(std::any val)
         {
             ++static_cast<Tuple&>(*tuple).count;
             tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
-                std::make_shared<Integer>(vec[i], &tuple->scope, this));
+                std::make_shared<Integer>(vec[i], &tuple->scope, this), true);
         }
         return tuple;
     }
