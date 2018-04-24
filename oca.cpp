@@ -85,7 +85,7 @@ State::~State() {
     #endif
 }
 
-ValuePtr State::script(const std::string& path, bool asTuple) {
+ValuePtr State::runFile(const std::string& path, bool asTuple) {
     std::ifstream file(path);
     if (!file.is_open())
         std::cout << "Could not open file " << path << "\n";
@@ -95,10 +95,10 @@ ValuePtr State::script(const std::string& path, bool asTuple) {
     file.close();
 
     eh.path = &path;
-    return eval(source, asTuple);
+    return runScript(source, asTuple);
 }
 
-ValuePtr State::eval(const std::string& source, bool asTuple) {
+ValuePtr State::runScript(const std::string& source, bool asTuple) {
     eh.source = &source;
 
     auto tokens = lex(source);
@@ -106,10 +106,35 @@ ValuePtr State::eval(const std::string& source, bool asTuple) {
     return evaluate(ast, asTuple);
 }
 
-// ---------------------------------------
+void State::runREPL() {
+    enableANSI();
+    while (true) {
+        std::cout << ESC "38;5;15m"
+                  << ":: " << ESC "0m";
 
-void State::bind(const std::string& name, const std::string& params, CPPFunc func) {
-    global.set(name, std::make_shared<Func>(func, params, &global, this), true);
+        std::string input;
+        while (true) {
+            std::string line;
+            std::getline(std::cin, line);
+
+            if (line.back() == '`') {
+                line.pop_back();
+                input += line + '\n';
+                std::cout << ESC "38;5;15m"
+                          << "-: " << ESC "0m";
+            } else {
+                input += line + '\n';
+                break;
+            }
+        }
+
+        if (input == "exit\n")
+            return;
+
+        auto val = runScript(input);
+
+        std::cout << ESC "38;5;8m" << val->tos(false) << ESC "0m\n";
+    }
 }
 
 // ---------------------------------------
@@ -135,6 +160,10 @@ ValuePtr State::cast(std::any val) {
         return tuple;
     } else
         return NIL;
+}
+
+void State::bind(const std::string& name, const std::string& params, CPPFunc func) {
+    global.set(name, std::make_shared<Func>(func, params, &global, this), true);
 }
 
 // ---------------------------------------

@@ -46,10 +46,11 @@ public:
     State(const State&) = delete;
     State& operator=(const State&) = delete;
 
-    ValuePtr script(const std::string& path, bool asTuple = false);
-    ValuePtr eval(const std::string& source, bool asTuple = false);
-    ValuePtr cast(std::any val);
+    ValuePtr runFile(const std::string& path, bool asTuple = false);
+    ValuePtr runScript(const std::string& source, bool asTuple = false);
+    void runREPL();
 
+    ValuePtr cast(std::any val);
     void load(const std::string& lib);
     void bind(const std::string& name, const std::string& params, CPPFunc func);
 
@@ -58,11 +59,9 @@ private:
     std::vector<ExprPtr> parse(const std::vector<Token>& tokens);
     ValuePtr evaluate(const std::vector<ExprPtr>& ast, bool asTuple);
 
-    friend class Lexer;
-    friend class Parser;
+    friend class ErrorHandler;
     friend class Evaluator;
     friend class Value;
-    friend class ErrorHandler;
     friend class Integer;
     friend class Real;
     friend class String;
