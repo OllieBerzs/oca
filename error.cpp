@@ -3,254 +3,29 @@
 ** handle oca errors
 */
 
+#include <iostream>
 #include "error.hpp"
 #include "oca.hpp"
 #include "utils.hpp"
-#include <iostream>
 
 OCA_BEGIN
 
-Error::Error(ErrorType type, const std::string& detail, ExprPtr expr)
-    : type(type), expr(expr), detail(detail) {}
+Error::Error(ErrorType type, const std::string& detail) : type(type), detail(detail) {}
 
 ErrorHandler::ErrorHandler(const State* state) : state(state) {}
 
-void ErrorHandler::panic(Error error) const {
-    std::vector<std::string> typestrings = {"UNKNOWN SYMBOL",
-                                            "INDENTED FILE",
-                                            "NOT AN EXPRESSION",
-                                            "UNEXPECTED INDENT",
-                                            "NO NEWLINE",
-                                            "NO PARAMETER",
-                                            "NOTHING TO SET",
-                                            "NO CLOSING BRACE",
-                                            "NO INDENT",
-                                            "NO NAME",
-                                            "NO ACCESS KEY",
-                                            "NO ACCESS KEY CALL",
-                                            "NO CONDITIONAL",
-                                            "NO THEN",
-                                            "NO RIGHT VALUE",
-                                            "NOTHING TO INJECT",
-                                            "NEW TUPLE KEY",
-                                            "CANNOT SPLIT",
-                                            "UNDEFINED OPERATOR",
-                                            "IF BOOL",
-                                            "UNDEFINED IN TUPLE",
-                                            "NO ARGUMENT",
-                                            "SMALL TUPLE",
-                                            "UNDEFINED",
-                                            "TYPE MISMATCH",
-                                            "NOT PUBLIC",
-                                            "ERROR"};
-
-    // error message config
-    uint position;
-    uint width;
-    std::string message;
-
-    switch (error.type) {
-    case UNKNOWN_SYMBOL:
-        // last added token
-        position = std::stoi(error.detail);
-        width = 1;
-        message = "This symbol is not supported by the Oca language.";
-        break;
-
-    case INDENTED_FILE:
-        // first symbol in source
-        position = 0;
-        width = 1;
-        message = "The first line of the file must not be indented.";
-        break;
-
-    case NOT_AN_EXPRESSION:
-        // current token
-        position = tokens->at(state->parser.index).pos;
-        width = tokens->at(state->parser.index).val.size();
-        message = "This is not a valid start of an expression.";
-        break;
-
-    case UNEXPECTED_INDENT:
-        // indent - previous token
-        position = tokens->at(state->parser.index - 1).pos + 1;
-        width = tokens->at(state->parser.index - 1).val.size() - 1;
-        message = "This indent is not supposed to be here.";
-        break;
-
-    case NO_NEWLINE:
-        // current token
-        position = tokens->at(state->parser.index).pos;
-        width = tokens->at(state->parser.index).val.size();
-        message = "There must be a newline here.";
-        break;
-
-    case NO_PARAMETER:
-        // $ - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "There must be a parameter name after this.";
-        break;
-
-    case NOTHING_TO_SET:
-        // =/: - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Expected some value to be set.";
-        break;
-
-    case NO_CLOSING_BRACE:
-        // previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Expected a closing brace for tuple";
-        break;
-
-    case NO_INDENT:
-        // current token
-        position = tokens->at(state->parser.index).pos;
-        width = tokens->at(state->parser.index).val.size();
-        message = "There must be an indented block of code here.";
-        break;
-
-    case NO_NAME:
-        // , - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Expected another variable.";
-        break;
-
-    case NO_ACCESS_KEY:
-        // . - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Expected an accessor key.";
-        break;
-
-    case NO_ACCESS_KEY_CALL:
-        // [ - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Expected an accessor key call.";
-        break;
-
-    case NO_CONDITIONAL:
-        // if - previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "'if' must have a conditional expression.";
-        break;
-
-    case NO_THEN:
-        // previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "'if' must have the 'then' keyword.";
-        break;
-
-    case NO_RIGHT_VALUE:
-        // previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Missing right value for operator.";
-        break;
-
-    case NOTHING_TO_INJECT:
-        // previous token
-        position = tokens->at(state->parser.index - 1).pos;
-        width = tokens->at(state->parser.index - 1).val.size();
-        message = "Missing file to inject.";
-        break;
-
-    case NEW_TUPLE_KEY:
-        // tuple - left branch
-        position = tokens->at(error.expr->left->index).pos;
-        width = tokens->at(error.expr->left->index).val.size();
-        message = "You cannot error.detail a new key to a tuple.";
-        break;
-
-    case CANNOT_SPLIT:
-        // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
-        message = "This value cannot be split into the variables on the left.";
-        break;
-
-    case UNDEFINED_OPERATOR:
-        // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
-        message = "The operator doesn't exist for the type.";
-        break;
-
-    case IF_BOOL:
-        // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
-        message = "The conditional for 'if' must evaluate to a boolean value.";
-        break;
-
-    case UNDEFINED_IN_TUPLE:
-        // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
-        message = "Undefined name in tuple.";
-        break;
-
-    case NO_ARGUMENT:
-        // current expression
-        position = tokens->at(state->evaler.current->index).pos;
-        width = tokens->at(state->evaler.current->index).val.size();
-        message = "This block requires an argument to be called.";
-        break;
-
-    case SMALL_TUPLE:
-        // current expression
-        position = tokens->at(state->evaler.current->index).pos;
-        width = tokens->at(state->evaler.current->index).val.size();
-        message = "The tuple is too small of an argument for function " + error.detail;
-        break;
-
-    case UNDEFINED:
-        // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
-        message = "Undefined variable.";
-        break;
-
-    case TYPE_MISMATCH:
-        // current expression
-        position = tokens->at(state->evaler.current->index).pos;
-        width = tokens->at(state->evaler.current->index).val.size();
-        message = "This function got " + error.detail;
-        break;
-
-    case NOT_PUBLIC:
-        position = tokens->at(state->evaler.current->index).pos;
-        width = tokens->at(state->evaler.current->index).val.size();
-        message = "This is not a public member.";
-        break;
-
-    case CUSTOM_ERROR:
-        // current expression
-        position = tokens->at(state->evaler.current->index).pos;
-        width = tokens->at(state->evaler.current->index).val.size();
-        message = error.detail;
-        break;
-    }
-
+void ErrorHandler::panic(const Error& error) const {
     enableANSI();
+    auto info = getErrorInfo(error);
 
-    // header
     std::string filename = "";
     if (path)
         filename = *path;
 
     std::cout << ESC "38;5;14m";
-    std::cout << "-- " << typestrings[error.type] << " -------------------- " << filename << "\n";
+    std::cout << "-- " << info.typestring << " -------------------- " << filename << "\n";
     std::cout << ESC "0m";
 
-    // get error line and the previous line if exists
     std::string prevline = "";
     std::string errline = "";
     uint lineNum = 1;
@@ -269,27 +44,184 @@ void ErrorHandler::panic(Error error) const {
         } else
             errline += c;
 
-        if (index == position) {
+        if (index == info.position) {
             found = true;
             colNum = errline.size() - 1;
         }
         ++index;
     }
 
-    // split the error line
     std::string lineBeg = errline.substr(0, colNum);
-    std::string lineMid = errline.substr(colNum, width);
-    std::string lineEnd = errline.substr(colNum + width, errline.size() - (colNum + width));
+    std::string lineMid = errline.substr(colNum, info.width);
+    std::string lineEnd =
+        errline.substr(colNum + info.width, errline.size() - (colNum + info.width));
 
-    // error lines
     if (lineNum > 1) {
         std::cout << lineNum - 1 << "| " << prevline << "\n";
     }
     std::cout << lineNum << "| " << ESC "38;5;15m" << lineBeg << ESC "48;5;9m" << lineMid
               << ESC "0m" << ESC "38;5;15m" << lineEnd << "\n"
-              << ESC "0m" << message << "\n";
+              << ESC "0m" << info.message << "\n";
 
     exit(1);
+}
+
+ErrorInfo ErrorHandler::getErrorInfo(const Error& error) const {
+    if (error.type <= INDENTED_FILE)
+        return getLexErrorInfo(error);
+    if (error.type <= NOTHING_TO_INJECT)
+        return getParseErrorInfo(error);
+    return getEvalErrorInfo(error);
+}
+
+ErrorInfo ErrorHandler::getLexErrorInfo(const Error& error) const {
+    switch (error.type) {
+    case UNKNOWN_SYMBOL:
+        return {static_cast<uint>(std::stoi(error.detail)), 1,
+                "This symbol is not supported by the Oca language.", "UNKNOWN SYMBOL"};
+
+    case INDENTED_FILE:
+        return {0, 1, "The first line of the file must not be indented.", "INDENTED FILE"};
+
+    default: return {0, 0, "", ""};
+    }
+}
+
+ErrorInfo ErrorHandler::getParseErrorInfo(const Error& error) const {
+    uint tokenIndex = state->parser.index;
+    switch (error.type) {
+    case NOT_AN_EXPRESSION:
+        return {tokens->at(tokenIndex).pos, static_cast<uint>(tokens->at(tokenIndex).val.size()),
+                "This is not a valid start of an expression.", "NOT AN EXPRESSION"};
+
+    case UNEXPECTED_INDENT:
+        return {tokens->at(tokenIndex - 1).pos + 1,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()) - 1,
+                "This indent is not supposed to be here.", "UNEXPECTED INDENT"};
+
+    case NO_NEWLINE:
+        return {tokens->at(tokenIndex).pos, static_cast<uint>(tokens->at(tokenIndex).val.size()),
+                "There must be a newline here.", "NO NEWLINE"};
+
+    case NO_PARAMETER:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "There must be a parameter name after this.", "NO PARAMETER"};
+
+    case NOTHING_TO_SET:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Expected some value to be set.", "NOTHING TO SET"};
+
+    case NO_CLOSING_BRACE:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Expected a closing brace for tuple", "NO CLOSING BRACE"};
+
+    case NO_INDENT:
+        return {tokens->at(tokenIndex).pos, static_cast<uint>(tokens->at(tokenIndex).val.size()),
+                "There must be an indented block of code here.", "NO INDENT"};
+
+    case NO_NAME:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Expected another variable.", "NO NAME"};
+
+    case NO_ACCESS_KEY:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Expected an accessor key.", "NO ACCESS KEY"};
+
+    case NO_ACCESS_KEY_CALL:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Expected an accessor key call.", "NO ACCESS KEY CALL"};
+
+    case NO_CONDITIONAL:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "'if' must have a conditional expression.", "NO CONDITIONAL"};
+
+    case NO_THEN:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "'if' must have the 'then' keyword.", "NO THEN"};
+
+    case NO_RIGHT_VALUE:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
+                "Missing right value for operator.", "NO RIGHT VALUE"};
+
+    case NOTHING_TO_INJECT:
+        return {tokens->at(tokenIndex - 1).pos,
+                static_cast<uint>(tokens->at(tokenIndex - 1).val.size()), "Missing file to inject.",
+                "NOTHING TO INJECT"};
+
+    default: return {0, 0, "", ""};
+    }
+}
+
+ErrorInfo ErrorHandler::getEvalErrorInfo(const Error& error) const {
+    auto currentExpr = state->evaler.current;
+    switch (error.type) {
+    case NEW_TUPLE_KEY:
+        return {tokens->at(currentExpr->left->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->left->index).val.size()),
+                "You cannot error.detail a new key to a tuple.", "NEW TUPLE KEY"};
+
+    case CANNOT_SPLIT:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "This value cannot be split into the variables on the left.", "CANNOT SPLIT"};
+
+    case UNDEFINED_OPERATOR:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "The operator doesn't exist for the type.", "UNDEFINED OPERATOR"};
+
+    case IF_BOOL:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "The conditional for 'if' must evaluate to a boolean value.", "IF BOOL"};
+
+    case UNDEFINED_IN_TUPLE:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "Undefined name in tuple.", "UNDEFINED IN TUPLE"};
+
+    case NO_ARGUMENT:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "This block requires an argument to be called.", "NO ARGUMENT"};
+
+    case SMALL_TUPLE:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "The tuple is too small of an argument for function " + error.detail,
+                "SMALL TUPLE"};
+
+    case UNDEFINED:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()), "Undefined variable.",
+                "UNDEFINED"};
+
+    case TYPE_MISMATCH:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "This function got " + error.detail, "TYPE MISMATCH"};
+
+    case NOT_PUBLIC:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()),
+                "This is not a public member.", "NOT PUBLIC"};
+
+    case CUSTOM_ERROR:
+        return {tokens->at(currentExpr->index).pos,
+                static_cast<uint>(tokens->at(currentExpr->index).val.size()), error.detail,
+                "ERROR"};
+
+    default: return {0, 0, "", ""};
+    }
 }
 
 OCA_END

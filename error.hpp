@@ -49,10 +49,16 @@ enum ValueType { INT = 0, REAL, STRING, BOOL };
 class Error {
 public:
     ErrorType type;
-    ExprPtr expr;
     std::string detail;
 
-    Error(ErrorType type, const std::string& detail = "", ExprPtr expr = nullptr);
+    Error(ErrorType type, const std::string& detail = "");
+};
+
+struct ErrorInfo {
+    uint position;
+    uint width;
+    std::string message;
+    std::string typestring;
 };
 
 class ErrorHandler {
@@ -63,7 +69,13 @@ public:
     const std::vector<Token>* tokens{};
 
     explicit ErrorHandler(const State* state);
-    void panic(Error error) const;
+    void panic(const Error& error) const;
+
+private:
+    ErrorInfo getErrorInfo(const Error& error) const;
+    ErrorInfo getLexErrorInfo(const Error& error) const;
+    ErrorInfo getParseErrorInfo(const Error& error) const;
+    ErrorInfo getEvalErrorInfo(const Error& error) const;
 };
 
 OCA_END
