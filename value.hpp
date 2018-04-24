@@ -14,17 +14,12 @@
 OCA_BEGIN
 
 class Value {
-protected:
-    State* state = nullptr;
-
 public:
     Scope scope = Scope(nullptr);
 
     virtual ~Value() = default;
     virtual std::string tos(bool debug) = 0;
     virtual bool isNil();
-
-    ValuePtr cast(std::any val);
 
     int toi();
     float tor();
@@ -42,45 +37,47 @@ public:
 class Integer : public Value {
 public:
     int val;
-    Integer(int val, Scope* parent, State* state);
+    Integer(int val, Scope* parent);
     std::string tos(bool debug);
 };
 
 class Real : public Value {
 public:
     float val;
-    Real(float val, Scope* parent, State* state);
+    Real(float val, Scope* parent);
     std::string tos(bool debug);
 };
 
 class String : public Value {
 public:
     std::string val;
-    String(const std::string& val, Scope* parent, State* state);
+    String(const std::string& val, Scope* parent);
     std::string tos(bool debug);
 };
 
 class Bool : public Value {
 public:
     bool val;
-    Bool(bool val, Scope* parent, State* state);
+    Bool(bool val, Scope* parent);
     std::string tos(bool debug);
 };
 
 class Tuple : public Value {
 public:
     uint count = 0;
-    Tuple(Scope* parent, State* state);
-    static std::shared_ptr<Tuple> from(Scope& scope, State* state);
+    explicit Tuple(Scope* parent);
+    static std::shared_ptr<Tuple> from(Scope& scope);
     void add(const std::string& name, std::any val);
     std::string tos(bool debug);
 };
 
 class Block : public Value {
+    Evaluator* evaler;
+
 public:
     ExprPtr val;
     std::vector<std::string> params;
-    Block(ExprPtr expr, Scope* parent, State* state);
+    Block(ExprPtr expr, Scope* parent, Evaluator* evaler);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
     std::string tos(bool debug);
 };
@@ -90,7 +87,7 @@ class Func : public Value {
 
 public:
     std::string params;
-    Func(CPPFunc func, const std::string& params, Scope* parent, State* state);
+    Func(CPPFunc func, const std::string& params, Scope* parent);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
     std::string tos(bool debug);
 };

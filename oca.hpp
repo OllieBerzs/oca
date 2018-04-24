@@ -6,7 +6,6 @@
 #pragma once
 
 #include <chrono>
-#include <any>
 #include "common.hpp"
 #include "lex.hpp"
 #include "scope.hpp"
@@ -50,7 +49,6 @@ public:
     ValuePtr runString(const std::string& source, bool asTuple = false);
     void runREPL();
 
-    ValuePtr cast(std::any val);
     void load(const std::string& lib);
     void bind(const std::string& name, const std::string& params, CPPFunc func);
 

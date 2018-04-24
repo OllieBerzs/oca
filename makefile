@@ -84,7 +84,7 @@ lex.o: lex.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
 parse.o: parse.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
   value.hpp parse.hpp eval.hpp error.hpp
 value.o: value.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
-  value.hpp parse.hpp eval.hpp error.hpp
+  value.hpp parse.hpp eval.hpp error.hpp utils.hpp
 scope.o: scope.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
   value.hpp parse.hpp eval.hpp error.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \

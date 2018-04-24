@@ -10,7 +10,7 @@
 
 OCA_BEGIN
 
-Error::Error(ErrorType type, ExprPtr expr, const std::string& detail)
+Error::Error(ErrorType type, const std::string& detail, ExprPtr expr)
     : type(type), expr(expr), detail(detail) {}
 
 ErrorHandler::ErrorHandler(const State* state) : state(state) {}
@@ -199,15 +199,15 @@ void ErrorHandler::panic(Error error) const {
 
     case NO_ARGUMENT:
         // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
+        position = tokens->at(state->evaler.current->index).pos;
+        width = tokens->at(state->evaler.current->index).val.size();
         message = "This block requires an argument to be called.";
         break;
 
     case SMALL_TUPLE:
         // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
+        position = tokens->at(state->evaler.current->index).pos;
+        width = tokens->at(state->evaler.current->index).val.size();
         message = "The tuple is too small of an argument for function " + error.detail;
         break;
 
@@ -220,8 +220,8 @@ void ErrorHandler::panic(Error error) const {
 
     case TYPE_MISMATCH:
         // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
+        position = tokens->at(state->evaler.current->index).pos;
+        width = tokens->at(state->evaler.current->index).val.size();
         message = "This function got " + error.detail;
         break;
 
@@ -233,8 +233,8 @@ void ErrorHandler::panic(Error error) const {
 
     case CUSTOM_ERROR:
         // current expression
-        position = tokens->at(error.expr->index).pos;
-        width = tokens->at(error.expr->index).val.size();
+        position = tokens->at(state->evaler.current->index).pos;
+        width = tokens->at(state->evaler.current->index).val.size();
         message = error.detail;
         break;
     }

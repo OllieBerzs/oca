@@ -60,7 +60,7 @@ std::vector<Token> Lexer::tokenize(const std::string& source) {
                 continue;
 
             if (syntax[index].first == Token::INVALID)
-                throw Error(UNKNOWN_SYMBOL, nullptr, std::to_string(pos));
+                throw Error(UNKNOWN_SYMBOL, std::to_string(pos));
 
             tokens.push_back({syntax[index].first, it->str(), pos});
             break;
