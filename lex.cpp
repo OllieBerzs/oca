@@ -34,7 +34,7 @@ Lexer::Lexer() {
     }
 }
 
-void Lexer::lex(const std::string& source, std::vector<Token>& tokens) {
+std::vector<Token> Lexer::tokenize(const std::string& source) {
     if (source[0] == ' ')
         throw Error(INDENTED_FILE);
 
@@ -52,18 +52,23 @@ void Lexer::lex(const std::string& source, std::vector<Token>& tokens) {
             if (it->str(i + 1).empty())
                 continue;
             uint index = indexFromGroup(i);
+
             if (syntax[index].first == Token::WHITESPACE)
                 continue;
+
             if (syntax[index].first == Token::COMMENT)
                 continue;
-            tokens.push_back({syntax[index].first, it->str(), pos});
+
             if (syntax[index].first == Token::INVALID)
-                throw Error(UNKNOWN_SYMBOL);
+                throw Error(UNKNOWN_SYMBOL, nullptr, std::to_string(pos));
+
+            tokens.push_back({syntax[index].first, it->str(), pos});
             break;
         }
     }
 
     tokens.push_back({Token::LAST, "", static_cast<uint>(source.size())});
+    return std::move(tokens);
 }
 
 uint Lexer::indexFromGroup(uint group) {

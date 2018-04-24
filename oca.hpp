@@ -28,8 +28,8 @@ struct Arg {
 };
 
 class State {
-    Scope scope;
     Scope global;
+    Scope scope;
 
     Lexer lexer;
     Parser parser;
@@ -46,13 +46,17 @@ public:
     State(const State&) = delete;
     State& operator=(const State&) = delete;
 
-public:
     ValuePtr script(const std::string& path, bool asTuple = false);
-    ValuePtr eval(const std::string& source, const std::string& path = "", bool asTuple = false);
+    ValuePtr eval(const std::string& source, bool asTuple = false);
     ValuePtr cast(std::any val);
 
     void load(const std::string& lib);
     void bind(const std::string& name, const std::string& params, CPPFunc func);
+
+private:
+    std::vector<Token> lex(const std::string& source);
+    std::vector<ExprPtr> parse(const std::vector<Token>& tokens);
+    ValuePtr evaluate(const std::vector<ExprPtr>& ast, bool asTuple);
 
     friend class Lexer;
     friend class Parser;

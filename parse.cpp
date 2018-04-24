@@ -14,15 +14,15 @@ Expression::Expression(Expression::Type type, const std::string& val, uint index
     : type(type), val(val), index(index) {}
 
 void Expression::print(uint indent, char mod) {
-    std::vector<std::string> types = {"set",  "call",     "access",    "if",   "else",   "next",
-                                      "main", "branches", "part oper", "oper", "return", "break",
-                                      "file", "str",      "int",       "real", "bool",   "block",
-                                      "tup",  "name",     "calls"};
+    std::vector<std::string> typestrings = {
+        "set",      "call",      "access", "if",     "else",  "next", "main",
+        "branches", "part oper", "oper",   "return", "break", "file", "str",
+        "int",      "real",      "bool",   "block",  "tup",   "name", "calls"};
 
     for (uint i = 0; i < indent; i++)
         std::cout << "  ";
 
-    std::cout << mod << "<" << types[type] << ">" << val << "\n";
+    std::cout << mod << "<" << typestrings[type] << ">" << val << "\n";
 
     if (left)
         left->print(indent + 1, 'L');
@@ -32,18 +32,17 @@ void Expression::print(uint indent, char mod) {
 
 // ----------------------------
 
-Parser::Parser(State* state) : state(state) {}
-
-void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs) {
+std::vector<ExprPtr> Parser::makeAST(const std::vector<Token>& tokens) {
     index = 0;
     indent = 0;
 
     this->tokens = &tokens;
-    while (checkIndent(Indent::SAME)) {
-    }
+    while (checkIndent(Indent::SAME))
+        ;
+    std::vector<ExprPtr> ast;
     while (index < tokens.size() - 1) {
         if (expr()) {
-            exprs.push_back(cache.back());
+            ast.push_back(cache.back());
             cache.pop_back();
         } else
             throw Error(NOT_AN_EXPRESSION);
@@ -54,6 +53,8 @@ void Parser::parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs
         if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS))
             throw Error(NO_NEWLINE);
     }
+
+    return ast;
 }
 
 // ----------------------------

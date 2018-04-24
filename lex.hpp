@@ -41,6 +41,7 @@ public:
 };
 
 class Lexer {
+    std::vector<Token> tokens;
     std::vector<int> captureGroupCounts;
     std::vector<std::pair<Token::Type, std::string>> syntax = {
         {Token::STRING, "'[^']*'"},
@@ -62,7 +63,7 @@ class Lexer {
 
 public:
     explicit Lexer();
-    void lex(const std::string& source, std::vector<Token>& tokens);
+    std::vector<Token> tokenize(const std::string& source);
 
 private:
     uint indexFromGroup(uint group);
