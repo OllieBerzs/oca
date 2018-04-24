@@ -59,7 +59,7 @@ class Parser {
 
 public:
     explicit Parser(State* state);
-    void parse(const std::vector<Token>& tokens, std::vector<ExprPtr>& exprs);
+    std::vector<ExprPtr> makeAST(const std::vector<Token>& tokens);
 
 private:
     const Token& get();

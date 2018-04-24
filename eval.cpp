@@ -217,14 +217,20 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
     current = expr;
-    auto temp = state->eh.path;
+    auto oldPath = state->eh.path;
+    auto oldScope = state->scope;
 
-    uint slash = state->eh.path->find_last_of("/");
-    std::string folder = state->eh.path->substr(0, slash + 1);
+    std::string folder = "";
+    if (state->eh.path) {
+        uint slash = state->eh.path->find_last_of("/");
+        folder = state->eh.path->substr(0, slash + 1);
+    }
+
+    state->scope = Scope(nullptr, state);
     ValuePtr val = state->script(folder + expr->val + ".oca", true);
 
-    // set back old path
-    state->eh.path = temp;
+    state->eh.path = oldPath;
+    state->scope = oldScope;
 
     return val;
 }

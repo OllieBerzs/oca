@@ -52,7 +52,7 @@ void ErrorHandler::panic(Error error) const {
     switch (error.type) {
     case UNKNOWN_SYMBOL:
         // last added token
-        position = tokens->back().pos;
+        position = std::stoi(error.detail);
         width = 1;
         message = "This symbol is not supported by the Oca language.";
         break;
@@ -242,8 +242,12 @@ void ErrorHandler::panic(Error error) const {
     enableANSI();
 
     // header
+    std::string filename = "";
+    if (path)
+        filename = *path;
+
     std::cout << ESC "38;5;14m";
-    std::cout << "-- " << typestrings[error.type] << " -------------------- " << *path << "\n";
+    std::cout << "-- " << typestrings[error.type] << " -------------------- " << filename << "\n";
     std::cout << ESC "0m";
 
     // get error line and the previous line if exists
