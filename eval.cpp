@@ -62,7 +62,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
         if (leftExpr->type == Expression::ACCESS) {
             leftVal = eval(leftExpr, scope);
             if (leftVal->isNil())
-                throw Error(NEW_TUPLE_KEY, leftExpr);
+                throw Error(NEW_TUPLE_KEY, "", leftExpr);
             name = leftVal->scope.parent->find(leftVal);
         }
 
@@ -74,7 +74,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
             ++counter;
             if (rightValPart->isNil())
-                throw Error(CANNOT_SPLIT, expr->right);
+                throw Error(CANNOT_SPLIT, "", expr->right);
 
             leftVal->scope.parent->set(name, rightValPart, true);
         }
@@ -99,7 +99,7 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     if (val->isNil())
         val = state->global.get(expr->val, true); // global scope
     if (val->isNil())
-        throw Error(UNDEFINED, expr);
+        throw Error(UNDEFINED, "", expr);
 
     // get the argument and yield block
     ValuePtr arg = Nil::in(&scope);
@@ -112,9 +112,9 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     // call if variable is a function/block
     Value& vref = *val;
     if (TYPE_EQ(vref, Func))
-        return static_cast<Func&>(vref)(Tuple::from(scope, state), arg, block);
+        return static_cast<Func&>(vref)(Tuple::from(scope), arg, block);
     if (TYPE_EQ(vref, Block))
-        return static_cast<Block&>(vref)(Tuple::from(scope, state), arg, block);
+        return static_cast<Block&>(vref)(Tuple::from(scope), arg, block);
     return val;
 }
 
@@ -130,7 +130,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
     ValuePtr right = eval(expr->right, scope);
     ValuePtr func = left->scope.get(operFuncs[expr->val], false);
     if (func->isNil())
-        throw Error(UNDEFINED_OPERATOR, expr);
+        throw Error(UNDEFINED_OPERATOR, "", expr);
 
     // call the operator
     Value& funcref = *func;
@@ -148,7 +148,7 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
     ValuePtr conditional = eval(expr->left, scope);
     Value& cref = *conditional;
     if (!(TYPE_EQ(cref, Bool)))
-        throw Error(IF_BOOL, expr->left);
+        throw Error(IF_BOOL, "", expr->left);
     bool trueness = static_cast<Bool&>(cref).val;
 
     // set the appropriate branch based on the conditional
@@ -195,7 +195,7 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     #endif
 
     if (right->isNil())
-        throw Error(UNDEFINED_IN_TUPLE, expr->right);
+        throw Error(UNDEFINED_IN_TUPLE, "", expr->right);
 
     // get the argument and yield block
     ValuePtr arg = Nil::in(&scope);
@@ -243,7 +243,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
         if (expr->right == nullptr && expr->val == "")
             return eval(expr->left, scope);
 
-        result = std::make_shared<Tuple>(&scope, state);
+        result = std::make_shared<Tuple>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
         while (expr && expr->left) {
             std::string nam = "";
@@ -268,15 +268,15 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
     } else if (
         expr->type == Expression::BLOCK || expr->type == Expression::MAIN ||
         expr->type == Expression::ELSE) {
-        result = std::make_shared<Block>(expr, &scope, state);
+        result = std::make_shared<Block>(expr, &scope, this);
     } else if (expr->type == Expression::STR) {
-        result = std::make_shared<String>(expr->val, &scope, state);
+        result = std::make_shared<String>(expr->val, &scope);
     } else if (expr->type == Expression::INT) {
-        result = std::make_shared<Integer>(std::stoi(expr->val), &scope, state);
+        result = std::make_shared<Integer>(std::stoi(expr->val), &scope);
     } else if (expr->type == Expression::REAL) {
-        result = std::make_shared<Real>(std::stof(expr->val), &scope, state);
+        result = std::make_shared<Real>(std::stof(expr->val), &scope);
     } else if (expr->type == Expression::BOOL) {
-        result = std::make_shared<Bool>(expr->val == "true", &scope, state);
+        result = std::make_shared<Bool>(expr->val == "true", &scope);
     }
     return result;
 }

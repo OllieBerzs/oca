@@ -25,7 +25,7 @@ State::State()
         return NIL;
     });
 
-    bind("input", "", [&, this] CPPFUNC {
+    bind("input", "", [&] CPPFUNC {
         std::string result;
         std::cin >> result;
         return cast(result);
@@ -36,15 +36,15 @@ State::State()
         return NIL;
     });
 
-    bind("assert", "bs", [&, this] CPPFUNC {
+    bind("assert", "bs", [&] CPPFUNC {
         bool cond = arg[0]->tob();
         std::string message = arg[1]->tos(false);
         if (!cond)
-            throw Error(CUSTOM_ERROR, evaler.current, message);
+            throw Error(CUSTOM_ERROR, message);
         return NIL;
     });
 
-    bind("type", "a", [&, this] CPPFUNC {
+    bind("type", "a", [&] CPPFUNC {
         std::string str = arg.value->tos(true);
         auto end = str.find('>');
         return cast(str.substr(1, end - 1));
@@ -139,31 +139,8 @@ void State::runREPL() {
 
 // ---------------------------------------
 
-ValuePtr State::cast(std::any val) {
-    if (val.type() == typeid(int)) {
-        return std::make_shared<Integer>(std::any_cast<int>(val), nullptr, this);
-    } else if (val.type() == typeid(float)) {
-        return std::make_shared<Real>(std::any_cast<float>(val), nullptr, this);
-    } else if (val.type() == typeid(bool)) {
-        return std::make_shared<Bool>(std::any_cast<bool>(val), nullptr, this);
-    } else if (val.type() == typeid(std::string)) {
-        return std::make_shared<String>(std::any_cast<std::string>(val), nullptr, this);
-    } else if (val.type() == typeid(std::vector<int>)) {
-        auto vec = std::any_cast<std::vector<int>>(val);
-        auto tuple = std::make_shared<Tuple>(nullptr, this);
-        for (uint i = 0; i < vec.size(); ++i) {
-            ++static_cast<Tuple&>(*tuple).count;
-            tuple->scope.set(
-                std::to_string(i + ARRAY_BEGIN_INDEX),
-                std::make_shared<Integer>(vec[i], &tuple->scope, this), true);
-        }
-        return tuple;
-    } else
-        return NIL;
-}
-
 void State::bind(const std::string& name, const std::string& params, CPPFunc func) {
-    global.set(name, std::make_shared<Func>(func, params, &global, this), true);
+    global.set(name, std::make_shared<Func>(func, params, &global), true);
 }
 
 // ---------------------------------------
@@ -252,7 +229,7 @@ ValuePtr State::evaluate(const std::vector<ExprPtr>& ast, bool asTuple) {
     #endif
 
     if (asTuple)
-        return Tuple::from(scope, this);
+        return Tuple::from(scope);
     return val;
 }
 

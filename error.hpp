@@ -52,7 +52,7 @@ public:
     ExprPtr expr;
     std::string detail;
 
-    Error(ErrorType type, ExprPtr expr = nullptr, const std::string& detail = "");
+    Error(ErrorType type, const std::string& detail = "", ExprPtr expr = nullptr);
 };
 
 class ErrorHandler {
