@@ -17,7 +17,7 @@ ValuePtr Arg::operator[](uint i) {
 // ---------------------------------------
 
 State::State()
-    : global(nullptr, this), scope(nullptr, this), evaler(this), eh(this), lextime(0), parsetime(0),
+    : global(nullptr), scope(nullptr), evaler(this), eh(this), lextime(0), parsetime(0),
       evaltime(0) {
     // add base functions
     bind("print", "a", [&] CPPFUNC {
