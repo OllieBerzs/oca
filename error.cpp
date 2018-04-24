@@ -62,9 +62,9 @@ void ErrorHandler::panic(const Error& error) const {
     std::cout << lineNum << "| " << ESC "38;5;15m" << lineBeg << ESC "48;5;9m" << lineMid
               << ESC "0m" << ESC "38;5;15m" << lineEnd << "\n"
               << ESC "0m" << info.message << "\n";
-
-    exit(1);
 }
+
+// -------------------------------------------
 
 ErrorInfo ErrorHandler::getErrorInfo(const Error& error) const {
     if (error.type <= INDENTED_FILE)

@@ -19,7 +19,6 @@ ValuePtr Arg::operator[](uint i) {
 State::State()
     : global(nullptr), scope(nullptr), evaler(this), eh(this), lextime(0), parsetime(0),
       evaltime(0) {
-    // add base functions
     bind("print", "a", [&] CPPFUNC {
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
@@ -99,11 +98,15 @@ ValuePtr State::runFile(const std::string& path, bool asTuple) {
 }
 
 ValuePtr State::runString(const std::string& source, bool asTuple) {
-    eh.source = &source;
-
-    auto tokens = lex(source);
-    auto ast = parse(tokens);
-    return evaluate(ast, asTuple);
+    try {
+        eh.source = &source;
+        auto tokens = lex(source);
+        auto ast = parse(tokens);
+        return evaluate(ast, asTuple);
+    } catch (Error& e) {
+        eh.panic(e);
+    }
+    return NIL;
 }
 
 void State::runREPL() {
@@ -150,12 +153,7 @@ std::vector<Token> State::lex(const std::string& source) {
     auto lstart = std::chrono::high_resolution_clock::now();
     #endif
 
-    std::vector<Token> tokens;
-    try {
-        tokens = lexer.tokenize(source);
-    } catch (Error& e) {
-        eh.panic(e);
-    }
+    auto tokens = lexer.tokenize(source);
     eh.tokens = &tokens;
 
     #ifdef OUT_TIMES
@@ -178,12 +176,7 @@ std::vector<ExprPtr> State::parse(const std::vector<Token>& tokens) {
     auto pstart = std::chrono::high_resolution_clock::now();
     #endif
 
-    std::vector<ExprPtr> ast;
-    try {
-        ast = parser.makeAST(tokens);
-    } catch (Error& e) {
-        eh.panic(e);
-    }
+    auto ast = parser.makeAST(tokens);
 
     #ifdef OUT_TIMES
     auto pend = std::chrono::high_resolution_clock::now();
@@ -211,11 +204,7 @@ ValuePtr State::evaluate(const std::vector<ExprPtr>& ast, bool asTuple) {
 
     ValuePtr val = nullptr;
     for (ExprPtr e : ast) {
-        try {
-            val = evaler.eval(e, scope);
-        } catch (Error& e) {
-            eh.panic(e);
-        }
+        val = evaler.eval(e, scope);
 
         #ifdef OUT_VALUES
         std::cout << "->" << val->tos(true) << "\n";
