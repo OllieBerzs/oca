@@ -1,6 +1,4 @@
-#include <iostream>
 #include "oca.hpp"
-#include "utils.hpp"
 
 int main(int argc, char** argv) {
     oca::State oca;
