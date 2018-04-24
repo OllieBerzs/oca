@@ -92,6 +92,6 @@ eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
 error.o: error.cpp error.hpp common.hpp ocaconf.hpp oca.hpp lex.hpp \
   scope.hpp value.hpp parse.hpp eval.hpp utils.hpp
 main.o: main.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
-  value.hpp parse.hpp eval.hpp error.hpp utils.hpp
+  value.hpp parse.hpp eval.hpp error.hpp
 tests.o: tests.cpp catch/catch-mini.hpp oca.hpp common.hpp ocaconf.hpp \
   lex.hpp scope.hpp value.hpp parse.hpp eval.hpp error.hpp

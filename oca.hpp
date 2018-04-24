@@ -47,7 +47,7 @@ public:
     State& operator=(const State&) = delete;
 
     ValuePtr runFile(const std::string& path, bool asTuple = false);
-    ValuePtr runScript(const std::string& source, bool asTuple = false);
+    ValuePtr runString(const std::string& source, bool asTuple = false);
     void runREPL();
 
     ValuePtr cast(std::any val);

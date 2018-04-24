@@ -95,10 +95,10 @@ ValuePtr State::runFile(const std::string& path, bool asTuple) {
     file.close();
 
     eh.path = &path;
-    return runScript(source, asTuple);
+    return runString(source, asTuple);
 }
 
-ValuePtr State::runScript(const std::string& source, bool asTuple) {
+ValuePtr State::runString(const std::string& source, bool asTuple) {
     eh.source = &source;
 
     auto tokens = lex(source);
@@ -131,7 +131,7 @@ void State::runREPL() {
         if (input == "exit\n")
             return;
 
-        auto val = runScript(input);
+        auto val = runString(input);
 
         std::cout << ESC "38;5;8m" << val->tos(false) << ESC "0m\n";
     }
