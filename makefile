@@ -55,7 +55,7 @@ check:
 
 deps:
 	@echo [Gen dependencies]
-	@$(CXX) -MM $(OBJ:.o=.cpp) $(BINOBJ:.o=.cpp) $(TESTOBJ:.o=.cpp) >> makefile
+	@$(CXX) $(CPPFLAGS) -MM $(OBJ:.o=.cpp) $(BINOBJ:.o=.cpp) $(TESTOBJ:.o=.cpp) >> makefile
 
 clean:
 	@echo [Clean]
@@ -78,19 +78,20 @@ test: $(TEST)
 
 # dependencies (generated) -----------------------------------
 oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
-  parse.hpp eval.hpp error.hpp
+  parse.hpp eval.hpp error.hpp utils.hpp
 lex.o: lex.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
   parse.hpp eval.hpp error.hpp
 parse.o: parse.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
   value.hpp parse.hpp eval.hpp error.hpp
-value.o: value.cpp value.hpp common.hpp ocaconf.hpp scope.hpp parse.hpp \
-  oca.hpp lex.hpp eval.hpp error.hpp
-scope.o: scope.cpp scope.hpp common.hpp ocaconf.hpp value.hpp
+value.o: value.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
+  value.hpp parse.hpp eval.hpp error.hpp
+scope.o: scope.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
+  value.hpp parse.hpp eval.hpp error.hpp
 eval.o: eval.cpp eval.hpp common.hpp ocaconf.hpp parse.hpp value.hpp \
   scope.hpp oca.hpp lex.hpp error.hpp
-error.o: error.cpp error.hpp common.hpp ocaconf.hpp value.hpp scope.hpp \
-  oca.hpp lex.hpp parse.hpp eval.hpp
+error.o: error.cpp error.hpp common.hpp ocaconf.hpp oca.hpp lex.hpp \
+  scope.hpp value.hpp parse.hpp eval.hpp utils.hpp
 main.o: main.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp \
-  value.hpp parse.hpp eval.hpp error.hpp
+  value.hpp parse.hpp eval.hpp error.hpp utils.hpp
 tests.o: tests.cpp catch2/catch.hpp oca.hpp common.hpp ocaconf.hpp \
   lex.hpp scope.hpp value.hpp parse.hpp eval.hpp error.hpp

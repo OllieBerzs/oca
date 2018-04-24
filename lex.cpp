@@ -9,70 +9,71 @@
 
 OCA_BEGIN
 
-void Token::print() const
-{
-    std::vector<std::string> types =
-    {
-        "string", "binnum", "hexnum", "scientnum", "real", "integer", "boolean", "filepath",
-        "keyword", "name", "operator", "punctuation",
-        "comment", "indent", "whitespace", "invalid", "last"
-    };
+void Token::print() const {
+    std::vector<std::string> types = {
+        "string",  "binnum",   "hexnum",     "scientnum", "real",     "integer",
+        "boolean", "filepath", "keyword",    "name",      "operator", "punctuation",
+        "comment", "indent",   "whitespace", "invalid",   "last"};
     std::cout << "<" << types[type] << ">";
-    if (type != Type::INDENT) std::cout << val;
+    if (type != Type::INDENT)
+        std::cout << val;
     std::cout << "\n";
 }
 
 //-----------------------------
 
-Lexer::Lexer(State* state) : state(state) {}
+Lexer::Lexer() {
+    // calculate the capture group count for each syntax element
+    captureGroupCounts.reserve(syntax.size());
+    for (auto element : syntax) {
+        std::regex regex(element.second + "|.*");
+        std::string blank = "";
+        auto matches = std::sregex_iterator(blank.begin(), blank.end(), regex);
+        auto match = *matches;
+        captureGroupCounts.push_back(match.size());
+    }
+}
 
-void Lexer::lex(const std::string& source, std::vector<Token>& tokens)
-{
-    std::vector<std::pair<Token::Type, std::string>> syntax
-    {
-        {Token::STRING,          "()()('[^']*')"},
-        {Token::BINNUM,          "()()(0b[01]+)"},
-        {Token::HEXNUM,          "()()(0x[0-9A-Fa-f]+)"},
-        {Token::SCIENTNUM,       "([0-9]+(\\.[0-9]+)?[eE]-?[0-9]+(\\.[0-9]+)?)"},
-        {Token::REAL,            "()()([0-9]+\\.[0-9]+)"},
-        {Token::INTEGER,         "()()([0-9]+)"},
-        {Token::BOOLEAN,         "()()\\b(true|false)\\b"},
-        {Token::FILEPATH,        "()()(\\$.+)"},
-        {Token::KEYWORD,         "()()\\b(do|if|then|else|return|break|with|pub)\\b"},
-        {Token::OPERATOR,        "()()(\\+|-|\\*|\\/|%|\\^|<=|>=|==|!=|<|>|\\.\\.|and|or|xor|lsh|rsh)"},
-        {Token::COMMENT,         "()(#(.)*)"},
-        {Token::NAME,            "()([A-Za-z_])([A-Za-z_0-9]*)"},
-        {Token::PUNCTUATION,     "()()(\\.|:|\\(|\\)|,|=)"},
-        {Token::INDENT,          "()(\\n *)(?=[^\\s^#])"},
-        {Token::WHITESPACE,      "()()(\\n *| +)"},
-        {Token::INVALID,         "()()(.)+"}
-    };
+void Lexer::lex(const std::string& source, std::vector<Token>& tokens) {
+    if (source[0] == ' ')
+        throw Error(INDENTED_FILE);
 
-    if (source[0] == ' ') state->err.panic(INDENTED_FILE);
+    std::string fullRegexString = "";
+    for (const auto& element : syntax)
+        fullRegexString += "(" + element.second + ")|";
+    fullRegexString.pop_back();
 
-    std::string reg;
-    for (const auto& r : syntax) reg += r.second + "|";
-    reg.pop_back();
-
-    std::regex regex(reg);
+    std::regex regex(fullRegexString);
     auto matches = std::sregex_iterator(source.begin(), source.end(), regex);
 
-    for (auto it = matches; it != std::sregex_iterator(); ++it)
-    {
+    for (auto it = matches; it != std::sregex_iterator(); ++it) {
         uint pos = static_cast<uint>(it->position());
-        for (uint i = 0; i < it->size(); ++i)
-        {
-            if (it->str(i + 1).empty()) continue;
-            uint index = i / 3;
-            if (syntax[index].first == Token::WHITESPACE) continue;
-            if (syntax[index].first == Token::COMMENT) continue;
+        for (uint i = 0; i < it->size(); ++i) {
+            if (it->str(i + 1).empty())
+                continue;
+            uint index = indexFromGroup(i);
+            if (syntax[index].first == Token::WHITESPACE)
+                continue;
+            if (syntax[index].first == Token::COMMENT)
+                continue;
             tokens.push_back({syntax[index].first, it->str(), pos});
-            if (syntax[index].first == Token::INVALID) state->err.panic(UNKNOWN_SYMBOL);
+            if (syntax[index].first == Token::INVALID)
+                throw Error(UNKNOWN_SYMBOL);
             break;
         }
     }
 
     tokens.push_back({Token::LAST, "", static_cast<uint>(source.size())});
+}
+
+uint Lexer::indexFromGroup(uint group) {
+    uint sum = 0;
+    uint index = 0;
+    while (sum < group) {
+        sum += captureGroupCounts[index];
+        ++index;
+    }
+    return index;
 }
 
 OCA_END

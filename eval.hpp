@@ -11,8 +11,7 @@
 
 OCA_BEGIN
 
-class Evaluator
-{
+class Evaluator {
 public:
     State* state;
     ExprPtr current;

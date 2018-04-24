@@ -14,14 +14,30 @@ OCA_BEGIN
 
 enum class Indent { SAME, MORE, LESS, ANY };
 
-class Expression
-{
+class Expression {
 public:
-    enum Type
-    {
-        SET, CALL, ACCESS, IF, ELSE, NEXT, MAIN,
-        BRANCHES, PART_OPER, OPER, RETURN, BREAK, FILE, STR,
-        INT, REAL, BOOL, BLOCK, TUP, NAME, CALLS
+    enum Type {
+        SET,
+        CALL,
+        ACCESS,
+        IF,
+        ELSE,
+        NEXT,
+        MAIN,
+        BRANCHES,
+        PART_OPER,
+        OPER,
+        RETURN,
+        BREAK,
+        FILE,
+        STR,
+        INT,
+        REAL,
+        BOOL,
+        BLOCK,
+        TUP,
+        NAME,
+        CALLS
     };
 
     Type type;
@@ -34,8 +50,7 @@ public:
     void print(uint indent = 0, char mod = '.');
 };
 
-class Parser
-{
+class Parser {
     State* state;
     const std::vector<Token>* tokens{};
     std::vector<ExprPtr> cache;
@@ -70,7 +85,7 @@ private:
     bool name();
     bool lit(const std::string& t);
 
-    friend class Errors;
+    friend class ErrorHandler;
 };
 
 OCA_END

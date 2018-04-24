@@ -8,8 +8,7 @@
 
 #include "oca.hpp"
 
-TEST_CASE("Evaluation of basic types", "[types]")
-{
+TEST_CASE("Evaluation of basic types", "[types]") {
     oca::State oca;
 
     // int
@@ -28,12 +27,12 @@ TEST_CASE("Evaluation of basic types", "[types]")
     REQUIRE(oca.eval("true")->tos(true) == "<bool>true");
 
     // tuple
-    REQUIRE(oca.eval("(2, 3, (true, false))")->tos(true)
-        == "<tup>([0]<int>2, [1]<int>3, [2]<tup>([0]<bool>true, [1]<bool>false))");
+    REQUIRE(
+        oca.eval("(2, 3, (true, false))")->tos(true) ==
+        "<tup>([0]<int>2, [1]<int>3, [2]<tup>([0]<bool>true, [1]<bool>false))");
 }
 
-TEST_CASE("Variable setting and getting", "[variables]")
-{
+TEST_CASE("Variable setting and getting", "[variables]") {
     oca::State oca;
 
     // simple variable
@@ -60,8 +59,7 @@ TEST_CASE("Variable setting and getting", "[variables]")
     REQUIRE(oca.eval("ret 6")->tos(false) == "6");
 }
 
-TEST_CASE("Conditional evaluation", "[conditionals]")
-{
+TEST_CASE("Conditional evaluation", "[conditionals]") {
     oca::State oca;
 
     // if
@@ -71,8 +69,7 @@ TEST_CASE("Conditional evaluation", "[conditionals]")
     REQUIRE(oca.eval("if false then 'yes' else 'no'")->tos(false) == "no");
 }
 
-TEST_CASE("Operators", "operators")
-{
+TEST_CASE("Operators", "operators") {
     oca::State oca;
 
     // int and int
