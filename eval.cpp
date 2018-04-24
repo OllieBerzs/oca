@@ -105,14 +105,12 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     state->global.print();
     #endif
 
-    // get the variable from one of the scopes
-    ValuePtr val = scope.get(expr->val, true); // function scope
+    ValuePtr val = scope.get(expr->val, true);
     if (val->isNil())
-        val = state->global.get(expr->val, true); // global scope
+        val = state->global.get(expr->val, true);
     if (val->isNil())
         throw Error(UNDEFINED);
 
-    // get the argument and yield block
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
     if (expr->right)
@@ -120,7 +118,6 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     if (expr->left)
         block = eval(expr->left, scope);
 
-    // call if variable is a function/block
     Value& vref = *val;
     if (TYPE_EQ(vref, Func))
         return static_cast<Func&>(vref)(Tuple::from(scope), arg, block);
