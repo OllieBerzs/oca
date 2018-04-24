@@ -3,100 +3,80 @@
 ** oca api
 */
 
-#include "oca.hpp"
 #include <fstream>
 #include <iostream>
-
-#if _WIN32 || _WIN64
-#include <windows.h>
-#endif
-
-#define ESC "\033["
+#include "oca.hpp"
+#include "utils.hpp"
 
 OCA_BEGIN
 
-ValuePtr Arg::operator[](uint i)
-{
+ValuePtr Arg::operator[](uint i) {
     return value->scope.get(std::to_string(i), false);
 }
 
 // ---------------------------------------
 
 State::State()
-    : scope(nullptr, this), global(nullptr, this), lexer(this), parser(this)
-    , evaler(this), err(this), lextime(0), parsetime(0), evaltime(0)
-{
+    : scope(nullptr, this), global(nullptr, this), parser(this), evaler(this), eh(this), lextime(0),
+      parsetime(0), evaltime(0) {
     // add base functions
-    bind("print", "a", [&]CPPFUNC
-    {
+    bind("print", "a", [&] CPPFUNC {
         std::cout << arg.value->tos(false) << "\n";
         return NIL;
     });
 
-    bind("input", "", [&,this]CPPFUNC
-    {
+    bind("input", "", [&, this] CPPFUNC {
         std::string result;
         std::cin >> result;
         return cast(result);
     });
 
-    bind("pause", "", [&]CPPFUNC
-    {
+    bind("pause", "", [&] CPPFUNC {
         std::cin.get();
         return NIL;
     });
 
-    bind("assert", "bs", [&,this]CPPFUNC
-    {
+    bind("assert", "bs", [&, this] CPPFUNC {
         bool cond = arg[0]->tob();
         std::string message = arg[1]->tos(false);
-        if (!cond) err.panic(CUSTOM_ERROR, evaler.current, message);
+        if (!cond)
+            throw Error(CUSTOM_ERROR, evaler.current, message);
         return NIL;
     });
 
-    bind("type", "a", [&,this]CPPFUNC
-    {
+    bind("type", "a", [&, this] CPPFUNC {
         std::string str = arg.value->tos(true);
         auto end = str.find('>');
         return cast(str.substr(1, end - 1));
     });
 
-    bind("inject", "t", [&]CPPFUNC
-    {
+    bind("inject", "t", [&] CPPFUNC {
         arg.caller->scope.add(dynamic_cast<Tuple&>(*arg.value).scope);
         return NIL;
     });
 }
 
-State::~State()
-{
+State::~State() {
     // output times
     #ifdef OUT_TIMES
 
-    // set console mode for ansi
-    #if _WIN32 || _WIN64
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    dwMode |= 0x0004;
-    SetConsoleMode(hOut, dwMode);
-    #endif
+    enableANSI();
 
     std::cout << ESC "38;5;15m";
     std::cout << "Interpreter time: " << (lextime + parsetime + evaltime).count() << "ms";
     std::cout << " (L:";
-    if (lextime.count() >= parsetime.count() &&
-        lextime.count() >= evaltime.count()) std::cout << ESC "38;5;11m";
+    if (lextime.count() >= parsetime.count() && lextime.count() >= evaltime.count())
+        std::cout << ESC "38;5;11m";
     std::cout << lextime.count() << "ms";
     std::cout << ESC "38;5;15m";
     std::cout << ", P:";
-    if (parsetime.count() >= lextime.count() &&
-        parsetime.count() >= evaltime.count()) std::cout << ESC "38;5;11m";
+    if (parsetime.count() >= lextime.count() && parsetime.count() >= evaltime.count())
+        std::cout << ESC "38;5;11m";
     std::cout << parsetime.count() << "ms";
     std::cout << ESC "38;5;15m";
     std::cout << ", E:";
-    if (evaltime.count() >= parsetime.count() &&
-        evaltime.count() >= lextime.count()) std::cout << ESC "38;5;11m";
+    if (evaltime.count() >= parsetime.count() && evaltime.count() >= lextime.count())
+        std::cout << ESC "38;5;11m";
     std::cout << evaltime.count() << "ms";
     std::cout << ESC "38;5;15m";
     std::cout << ")\n";
@@ -104,32 +84,36 @@ State::~State()
     #endif
 }
 
-ValuePtr State::script(const std::string& path, bool asTuple)
-{
+ValuePtr State::script(const std::string& path, bool asTuple) {
     std::ifstream file(path);
-    if (!file.is_open()) std::cout << "Could not open file " << path << "\n";
-    std::string source((std::istreambuf_iterator<char>(file)),
-        (std::istreambuf_iterator<char>()));
+    if (!file.is_open())
+        std::cout << "Could not open file " << path << "\n";
+    std::string source((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
     file.close();
 
     return eval(source, path, asTuple);
 }
 
-ValuePtr State::eval(const std::string& source, const std::string& path, bool asTuple)
-{
+ValuePtr State::eval(const std::string& source, const std::string& path, bool asTuple) {
     std::vector<Token> tokens;
     std::vector<ExprPtr> ast;
 
     // error handling
-    err.path = &path;
-    err.source = &source;
-    err.tokens = &tokens;
+    eh.path = &path;
+    eh.source = &source;
+    eh.tokens = &tokens;
 
     // Lexing
     #ifdef OUT_TIMES
     auto lstart = std::chrono::high_resolution_clock::now();
     #endif
-    lexer.lex(source, tokens);
+
+    try {
+        lexer.lex(source, tokens);
+    } catch (Error& e) {
+        eh.panic(e);
+    }
+
     #ifdef OUT_TIMES
     auto lend = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> lduration = lend - lstart;
@@ -138,14 +122,21 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
     #ifdef OUT_TOKENS
     std::cout << "----------- TOKENS -----------\n";
-    for (Token& t : tokens) t.print();
+    for (Token& t : tokens)
+        t.print();
     #endif
 
     // Parsing
     #ifdef OUT_TIMES
     auto pstart = std::chrono::high_resolution_clock::now();
     #endif
-    parser.parse(tokens, ast);
+
+    try {
+        parser.parse(tokens, ast);
+    } catch (Error& e) {
+        eh.panic(e);
+    }
+
     #ifdef OUT_TIMES
     auto pend = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> pduration = pend - pstart;
@@ -154,7 +145,8 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
     #ifdef OUT_AST
     std::cout << "------------ AST -------------\n";
-    for (ExprPtr e : ast) e->print();
+    for (ExprPtr e : ast)
+        e->print();
     #endif
 
     // Evaluating
@@ -165,15 +157,23 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     #ifdef OUT_TIMES
     auto estart = std::chrono::high_resolution_clock::now();
     #endif
+
     ValuePtr val = nullptr;
-    for (ExprPtr e : ast)
-    {
-        val = evaler.eval(e, scope);
+    for (ExprPtr e : ast) {
+        try {
+            val = evaler.eval(e, scope);
+        } catch (Error& e) {
+            eh.panic(e);
+        }
+
         #ifdef OUT_VALUES
-        if (val == nullptr) std::cout << "->nullptr\n";
-        else std::cout << "->" << val->tos(true) << "\n";
+        if (val == nullptr)
+            std::cout << "->nullptr\n";
+        else
+            std::cout << "->" << val->tos(true) << "\n";
         #endif
     }
+
     #ifdef OUT_TIMES
     auto eend = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> eduration = eend - estart;
@@ -181,8 +181,7 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
     #endif
 
     // return as tuple
-    if (asTuple)
-    {
+    if (asTuple) {
         auto tuple = std::make_shared<Tuple>(nullptr, this);
         tuple->scope = scope;
         return tuple;
@@ -194,44 +193,33 @@ ValuePtr State::eval(const std::string& source, const std::string& path, bool as
 
 // ---------------------------------------
 
-void State::bind(const std::string& name, const std::string& params, CPPFunc func)
-{
+void State::bind(const std::string& name, const std::string& params, CPPFunc func) {
     global.set(name, std::make_shared<Func>(func, params, &global, this), true);
 }
 
 // ---------------------------------------
 
-ValuePtr State::cast(std::any val)
-{
-    if (val.type() == typeid(int))
-    {
+ValuePtr State::cast(std::any val) {
+    if (val.type() == typeid(int)) {
         return std::make_shared<Integer>(std::any_cast<int>(val), nullptr, this);
-    }
-    else if (val.type() == typeid(float))
-    {
+    } else if (val.type() == typeid(float)) {
         return std::make_shared<Real>(std::any_cast<float>(val), nullptr, this);
-    }
-    else if (val.type() == typeid(bool))
-    {
+    } else if (val.type() == typeid(bool)) {
         return std::make_shared<Bool>(std::any_cast<bool>(val), nullptr, this);
-    }
-    else if (val.type() == typeid(std::string))
-    {
+    } else if (val.type() == typeid(std::string)) {
         return std::make_shared<String>(std::any_cast<std::string>(val), nullptr, this);
-    }
-    else if (val.type() == typeid(std::vector<int>))
-    {
+    } else if (val.type() == typeid(std::vector<int>)) {
         auto vec = std::any_cast<std::vector<int>>(val);
         auto tuple = std::make_shared<Tuple>(nullptr, this);
-        for (uint i = 0; i < vec.size(); ++i)
-        {
+        for (uint i = 0; i < vec.size(); ++i) {
             ++static_cast<Tuple&>(*tuple).count;
-            tuple->scope.set(std::to_string(i + ARRAY_BEGIN_INDEX),
+            tuple->scope.set(
+                std::to_string(i + ARRAY_BEGIN_INDEX),
                 std::make_shared<Integer>(vec[i], &tuple->scope, this), true);
         }
         return tuple;
-    }
-    else return NIL;
+    } else
+        return NIL;
 }
 
 OCA_END

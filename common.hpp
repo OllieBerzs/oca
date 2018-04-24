@@ -32,7 +32,7 @@ class ValueCast;
 typedef unsigned int uint;
 typedef std::shared_ptr<Expression> ExprPtr;
 typedef std::shared_ptr<Value> ValuePtr;
-typedef void(*DLLfunc)(Scope&);
+typedef void (*DLLfunc)(Scope&);
 typedef ValuePtr Ret;
 typedef std::function<Ret(Arg)> CPPFunc;
 

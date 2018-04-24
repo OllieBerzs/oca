@@ -9,8 +9,7 @@
 
 OCA_BEGIN
 
-class Scope
-{
+class Scope {
 public:
     std::vector<std::tuple<bool, std::string, ValuePtr>> vars;
     Scope* parent;

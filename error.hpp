@@ -5,14 +5,11 @@
 
 #pragma once
 
-#include <tuple>
 #include "common.hpp"
-#include "value.hpp"
 
 OCA_BEGIN
 
-enum ErrorType
-{
+enum ErrorType {
     // Lexing
     UNKNOWN_SYMBOL = 0,
     INDENTED_FILE,
@@ -47,24 +44,26 @@ enum ErrorType
     CUSTOM_ERROR
 };
 
-enum ValueType
-{
-    INT = 0,
-    REAL,
-    STRING,
-    BOOL
+enum ValueType { INT = 0, REAL, STRING, BOOL };
+
+class Error {
+public:
+    ErrorType type;
+    ExprPtr expr;
+    std::string detail;
+
+    Error(ErrorType type, ExprPtr expr = nullptr, const std::string& detail = "");
 };
 
-class Errors
-{
+class ErrorHandler {
 public:
     const State* state;
     const std::string* path{};
     const std::string* source{};
     const std::vector<Token>* tokens{};
 
-    explicit Errors(const State* state);
-    void panic(ErrorType type, ExprPtr expr = nullptr, const std::string& add = "") const;
+    explicit ErrorHandler(const State* state);
+    void panic(Error error) const;
 };
 
 OCA_END

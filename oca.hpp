@@ -19,8 +19,7 @@
 
 OCA_BEGIN
 
-struct Arg
-{
+struct Arg {
     ValuePtr caller;
     ValuePtr value;
     ValuePtr yield;
@@ -28,15 +27,14 @@ struct Arg
     ValuePtr operator[](uint i);
 };
 
-class State
-{
+class State {
     Scope scope;
     Scope global;
 
     Lexer lexer;
     Parser parser;
     Evaluator evaler;
-    Errors err;
+    ErrorHandler eh;
 
     std::chrono::milliseconds lextime;
     std::chrono::milliseconds parsetime;
@@ -60,7 +58,7 @@ public:
     friend class Parser;
     friend class Evaluator;
     friend class Value;
-    friend class Errors;
+    friend class ErrorHandler;
     friend class Integer;
     friend class Real;
     friend class String;
@@ -70,6 +68,5 @@ public:
     friend class Func;
     friend class Scope;
 };
-
 
 OCA_END
