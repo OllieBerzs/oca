@@ -51,14 +51,13 @@ public:
 };
 
 class Parser {
-    State* state;
-    const std::vector<Token>* tokens{};
+    const std::vector<Token>* tokens;
     std::vector<ExprPtr> cache;
-    uint index{};
-    uint indent{};
+    uint index;
+    uint indent;
 
 public:
-    explicit Parser(State* state);
+    Parser() = default;
     std::vector<ExprPtr> makeAST(const std::vector<Token>& tokens);
 
 private:

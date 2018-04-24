@@ -32,8 +32,6 @@ void Expression::print(uint indent, char mod) {
 
 // ----------------------------
 
-Parser::Parser(State* state) : state(state) {}
-
 std::vector<ExprPtr> Parser::makeAST(const std::vector<Token>& tokens) {
     index = 0;
     indent = 0;
