@@ -11,6 +11,15 @@
 
 OCA_BEGIN
 
+class ExprTracker {
+    ExprPtr tracker;
+    ExprPtr* evalcurr;
+
+public:
+    ExprTracker(ExprPtr tracker, ExprPtr* evalcurr);
+    ~ExprTracker();
+};
+
 class Evaluator {
 public:
     State* state;
