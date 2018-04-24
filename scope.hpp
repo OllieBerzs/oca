@@ -13,9 +13,8 @@ class Scope {
 public:
     std::vector<std::tuple<bool, std::string, ValuePtr>> vars;
     Scope* parent;
-    State* state;
 
-    Scope(Scope* parent, State* state);
+    explicit Scope(Scope* parent);
 
     void set(const std::string& name, ValuePtr value, bool pub);
     void add(const Scope& scope);

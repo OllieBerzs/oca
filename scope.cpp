@@ -8,7 +8,7 @@
 
 OCA_BEGIN
 
-Scope::Scope(Scope* parent, State* state) : parent(parent), state(state) {}
+Scope::Scope(Scope* parent) : parent(parent) {}
 
 // ----------------------------
 

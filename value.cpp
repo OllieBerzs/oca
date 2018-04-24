@@ -83,7 +83,7 @@ bool Value::ist() {
 
 Integer::Integer(int val, Scope* parent, State* state) : val(val) {
     this->state = state;
-    scope = Scope(parent, state);
+    scope = Scope(parent);
 
     // functions
     bind("__add", "n", [&, this] CPPFUNC {
@@ -244,7 +244,7 @@ std::string Integer::tos(bool debug) {
 
 Real::Real(float val, Scope* parent, State* state) : val(val) {
     this->state = state;
-    scope = Scope(nullptr, state);
+    scope = Scope(nullptr);
     scope.parent = parent;
 
     // functions
@@ -332,7 +332,7 @@ std::string Real::tos(bool debug) {
 
 String::String(const std::string& val, Scope* parent, State* state) : val(val) {
     this->state = state;
-    scope = Scope(parent, state);
+    scope = Scope(parent);
 
     // functions
     bind("__add", "a", [&, this] CPPFUNC {
@@ -409,7 +409,7 @@ std::string String::tos(bool debug) {
 
 Bool::Bool(bool val, Scope* parent, State* state) : val(val) {
     this->state = state;
-    scope = Scope(nullptr, state);
+    scope = Scope(nullptr);
     scope.parent = parent;
 
     bind("__eq", "b", [&, this] CPPFUNC {
@@ -447,9 +447,45 @@ std::string Bool::tos(bool debug) {
 
 // ---------------------------------
 
+Tuple::Tuple(Scope* parent, State* state) {
+    this->state = state;
+    scope = Scope(parent);
+}
+
+std::shared_ptr<Tuple> Tuple::from(Scope& scope, State* state) {
+    auto t = std::make_shared<Tuple>(nullptr, state);
+    t->scope = scope;
+    return t;
+}
+
+void Tuple::add(const std::string& name, std::any val) {
+    auto vptr = cast(val);
+    vptr->scope.parent = &scope;
+    scope.set(name, vptr, true);
+}
+
+std::string Tuple::tos(bool debug) {
+    std::string result = "";
+    if (debug)
+        result += "<tup>";
+    result += "(";
+    for (auto var : scope.vars) {
+        if (debug)
+            result += "[" + std::get<1>(var) + "]";
+        result += std::get<2>(var)->tos(debug);
+        result += ", ";
+    }
+    result.pop_back();
+    result.pop_back();
+    result += ")";
+    return result;
+}
+
+// ---------------------------------
+
 Block::Block(ExprPtr expr, Scope* parent, State* state) {
     this->state = state;
-    scope = Scope(parent, state);
+    scope = Scope(parent);
     val = expr;
 
     // set parameters
@@ -493,7 +529,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
             "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // set super and yield in scope
-    Scope temp(&scope, state);
+    Scope temp(&scope);
     temp.set("yield", block, true);
     temp.set("super", caller, true);
 
@@ -532,46 +568,10 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
 
 // ---------------------------------
 
-Tuple::Tuple(Scope* parent, State* state) {
-    this->state = state;
-    scope = Scope(parent, state);
-}
-
-std::shared_ptr<Tuple> Tuple::from(Scope& scope, State* state) {
-    auto t = std::make_shared<Tuple>(nullptr, state);
-    t->scope = scope;
-    return t;
-}
-
-void Tuple::add(const std::string& name, std::any val) {
-    auto vptr = cast(val);
-    vptr->scope.parent = &scope;
-    scope.set(name, vptr, true);
-}
-
-std::string Tuple::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<tup>";
-    result += "(";
-    for (auto var : scope.vars) {
-        if (debug)
-            result += "[" + std::get<1>(var) + "]";
-        result += std::get<2>(var)->tos(debug);
-        result += ", ";
-    }
-    result.pop_back();
-    result.pop_back();
-    result += ")";
-    return result;
-}
-
-// ---------------------------------
-
 Func::Func(CPPFunc func, const std::string& params, Scope* parent, State* state)
     : val(func), params(params) {
     this->state = state;
-    scope = Scope(parent, state);
+    scope = Scope(parent);
 }
 
 std::string Func::tos(bool debug) {
