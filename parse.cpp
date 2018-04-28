@@ -46,6 +46,7 @@ std::vector<ExprPtr> Parser::makeAST(const std::vector<Token>& tokens) {
             cache.pop_back();
         } else
             throw Error(NOT_AN_EXPRESSION);
+
         if (get().type == Token::LAST)
             break;
         if (checkIndent(Indent::MORE))
@@ -98,7 +99,7 @@ ExprPtr Parser::uncache() {
 // ----------------------------
 
 bool Parser::expr() {
-    if (call() || value() || block() || cond() || keyword() || file())
+    if (set() || call() || value() || block() || cond() || keyword() || file())
         return true;
     return false;
 }
@@ -106,16 +107,23 @@ bool Parser::expr() {
 bool Parser::set() {
     uint orig = index;
 
-    if (!lit("="))
+    if (!call())
         return false;
+
+    if (!lit("=")) {
+        uncache();
+        index = orig;
+        return false;
+    }
+
     if (!call() && !value() && !block() && !file() && !cond())
         throw Error(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr s = std::make_shared<Expression>(Expression::SET, "", orig);
-    s->right = uncache();
-    s->left = uncache();
-    cache.push_back(s);
+    ExprPtr expr = std::make_shared<Expression>(Expression::SET, "", orig);
+    expr->right = uncache();
+    expr->left = uncache();
+    cache.push_back(expr);
 
     return true;
 }
@@ -125,6 +133,7 @@ bool Parser::call(bool inDot) {
 
     if (!name())
         return false;
+
     bool hasArg = value() || call() || file();
     bool hasYield = block();
 
@@ -151,7 +160,7 @@ bool Parser::call(bool inDot) {
         cache.push_back(calls);
     }
 
-    if (!inDot && !set())
+    if (!inDot)
         oper();
 
     return true;
@@ -161,7 +170,7 @@ bool Parser::access() {
     uint orig = index;
     if (!lit("."))
         return false;
-    // pass true, so the next call doesn't parse dotaccess
+    // pass true, so the next call doesn't parse access
     if (!call(true) && !integer())
         throw Error(NO_ACCESS_KEY);
 
@@ -171,7 +180,6 @@ bool Parser::access() {
     a->left = uncache();
     cache.push_back(a);
 
-    // additional access
     access();
 
     return true;
@@ -194,10 +202,8 @@ bool Parser::cond() {
             if (!checkIndent(Indent::SAME))
                 break;
         }
-    } else {
-        if (!expr())
-            throw Error(NOT_AN_EXPRESSION);
-    }
+    } else if (!expr())
+        throw Error(NOT_AN_EXPRESSION);
 
     uint elseCached = cache.size();
     bool hasElse = false;
@@ -210,16 +216,13 @@ bool Parser::cond() {
                 if (!checkIndent(Indent::SAME))
                     break;
             }
-        } else {
-            if (!expr())
-                throw Error(NOT_AN_EXPRESSION);
-        }
+        } else if (!expr())
+            throw Error(NOT_AN_EXPRESSION);
     } else if (preelseIndent)
         --index;
 
     // assemble conditional
     ExprPtr els = std::make_shared<Expression>(Expression::ELSE, "", orige);
-
     ExprPtr curr = els;
     for (uint i = elseCached; i < cache.size(); ++i) {
         curr->left = cache[i];
@@ -231,7 +234,6 @@ bool Parser::cond() {
     cache.resize(elseCached);
 
     ExprPtr mn = std::make_shared<Expression>(Expression::MAIN, "", origt);
-
     curr = mn;
     for (uint i = cached; i < cache.size(); ++i) {
         curr->left = cache[i];
@@ -255,30 +257,27 @@ bool Parser::cond() {
 }
 
 bool Parser::oper() {
-    uint orig = index;
     uint cached = cache.size();
 
     if (get().type != Token::OPERATOR)
         return false;
-    bool first = (cached < 2) || (cache[cached - 2]->type != Expression::PART_OPER);
-
-    cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, orig));
+    cache.push_back(std::make_shared<Expression>(Expression::PART_OPER, get().val, index));
     ++index;
+
     if (!value() && !call())
         throw Error(NO_RIGHT_VALUE);
     oper();
 
-    if (!first)
+    if (!(cached < 2) || (cache[cached - 2]->type != Expression::PART_OPER))
         return true;
 
     // assemble operator
     for (int p = 3; p >= 0; p--) {
-        for (auto it = cache.begin() + cached - 1; it != cache.end(); it++) {
+        for (auto it = cache.begin() + cached - 1; it != cache.end(); ++it) {
             if ((*it)->type != Expression::PART_OPER)
                 continue;
             uint origp = (*it)->index;
 
-            // set priority
             int priority = 1;
             char op = (*it)->val[0];
             if (op == '=' || op == '<' || op == '>')
@@ -340,7 +339,6 @@ bool Parser::string() {
 }
 
 bool Parser::integer() {
-    // check for binary number
     if (get().type == Token::BINNUM) {
         int num = 0;
         std::string bin = get().val;
@@ -353,7 +351,6 @@ bool Parser::integer() {
         return true;
     }
 
-    // check for hexadecimal number
     if (get().type == Token::HEXNUM) {
         int num = std::stoi(get().val, 0, 16);
         cache.push_back(std::make_shared<Expression>(Expression::INT, std::to_string(num), index));
@@ -361,7 +358,6 @@ bool Parser::integer() {
         return true;
     }
 
-    // check if negative
     bool minus = false;
     if (get().val == "-") {
         const Token& prev = (index == 0) ? tokens->back() : tokens->at(index - 1);
@@ -383,7 +379,6 @@ bool Parser::integer() {
 }
 
 bool Parser::real() {
-    // check if negative
     bool minus = false;
     if (get().val == "-") {
         const Token& prev = (index == 0) ? tokens->back() : tokens->at(index - 1);
@@ -393,7 +388,6 @@ bool Parser::real() {
         }
     }
 
-    // check scientific notation
     if (get().type == Token::SCIENTNUM) {
         auto e = get().val.find("e");
         if (e == std::string::npos)
@@ -434,7 +428,6 @@ bool Parser::block() {
     if (!lit("do"))
         return false;
 
-    // check for parameters
     std::string params = "";
     if (lit("with")) {
         while (name()) {
@@ -447,7 +440,6 @@ bool Parser::block() {
             throw Error(NO_PARAMETER);
     }
 
-    // getting the expression block
     if (checkIndent(Indent::SAME))
         throw Error(NO_INDENT);
     uint cached = cache.size();
@@ -481,14 +473,11 @@ bool Parser::block() {
 bool Parser::value() {
     uint cached = cache.size();
 
-    if (string() || integer() || real() || boolean()) // single value
-    {
-        // check for accessor
+    if (string() || integer() || real() || boolean()) {
         access();
         oper();
         return true;
-    } else if (lit("(")) // tuple
-    {
+    } else if (lit("(")) {
         checkIndent(Indent::MORE);
         while (true) {
             if (checkIndent(Indent::MORE))
@@ -528,7 +517,6 @@ bool Parser::value() {
         cache.resize(cached);
         cache.push_back(tup);
 
-        // check for accessor
         access();
         oper();
         return true;

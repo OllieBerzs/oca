@@ -67,6 +67,7 @@ private:
 
     bool expr();
     bool set();
+    // bool infix();
     bool call(bool inDot = false);
     bool access();
     bool cond();

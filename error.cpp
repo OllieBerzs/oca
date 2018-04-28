@@ -22,10 +22,6 @@ void ErrorHandler::panic(const Error& error) const {
     if (path)
         filename = *path;
 
-    std::cout << ESC "38;5;14m";
-    std::cout << "-- " << info.typestring << " -------------------- " << filename << "\n";
-    std::cout << ESC "0m";
-
     std::string prevline = "";
     std::string errline = "";
     uint lineNum = 1;
@@ -51,14 +47,18 @@ void ErrorHandler::panic(const Error& error) const {
         ++index;
     }
 
+    uint colEnd = colNum + info.width;
     std::string lineBeg = errline.substr(0, colNum);
     std::string lineMid = errline.substr(colNum, info.width);
-    std::string lineEnd =
-        errline.substr(colNum + info.width, errline.size() - (colNum + info.width));
+    std::string lineEnd = errline.substr(colEnd, errline.size() - colEnd);
 
-    if (lineNum > 1) {
+    std::cout << ESC "38;5;14m"
+              << "-- " << info.typestring << " -------------------- " << filename << "\n"
+              << ESC "0m";
+
+    if (lineNum > 1)
         std::cout << lineNum - 1 << "| " << prevline << "\n";
-    }
+
     std::cout << lineNum << "| " << ESC "38;5;15m" << lineBeg << ESC "48;5;9m" << lineMid
               << ESC "0m" << ESC "38;5;15m" << lineEnd << "\n"
               << ESC "0m" << info.message << "\n";

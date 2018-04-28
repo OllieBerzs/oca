@@ -113,7 +113,7 @@ void State::runREPL() {
     enableANSI();
     while (true) {
         std::cout << ESC "38;5;15m"
-                  << ":: " << ESC "0m";
+                  << "[] " << ESC "0m";
 
         std::string input;
         while (true) {
@@ -124,7 +124,7 @@ void State::runREPL() {
                 line.pop_back();
                 input += line + '\n';
                 std::cout << ESC "38;5;15m"
-                          << "-: " << ESC "0m";
+                          << "-] " << ESC "0m";
             } else {
                 input += line + '\n';
                 break;
