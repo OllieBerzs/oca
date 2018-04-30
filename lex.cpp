@@ -17,6 +17,8 @@ void Token::print() const {
     std::cout << "<" << types[type] << ">";
     if (type != Type::INDENT)
         std::cout << val;
+    else
+        std::cout << val.size() - 1;
     std::cout << "\n";
 }
 

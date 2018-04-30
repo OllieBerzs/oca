@@ -49,8 +49,10 @@ std::vector<ExprPtr> Parser::makeAST(const std::vector<Token>& tokens) {
 
         if (get().type == Token::LAST)
             break;
+
         if (checkIndent(Indent::MORE))
             throw Error(UNEXPECTED_INDENT);
+
         if (!checkIndent(Indent::SAME) && !checkIndent(Indent::LESS))
             throw Error(NO_NEWLINE);
     }
@@ -186,6 +188,7 @@ bool Parser::access() {
 }
 
 bool Parser::cond() {
+    uint startIndent = indent;
     uint orig = index;
     if (!lit("if"))
         return false;
@@ -220,6 +223,7 @@ bool Parser::cond() {
             throw Error(NOT_AN_EXPRESSION);
     } else if (preelseIndent)
         --index;
+    indent = startIndent;
 
     // assemble conditional
     ExprPtr els = std::make_shared<Expression>(Expression::ELSE, "", orige);
@@ -424,6 +428,7 @@ bool Parser::boolean() {
 }
 
 bool Parser::block() {
+    uint startIndent = indent;
     uint orig = index;
     if (!lit("do"))
         return false;
@@ -442,6 +447,7 @@ bool Parser::block() {
 
     if (checkIndent(Indent::SAME))
         throw Error(NO_INDENT);
+
     uint cached = cache.size();
     if (checkIndent(Indent::MORE)) {
         while (expr())
@@ -449,10 +455,10 @@ bool Parser::block() {
                 break;
     } else if (!expr())
         throw Error(NOT_AN_EXPRESSION);
+    indent = startIndent;
 
     // assemble block
     ExprPtr bl = std::make_shared<Expression>(Expression::BLOCK, params, orig);
-
     ExprPtr curr = bl;
     for (uint i = cached; i < cache.size(); ++i) {
         curr->left = cache[i];
@@ -480,9 +486,6 @@ bool Parser::value() {
     } else if (lit("(")) {
         checkIndent(Indent::MORE);
         while (true) {
-            if (checkIndent(Indent::MORE))
-                throw Error(UNEXPECTED_INDENT);
-            checkIndent(Indent::SAME);
             uint origt = index;
             std::string nam = "";
             bool pub = lit("pub");
@@ -496,6 +499,7 @@ bool Parser::value() {
                         --index;
                 }
             }
+
             if (!expr())
                 throw Error(NOTHING_TO_SET);
 
@@ -505,7 +509,12 @@ bool Parser::value() {
 
             if (!lit(","))
                 break;
+
+            if (checkIndent(Indent::MORE))
+                throw Error(UNEXPECTED_INDENT);
+            checkIndent(Indent::SAME);
         }
+
         checkIndent(Indent::LESS);
         if (!lit(")"))
             throw Error(NO_CLOSING_BRACE);
