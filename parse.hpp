@@ -62,28 +62,26 @@ public:
 
 private:
     const Token& get();
-    bool checkIndent(Indent ind);
     ExprPtr uncache();
 
     bool expr();
     bool set();
-    // bool infix();
     bool call(bool inDot = false);
     bool access();
     bool cond();
     bool oper();
     bool keyword();
     bool file();
-
+    bool name();
+    bool value();
     bool string();
     bool integer();
     bool real();
     bool boolean();
     bool block();
 
-    bool value();
-    bool name();
-    bool lit(const std::string& t);
+    bool checkLit(const std::string& t);
+    bool checkIndent(Indent ind);
 
     friend class ErrorHandler;
 };

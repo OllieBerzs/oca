@@ -73,7 +73,7 @@ TEST_CASE("Operators") {
     oca::State oca;
 
     // int and int
-    /*REQUIRE(oca.runString("2 + 3")->tos(false) == "5");
+    REQUIRE(oca.runString("2 + 3")->tos(false) == "5");
     REQUIRE(oca.runString("2 - 3")->tos(false) == "-1");
     REQUIRE(oca.runString("2 * 3")->tos(false) == "6");
     REQUIRE(oca.runString("6 / 3")->tos(false) == "2");
@@ -133,5 +133,5 @@ TEST_CASE("Operators") {
     REQUIRE(oca.runString("true == false")->tos(false) == "false");
     REQUIRE(oca.runString("true != false")->tos(false) == "true");
     REQUIRE(oca.runString("true and false")->tos(false) == "false");
-    REQUIRE(oca.runString("true or false")->tos(false) == "true");*/
+    REQUIRE(oca.runString("true or false")->tos(false) == "true");
 }
