@@ -35,7 +35,7 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope) {
 // ----------------------------
 
 ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
-    auto tracker = expr;
+    auto tracker = current;
     current = expr;
 
     std::vector<ExprPtr> lefts;
@@ -81,7 +81,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
-    auto tracker = expr;
+    auto tracker = current;
     current = expr;
 
     #ifdef OUT_SCOPES
@@ -115,7 +115,7 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
-    auto tracker = expr;
+    auto tracker = current;
     current = expr;
 
     std::map<std::string, std::string> operFuncs = {
@@ -141,7 +141,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
-    auto tracker = expr;
+    auto tracker = current;
     current = expr;
 
     ValuePtr conditional = eval(expr->left, scope);
@@ -176,16 +176,14 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
-    auto tracker = expr;
-    current = expr;
+    auto tracker = current;
+    current = expr->right;
 
     std::string name = expr->right->val;
     ValuePtr left = eval(expr->left, scope);
-    ValuePtr right = nullptr;
-    if (expr->left->val == "super")
-        right = left->scope.get(name, true);
-    else
-        right = left->scope.get(name, false);
+
+    bool super = expr->left->val == "super";
+    ValuePtr right = left->scope.get(name, super);
 
     #ifdef OUT_SCOPES
     std::cout << "Access '" << expr->right->val << "' scopes:\n";
@@ -214,6 +212,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
     auto oldPath = state->eh.path;
+    auto oldSource = state->eh.source;
+    auto oldTokens = state->eh.tokens;
     auto oldScope = state->scope;
 
     std::string folder = "";
@@ -226,6 +226,8 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
     ValuePtr val = state->runFile(folder + expr->val + ".oca", true);
 
     state->eh.path = oldPath;
+    state->eh.source = oldSource;
+    state->eh.tokens = oldTokens;
     state->scope = oldScope;
 
     return val;

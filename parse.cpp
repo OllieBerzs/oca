@@ -23,7 +23,6 @@ void Expression::print(uint indent, char mod) {
         std::cout << "  ";
 
     std::cout << mod << "<" << typestrings[type] << ">" << val << "\n";
-
     if (left)
         left->print(indent + 1, 'L');
     if (right)

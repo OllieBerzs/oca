@@ -38,7 +38,7 @@ void Scope::add(const Scope& scope) {
 }
 
 ValuePtr Scope::get(const std::string& name, bool super) {
-    ValuePtr val = nullptr;
+    ValuePtr val = Nil::in(this);
     for (auto var : vars) {
         if (std::get<1>(var) == name) {
             val = std::get<2>(var);
@@ -47,11 +47,7 @@ ValuePtr Scope::get(const std::string& name, bool super) {
             break;
         }
     }
-
-    if (val)
-        return val;
-    else
-        return Nil::in(this);
+    return val;
 }
 
 std::string Scope::find(ValuePtr value) {
