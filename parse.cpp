@@ -116,7 +116,6 @@ bool Parser::call(bool inDot) {
     bool hasArg = value() || call() || file();
     bool hasYield = block();
 
-    // assemble call
     ExprPtr yield = (hasYield) ? uncache() : nullptr;
     ExprPtr arg = (hasArg) ? uncache() : nullptr;
 

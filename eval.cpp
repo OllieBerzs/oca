@@ -13,21 +13,9 @@
 
 OCA_BEGIN
 
-ExprTracker::ExprTracker(ExprPtr tracker, ExprPtr* evalcurr)
-    : tracker(tracker), evalcurr(evalcurr) {
-    *evalcurr = tracker;
-}
-
-ExprTracker::~ExprTracker() {
-    *evalcurr = tracker;
-}
-
-// ----------------------------
-
 Evaluator::Evaluator(State* state) : state(state), current(nullptr) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
     if (expr->type == Expression::SET)
         return set(expr, scope);
     else if (expr->type == Expression::CALL)
@@ -47,11 +35,12 @@ ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope) {
 // ----------------------------
 
 ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
+    auto tracker = expr;
+    current = expr;
+
     std::vector<ExprPtr> lefts;
     ValuePtr rightVal = eval(expr->right, scope);
 
-    // get variables from left side
     ExprPtr it = expr->left;
     if (it->type == Expression::CALL)
         lefts.push_back(it);
@@ -63,13 +52,11 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
         lefts.push_back(it);
     }
 
-    // split the right value into all variables on the left
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& leftExpr : lefts) {
         std::string name = leftExpr->val;
         ValuePtr leftVal = Nil::in(&scope);
 
-        // get the name if it is a tuple member
         if (leftExpr->type == Expression::ACCESS) {
             leftVal = eval(leftExpr, scope);
             if (leftVal->isNil())
@@ -77,11 +64,9 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
             name = leftVal->scope.parent->find(leftVal);
         }
 
-        // set the left variable to the right value
         if (lefts.size() == 1)
             leftVal->scope.parent->set(name, rightVal, true);
         else {
-            // get the right value based on the index
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
             ++counter;
             if (rightValPart->isNil())
@@ -91,11 +76,13 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
         }
     }
 
+    current = tracker;
     return rightVal;
 }
 
 ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
+    auto tracker = expr;
+    current = expr;
 
     #ifdef OUT_SCOPES
     std::cout << "Call '" << expr->val << "' scopes:\n";
@@ -110,6 +97,7 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
         val = state->global.get(expr->val, true);
     if (val->isNil())
         throw Error(UNDEFINED);
+    current = tracker;
 
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
@@ -127,7 +115,9 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
+    auto tracker = expr;
+    current = expr;
+
     std::map<std::string, std::string> operFuncs = {
         {"+", "__add"},   {"-", "__sub"},   {"*", "__mul"},  {"/", "__div"},   {"%", "__mod"},
         {"^", "__pow"},   {"==", "__eq"},   {"!=", "__neq"}, {">", "__gr"},    {"<", "__ls"},
@@ -139,36 +129,37 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
     ValuePtr func = left->scope.get(operFuncs[expr->val], false);
     if (func->isNil())
         throw Error(UNDEFINED_OPERATOR);
+    current = tracker;
 
-    // call the operator
     Value& funcref = *func;
     if (TYPE_EQ(funcref, Func))
-        return static_cast<Func&>(*func)(left, right, Nil::in(&scope));
+        return static_cast<Func&>(funcref)(left, right, Nil::in(&scope));
     if (TYPE_EQ(funcref, Block))
-        return static_cast<Block&>(*func)(left, right, Nil::in(&scope));
+        return static_cast<Block&>(funcref)(left, right, Nil::in(&scope));
+
     return func;
 }
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
+    auto tracker = expr;
+    current = expr;
 
-    // evaluate the conditional
     ValuePtr conditional = eval(expr->left, scope);
     Value& cref = *conditional;
     if (!(TYPE_EQ(cref, Bool)))
         throw Error(IF_BOOL);
     bool trueness = static_cast<Bool&>(cref).val;
+    current = tracker;
 
-    // set the appropriate branch based on the conditional
     ValuePtr branch = Nil::in(&scope);
     if (trueness)
         branch = eval(expr->right->left, scope);
     else if (expr->right->right)
         branch = eval(expr->right->right, scope);
 
-    // evaluate the branch
     if (branch->isNil())
         return branch;
+
     ValuePtr result = Nil::in(&scope);
     ExprPtr it = static_cast<Block&>(*branch).val;
     while (it && it->left) {
@@ -185,9 +176,9 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
+    auto tracker = expr;
+    current = expr;
 
-    // get the data member
     std::string name = expr->right->val;
     ValuePtr left = eval(expr->left, scope);
     ValuePtr right = nullptr;
@@ -204,8 +195,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
 
     if (right->isNil())
         throw Error(UNDEFINED_IN_TUPLE);
+    current = tracker;
 
-    // get the argument and yield block
     ValuePtr arg = Nil::in(&scope);
     ValuePtr block = Nil::in(&scope);
     if (expr->right->right)
@@ -213,18 +204,15 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     if (expr->right->left)
         block = eval(expr->right->left, scope);
 
-    // call the data member
     Value& val = *right;
     if (TYPE_EQ(val, Func))
         return static_cast<Func&>(val)(left, arg, block);
     if (TYPE_EQ(val, Block))
         return static_cast<Block&>(val)(left, arg, block);
-    else
-        return right; // if is not callable
+    return right;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
     auto oldPath = state->eh.path;
     auto oldScope = state->scope;
 
@@ -244,10 +232,8 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
-    auto tracker = ExprTracker(expr, &current);
     ValuePtr result = Nil::in(&scope);
     if (expr->type == Expression::TUP) {
-        // if tuple has only one member, open it up
         if (expr->right == nullptr && expr->val == "")
             return eval(expr->left, scope);
 
@@ -257,7 +243,6 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
             std::string nam = "";
             bool pub = (expr->val.find("pub ") != std::string::npos);
 
-            // unnamed value
             if (expr->val == "") {
                 pub = true;
                 nam = std::to_string(counter);
@@ -269,8 +254,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
             if (nam == "")
                 nam = expr->val;
 
-            // add tuple value to object table
-            result->scope.set(nam, eval(expr->left, result->scope), pub);
+            result->scope.set(nam, eval(expr->left, scope), pub);
             expr = expr->right;
         }
     } else if (
