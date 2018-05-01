@@ -105,8 +105,8 @@ ValuePtr State::runString(const std::string& source, bool asTuple) {
         return evaluate(ast, asTuple);
     } catch (Error& e) {
         eh.panic(e);
+        return NIL;
     }
-    return NIL;
 }
 
 void State::runREPL() {

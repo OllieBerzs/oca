@@ -23,7 +23,6 @@ void Expression::print(uint indent, char mod) {
         std::cout << "  ";
 
     std::cout << mod << "<" << typestrings[type] << ">" << val << "\n";
-
     if (left)
         left->print(indent + 1, 'L');
     if (right)
@@ -116,7 +115,6 @@ bool Parser::call(bool inDot) {
     bool hasArg = value() || call() || file();
     bool hasYield = block();
 
-    // assemble call
     ExprPtr yield = (hasYield) ? uncache() : nullptr;
     ExprPtr arg = (hasArg) ? uncache() : nullptr;
 

@@ -25,6 +25,8 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
         }
     }
 
+    value->scope.parent = this;
+
     if (val)
         vars[index] = std::make_tuple(valPub, name, value);
     else
@@ -38,7 +40,7 @@ void Scope::add(const Scope& scope) {
 }
 
 ValuePtr Scope::get(const std::string& name, bool super) {
-    ValuePtr val = nullptr;
+    ValuePtr val = Nil::in(this);
     for (auto var : vars) {
         if (std::get<1>(var) == name) {
             val = std::get<2>(var);
@@ -47,11 +49,7 @@ ValuePtr Scope::get(const std::string& name, bool super) {
             break;
         }
     }
-
-    if (val)
-        return val;
-    else
-        return Nil::in(this);
+    return val;
 }
 
 std::string Scope::find(ValuePtr value) {

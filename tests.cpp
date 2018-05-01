@@ -4,7 +4,7 @@
 */
 
 #define CATCH_CONFIG_MAIN
-#include "catch/catch-mini.hpp"
+#include "catch2/catch.hpp"
 
 #include "oca.hpp"
 
