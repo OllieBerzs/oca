@@ -25,6 +25,8 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
         }
     }
 
+    value->scope.parent = this;
+
     if (val)
         vars[index] = std::make_tuple(valPub, name, value);
     else
