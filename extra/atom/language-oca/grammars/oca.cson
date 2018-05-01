@@ -4,12 +4,6 @@
   'oca'
 ]
 'patterns': [
-  # numerals
-  {
-    'match': '(0b[01]+)|(0x[0-9A-Fa-f]+)|([0-9]+(\\.[0-9]+)?[eE]-?[0-9]+(\\.[0-9]+)?)|(-?[0-9]+(\\.[0-9]+)?)'
-    'name': 'constant.numeric.oca'
-  }
-
   # strings
   {
     'begin': '\''
@@ -60,6 +54,12 @@
   {
     'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *[=:](?![=<>])'
     'name': 'storage.type.oca'
+  }
+
+  # numerals
+  {
+    'match': '\\b((0b[01]+)|(0x[0-9A-Fa-f]+)|([0-9]+(\\.[0-9]+)?[eE]-?[0-9]+(\\.[0-9]+)?)|(-?[0-9]+(\\.[0-9]+)?))'
+    'name': 'constant.numeric.oca'
   }
 
   # keywords
