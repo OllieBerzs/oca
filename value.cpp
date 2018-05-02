@@ -228,12 +228,12 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 }
 
-std::string Integer::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<int>";
-    result += std::to_string(val);
-    return result;
+std::string Integer::tos() {
+    return std::to_string(val);
+}
+
+std::string Integer::typestr() {
+    return "int";
 }
 
 // ----------------------------------
@@ -308,19 +308,17 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 }
 
-std::string Real::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<real>";
-
-    // format real
+std::string Real::tos() {
     std::string str = std::to_string(val);
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);
     if (str.back() == '.')
         str += '0';
 
-    result += str;
-    return result;
+    return str;
+}
+
+std::string Real::typestr() {
+    return "real";
 }
 
 // ---------------------------------
@@ -330,13 +328,13 @@ String::String(const std::string& val, Scope* parent) : val(val) {
 
     // functions
     bind("__add", "a", [&] CPPFUNC {
-        std::string left = arg.caller->tos(false);
-        std::string right = arg.value->tos(false);
+        std::string left = arg.caller->tos();
+        std::string right = arg.value->tos();
         return cast(left + right);
     });
 
     bind("__mul", "i", [&] CPPFUNC {
-        std::string left = arg.caller->tos(false);
+        std::string left = arg.caller->tos();
         int right = arg.value->toi();
         std::string result = "";
         if (right <= 0)
@@ -348,24 +346,24 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     });
 
     bind("__eq", "s", [&] CPPFUNC {
-        std::string left = arg.caller->tos(false);
-        std::string right = arg.value->tos(false);
+        std::string left = arg.caller->tos();
+        std::string right = arg.value->tos();
         return cast(left == right);
     });
 
     bind("__neq", "s", [&] CPPFUNC {
-        std::string left = arg.caller->tos(false);
-        std::string right = arg.value->tos(false);
+        std::string left = arg.caller->tos();
+        std::string right = arg.value->tos();
         return cast(left != right);
     });
 
     bind("len", "", [&] CPPFUNC {
-        std::string str = arg.caller->tos(false);
+        std::string str = arg.caller->tos();
         return cast(static_cast<int>(str.size()));
     });
 
     bind("upcase", "", [&] CPPFUNC {
-        std::string str = arg.caller->tos(false);
+        std::string str = arg.caller->tos();
         std::string result;
         for (char c : str)
             result += std::toupper(c);
@@ -373,7 +371,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     });
 
     bind("lowcase", "", [&] CPPFUNC {
-        std::string str = arg.caller->tos(false);
+        std::string str = arg.caller->tos();
         std::string result;
         for (char c : str)
             result += std::tolower(c);
@@ -381,22 +379,22 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     });
 
     bind("int", "", [&] CPPFUNC {
-        std::string str = arg.caller->tos(false);
+        std::string str = arg.caller->tos();
         return cast(std::stoi(str));
     });
 
     bind("real", "", [&] CPPFUNC {
-        std::string str = arg.caller->tos(false);
+        std::string str = arg.caller->tos();
         return cast(std::stof(str));
     });
 }
 
-std::string String::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<str>";
-    result += val;
-    return result;
+std::string String::tos() {
+    return val;
+}
+
+std::string String::typestr() {
+    return "str";
 }
 
 // ---------------------------------
@@ -430,12 +428,12 @@ Bool::Bool(bool val, Scope* parent) : val(val) {
     });
 }
 
-std::string Bool::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<bool>";
-    result += (val) ? "true" : "false";
-    return result;
+std::string Bool::tos() {
+    return (val) ? "true" : "false";
+}
+
+std::string Bool::typestr() {
+    return "bool";
 }
 
 // ---------------------------------
@@ -456,15 +454,23 @@ void Tuple::add(const std::string& name, std::any val) {
     scope.set(name, vptr, true);
 }
 
-std::string Tuple::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<tup>";
-    result += "(";
+std::string Tuple::tos() {
+    std::string result = "(";
     for (auto var : scope.vars) {
-        if (debug)
-            result += "[" + std::get<1>(var) + "]";
-        result += std::get<2>(var)->tos(debug);
+        result += std::get<1>(var) + ": ";
+        result += std::get<2>(var)->tos();
+        result += ", ";
+    }
+    result.pop_back();
+    result.pop_back();
+    result += ")";
+    return result;
+}
+
+std::string Tuple::typestr() {
+    std::string result = "(";
+    for (auto var : scope.vars) {
+        result += std::get<2>(var)->typestr();
         result += ", ";
     }
     result.pop_back();
@@ -490,17 +496,6 @@ Block::Block(ExprPtr expr, Scope* parent, Evaluator* evaler) : evaler(evaler) {
     }
     if (param != "")
         params.push_back(param);
-}
-
-std::string Block::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<block>";
-    const void* address = static_cast<const void*>(&*val);
-    std::stringstream ss;
-    ss << address;
-    result += ss.str();
-    return result;
 }
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
@@ -556,21 +551,21 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     return result;
 }
 
+std::string Block::tos() {
+    const void* address = static_cast<const void*>(&*val);
+    std::stringstream ss;
+    ss << address;
+    return ss.str();
+}
+
+std::string Block::typestr() {
+    return "block";
+}
+
 // ---------------------------------
 
 Func::Func(CPPFunc func, const std::string& params, Scope* parent) : val(func), params(params) {
     scope = Scope(parent);
-}
-
-std::string Func::tos(bool debug) {
-    std::string result = "";
-    if (debug)
-        result += "<cppfunc>";
-    const void* address = static_cast<const void*>(&val);
-    std::stringstream ss;
-    ss << address;
-    result += ss.str();
-    return result;
 }
 
 ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
@@ -598,32 +593,43 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         switch (params[i]) {
         case 'i':
             if (!v->isi())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted int.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted int.");
             break;
         case 'r':
             if (!v->isr())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted real.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted real.");
             break;
         case 'n':
             if (!v->isi() && !v->isr())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted int/real.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted int/real.");
             break;
         case 'b':
             if (!v->isb())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted bool.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted bool.");
             break;
         case 's':
             if (!v->iss())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted str.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted str.");
             break;
         case 't':
             if (!v->ist())
-                throw Error(TYPE_MISMATCH, v->tos(true) + " wanted tuple.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted tuple.");
             break;
         }
     }
 
     return val({caller, arg, block});
+}
+
+std::string Func::tos() {
+    const void* address = static_cast<const void*>(&val);
+    std::stringstream ss;
+    ss << address;
+    return ss.str();
+}
+
+std::string Func::typestr() {
+    return "func";
 }
 
 // ---------------------------------
@@ -634,12 +640,16 @@ std::shared_ptr<Nil> Nil::in(Scope* parent) {
     return n;
 }
 
-std::string Nil::tos(bool debug) {
+bool Nil::isNil() {
+    return true;
+}
+
+std::string Nil::tos() {
     return "nil";
 }
 
-bool Nil::isNil() {
-    return true;
+std::string Nil::typestr() {
+    return "nil";
 }
 
 OCA_END

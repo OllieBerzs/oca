@@ -10,11 +10,11 @@
 OCA_BEGIN
 
 void Token::print() const {
-    std::vector<std::string> types = {
+    std::vector<std::string> typestrings = {
         "string",  "binnum",   "hexnum",     "scientnum", "real",     "integer",
         "boolean", "filepath", "keyword",    "name",      "operator", "punctuation",
         "comment", "indent",   "whitespace", "invalid",   "last"};
-    std::cout << "<" << types[type] << ">";
+    std::cout << "<" << typestrings[type] << ">";
     if (type != Type::INDENT)
         std::cout << val;
     else
@@ -28,11 +28,11 @@ Lexer::Lexer() {
     // calculate the capture group count for each syntax element
     captureGroupCounts.reserve(syntax.size());
     for (auto element : syntax) {
-        std::regex regex(element.second + "|.*");
+        std::regex regex("(" + element.second + ")|.*");
         std::string blank = "";
         auto matches = std::sregex_iterator(blank.begin(), blank.end(), regex);
         auto match = *matches;
-        captureGroupCounts.push_back(match.size());
+        captureGroupCounts.push_back(match.size() - 1);
     }
 }
 
