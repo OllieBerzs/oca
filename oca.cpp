@@ -20,7 +20,13 @@ State::State()
     : global(nullptr), scope(nullptr), evaler(this), eh(this), lextime(0), parsetime(0),
       evaltime(0) {
     bind("print", "a", [&] CPPFUNC {
-        std::cout << arg.value->tos(false) << "\n";
+        std::cout << arg.value->tos() << "\n";
+        return NIL;
+    });
+
+    bind("debug", "a", [&] CPPFUNC {
+        std::cout << arg.value->tos() << " of type " << arg.value->typestr() << " at "
+                  << arg.value.get() << "\n";
         return NIL;
     });
 
@@ -37,16 +43,15 @@ State::State()
 
     bind("assert", "bs", [&] CPPFUNC {
         bool cond = arg[0]->tob();
-        std::string message = arg[1]->tos(false);
+        std::string message = arg[1]->tos();
         if (!cond)
             throw Error(CUSTOM_ERROR, message);
         return NIL;
     });
 
     bind("type", "a", [&] CPPFUNC {
-        std::string str = arg.value->tos(true);
-        auto end = str.find('>');
-        return cast(str.substr(1, end - 1));
+        std::string str = arg.value->typestr();
+        return cast(str);
     });
 
     bind("inject", "t", [&, this] CPPFUNC {
@@ -136,7 +141,7 @@ void State::runREPL() {
 
         auto val = runString(input);
 
-        std::cout << ESC "38;5;8m" << val->tos(false) << ESC "0m\n";
+        std::cout << ESC "38;5;8m" << val->tos() << ESC "0m\n";
     }
 }
 
