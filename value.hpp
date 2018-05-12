@@ -18,6 +18,7 @@ public:
     Scope scope = Scope(nullptr);
 
     virtual ~Value() = default;
+    virtual ValuePtr copy() = 0;
     virtual bool isNil();
 
     virtual std::string tos() = 0;
@@ -40,6 +41,7 @@ class Integer : public Value {
 public:
     int val;
     Integer(int val, Scope* parent);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -48,6 +50,7 @@ class Real : public Value {
 public:
     float val;
     Real(float val, Scope* parent);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -56,6 +59,7 @@ class String : public Value {
 public:
     std::string val;
     String(const std::string& val, Scope* parent);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -64,6 +68,7 @@ class Bool : public Value {
 public:
     bool val;
     Bool(bool val, Scope* parent);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -73,6 +78,7 @@ public:
     uint count = 0;
     explicit Tuple(Scope* parent);
     static std::shared_ptr<Tuple> from(Scope& scope);
+    ValuePtr copy();
     void add(const std::string& name, std::any val);
     std::string tos();
     std::string typestr();
@@ -86,6 +92,7 @@ public:
     std::vector<std::string> params;
     Block(ExprPtr expr, Scope* parent, Evaluator* evaler);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -97,6 +104,7 @@ public:
     std::string params;
     Func(CPPFunc func, const std::string& params, Scope* parent);
     ValuePtr operator()(ValuePtr caller, ValuePtr arg, ValuePtr block);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
 };
@@ -104,6 +112,7 @@ public:
 class Nil : public Value {
 public:
     static std::shared_ptr<Nil> in(Scope* parent);
+    ValuePtr copy();
     std::string tos();
     std::string typestr();
     bool isNil();
