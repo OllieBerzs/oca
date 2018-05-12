@@ -18,33 +18,25 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
     uint index;
     for (index = 0; index < vars.size(); ++index) {
         auto var = vars.at(index);
-        if (std::get<1>(var) == name) {
-            val = std::get<2>(var);
-            valPub = std::get<0>(var);
+        if (var.name == name) {
+            val = var.value;
+            valPub = var.publicity;
             break;
         }
     }
 
-    value->scope.parent = this;
-
     if (val)
-        vars[index] = std::make_tuple(valPub, name, value);
+        vars[index] = {valPub, name, value};
     else
-        vars.emplace_back(pub, name, value);
-}
-
-void Scope::add(const Scope& scope) {
-    for (auto var : scope.vars) {
-        set(std::get<1>(var), std::get<2>(var), true);
-    }
+        vars.push_back({pub, name, value});
 }
 
 ValuePtr Scope::get(const std::string& name, bool super) {
     ValuePtr val = Nil::in(this);
     for (auto var : vars) {
-        if (std::get<1>(var) == name) {
-            val = std::get<2>(var);
-            if (!super && !std::get<0>(var))
+        if (var.name == name) {
+            val = var.value;
+            if (!super && !var.publicity)
                 throw Error(NOT_PUBLIC);
             break;
         }
@@ -52,12 +44,10 @@ ValuePtr Scope::get(const std::string& name, bool super) {
     return val;
 }
 
-std::string Scope::find(ValuePtr value) {
-    for (auto var : vars) {
-        if (value.get() == std::get<2>(var).get())
-            return std::get<1>(var);
+void Scope::add(const Scope& scope) {
+    for (auto var : scope.vars) {
+        set(var.name, var.value, true);
     }
-    return "";
 }
 
 // -----------------------------
@@ -65,9 +55,9 @@ std::string Scope::find(ValuePtr value) {
 void Scope::print() {
     std::string out = "{";
     for (auto var : vars) {
-        if (std::get<0>(var))
+        if (var.publicity)
             out += "[p]";
-        out += std::get<1>(var) + " ";
+        out += var.name + " ";
     }
     if (out.size() > 1)
         out.pop_back();
