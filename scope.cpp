@@ -13,24 +13,22 @@ Scope::Scope(Scope* parent) : parent(parent) {}
 // ----------------------------
 
 void Scope::set(const std::string& name, ValuePtr value, bool pub) {
-    ValuePtr val = nullptr;
-    bool valPub;
-    uint index;
+    uint index = 0;
     for (index = 0; index < vars.size(); ++index) {
         auto var = vars.at(index);
-        if (var.name == name) {
-            val = var.value;
-            valPub = var.publicity;
+        if (var.name == name)
             break;
-        }
     }
 
-    value->scope.parent = this;
+    auto copy = value->copy();
+    if (!copy)
+        copy = value;
+    copy->scope.parent = this;
 
-    if (val)
-        vars[index] = {valPub, name, value};
+    if (vars.size() > index && vars[index].value)
+        vars[index] = {vars[index].publicity, name, copy};
     else
-        vars.push_back({pub, name, value});
+        vars.push_back({pub, name, copy});
 }
 
 ValuePtr Scope::get(const std::string& name, bool super) {

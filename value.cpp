@@ -228,6 +228,10 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 }
 
+ValuePtr Integer::copy() {
+    return std::make_shared<Integer>(*this);
+}
+
 std::string Integer::tos() {
     return std::to_string(val);
 }
@@ -306,6 +310,10 @@ Real::Real(float val, Scope* parent) : val(val) {
             return cast(left < arg.value->tor());
         return NIL;
     });
+}
+
+ValuePtr Real::copy() {
+    return std::make_shared<Real>(*this);
 }
 
 std::string Real::tos() {
@@ -389,6 +397,10 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     });
 }
 
+ValuePtr String::copy() {
+    return std::make_shared<String>(*this);
+}
+
 std::string String::tos() {
     return val;
 }
@@ -428,6 +440,10 @@ Bool::Bool(bool val, Scope* parent) : val(val) {
     });
 }
 
+ValuePtr Bool::copy() {
+    return std::make_shared<Bool>(*this);
+}
+
 std::string Bool::tos() {
     return (val) ? "true" : "false";
 }
@@ -440,6 +456,11 @@ std::string Bool::typestr() {
 
 Tuple::Tuple(Scope* parent) {
     scope = Scope(parent);
+}
+
+ValuePtr Tuple::copy() {
+    // return std::make_shared<Tuple>(*this);
+    return nullptr;
 }
 
 std::shared_ptr<Tuple> Tuple::from(Scope& scope) {
@@ -496,6 +517,10 @@ Block::Block(ExprPtr expr, Scope* parent, Evaluator* evaler) : evaler(evaler) {
     }
     if (param != "")
         params.push_back(param);
+}
+
+ValuePtr Block::copy() {
+    return std::make_shared<Block>(*this);
 }
 
 ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
@@ -568,6 +593,10 @@ Func::Func(CPPFunc func, const std::string& params, Scope* parent) : val(func), 
     scope = Scope(parent);
 }
 
+ValuePtr Func::copy() {
+    return std::make_shared<Func>(*this);
+}
+
 ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     // get argument count
     uint argc = 0;
@@ -638,6 +667,10 @@ std::shared_ptr<Nil> Nil::in(Scope* parent) {
     auto n = std::make_shared<Nil>();
     n->scope.parent = parent;
     return n;
+}
+
+ValuePtr Nil::copy() {
+    return std::make_shared<Nil>(*this);
 }
 
 bool Nil::isNil() {
