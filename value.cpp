@@ -457,8 +457,8 @@ void Tuple::add(const std::string& name, std::any val) {
 std::string Tuple::tos() {
     std::string result = "(";
     for (auto var : scope.vars) {
-        result += std::get<1>(var) + ": ";
-        result += std::get<2>(var)->tos();
+        result += var.name + ": ";
+        result += var.value->tos();
         result += ", ";
     }
     result.pop_back();
@@ -470,7 +470,7 @@ std::string Tuple::tos() {
 std::string Tuple::typestr() {
     std::string result = "(";
     for (auto var : scope.vars) {
-        result += std::get<2>(var)->typestr();
+        result += var.value->typestr();
         result += ", ";
     }
     result.pop_back();

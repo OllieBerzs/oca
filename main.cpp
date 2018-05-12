@@ -3,11 +3,10 @@
 int main(int argc, char** argv) {
     oca::State oca;
 
-    if (argc > 1) {
+    if (argc > 1)
         oca.runFile(argv[1]);
-    } else {
+    else
         oca.runREPL();
-    }
 
     return 0;
 }

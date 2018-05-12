@@ -24,7 +24,7 @@ endif
 ifeq ($(DEBUG), true)
 CPPFLAGS += -g -O0
 else
-#CPPFLAGS += -O2
+CPPFLAGS += -O2
 endif
 
 # Objects

@@ -9,17 +9,22 @@
 
 OCA_BEGIN
 
+struct Variable {
+    bool publicity;
+    std::string name;
+    ValuePtr value;
+};
+
 class Scope {
 public:
-    std::vector<std::tuple<bool, std::string, ValuePtr>> vars;
+    std::vector<Variable> vars;
     Scope* parent;
 
     explicit Scope(Scope* parent);
 
     void set(const std::string& name, ValuePtr value, bool pub);
-    void add(const Scope& scope);
     ValuePtr get(const std::string& name, bool super);
-    std::string find(ValuePtr value);
+    void add(const Scope& scope);
 
     void print();
 };

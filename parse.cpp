@@ -146,11 +146,12 @@ bool Parser::access() {
     uint orig = index;
     if (!checkLit("."))
         return false;
+
     // pass true, so the next call doesn't parse access
     if (!call(true) && !integer())
         throw Error(NO_ACCESS_KEY);
 
-    // assemble dot access
+    // assemble access
     ExprPtr a = std::make_shared<Expression>(Expression::ACCESS, "", orig);
     a->right = uncache();
     a->left = uncache();

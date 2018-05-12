@@ -16,7 +16,9 @@ OCA_BEGIN
 Evaluator::Evaluator(State* state) : state(state), current(nullptr) {}
 
 ValuePtr Evaluator::eval(ExprPtr expr, Scope& scope) {
-    if (expr->type == Expression::SET)
+    if (expr == nullptr)
+        return Nil::in(&scope);
+    else if (expr->type == Expression::SET)
         return set(expr, scope);
     else if (expr->type == Expression::CALL)
         return call(expr, scope);
@@ -39,19 +41,14 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
     current = expr;
 
     std::vector<ExprPtr> lefts;
-    ValuePtr rightVal = eval(expr->right, scope);
-
     ExprPtr it = expr->left;
-    if (it->type == Expression::CALL)
-        lefts.push_back(it);
-    else {
-        while (it->type == Expression::CALLS) {
-            lefts.push_back(it->left);
-            it = it->right;
-        }
-        lefts.push_back(it);
+    while (it->type == Expression::CALLS) {
+        lefts.push_back(it->left);
+        it = it->right;
     }
+    lefts.push_back(it);
 
+    ValuePtr rightVal = eval(expr->right, scope);
     uint counter = ARRAY_BEGIN_INDEX;
     for (auto& leftExpr : lefts) {
         std::string name = leftExpr->val;
@@ -59,11 +56,8 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
 
         if (leftExpr->type == Expression::ACCESS) {
             leftVal = eval(leftExpr, scope);
-            if (leftVal->isNil())
-                throw Error(NEW_TUPLE_KEY);
-            name = leftVal->scope.parent->find(leftVal);
+            name = leftExpr->right->val;
         }
-
         if (lefts.size() == 1)
             leftVal->scope.parent->set(name, rightVal, true);
         else {
@@ -71,7 +65,6 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
             ++counter;
             if (rightValPart->isNil())
                 throw Error(CANNOT_SPLIT);
-
             leftVal->scope.parent->set(name, rightValPart, true);
         }
     }
@@ -84,27 +77,16 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     auto tracker = current;
     current = expr;
 
-    #ifdef OUT_SCOPES
-    std::cout << "Call '" << expr->val << "' scopes:\n";
-    std::cout << "-- function scope ";
-    scope.print();
-    std::cout << "-- global scope ";
-    state->global.print();
-    #endif
-
     ValuePtr val = scope.get(expr->val, true);
     if (val->isNil())
         val = state->global.get(expr->val, true);
     if (val->isNil())
         throw Error(UNDEFINED);
-    current = tracker;
 
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
-    if (expr->right)
-        arg = eval(expr->right, scope);
-    if (expr->left)
-        block = eval(expr->left, scope);
+    ValuePtr arg = eval(expr->right, scope);
+    ValuePtr block = eval(expr->left, scope);
+
+    current = tracker;
 
     Value& vref = *val;
     if (TYPE_EQ(vref, Func))
@@ -129,6 +111,7 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
     ValuePtr func = left->scope.get(operFuncs[expr->val], false);
     if (func->isNil())
         throw Error(UNDEFINED_OPERATOR);
+
     current = tracker;
 
     Value& funcref = *func;
@@ -179,28 +162,16 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     auto tracker = current;
     current = expr->right;
 
-    std::string name = expr->right->val;
     ValuePtr left = eval(expr->left, scope);
-
     bool super = expr->left->val == "super";
-    ValuePtr right = left->scope.get(name, super);
-
-    #ifdef OUT_SCOPES
-    std::cout << "Access '" << expr->right->val << "' scopes:\n";
-    std::cout << "-- left scope ";
-    left->scope.print();
-    #endif
-
+    ValuePtr right = left->scope.get(expr->right->val, super);
     if (right->isNil())
         throw Error(UNDEFINED_IN_TUPLE);
-    current = tracker;
 
-    ValuePtr arg = Nil::in(&scope);
-    ValuePtr block = Nil::in(&scope);
-    if (expr->right->right)
-        arg = eval(expr->right->right, scope);
-    if (expr->right->left)
-        block = eval(expr->right->left, scope);
+    ValuePtr arg = eval(expr->right->right, scope);
+    ValuePtr block = eval(expr->right->left, scope);
+
+    current = tracker;
 
     Value& val = *right;
     if (TYPE_EQ(val, Func))
