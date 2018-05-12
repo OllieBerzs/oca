@@ -25,6 +25,8 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
         }
     }
 
+    value->scope.parent = this;
+
     if (val)
         vars[index] = {valPub, name, value};
     else
@@ -54,7 +56,7 @@ void Scope::add(const Scope& scope) {
 
 void Scope::print() {
     std::string out = "{";
-    for (auto var : vars) {
+    for (auto& var : vars) {
         if (var.publicity)
             out += "[p]";
         out += var.name + " ";
