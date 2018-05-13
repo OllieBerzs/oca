@@ -40,6 +40,8 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
     auto tracker = current;
     current = expr;
 
+    bool pub = expr->val == "pub";
+
     std::vector<ExprPtr> lefts;
     ExprPtr it = expr->left;
     while (it->type == Expression::CALLS) {
@@ -59,13 +61,13 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
             name = leftExpr->right->val;
         }
         if (lefts.size() == 1)
-            leftVal->scope.parent->set(name, rightVal, true);
+            leftVal->scope.parent->set(name, rightVal, pub);
         else {
             ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
             ++counter;
             if (rightValPart->isNil())
                 throw Error(CANNOT_SPLIT);
-            leftVal->scope.parent->set(name, rightValPart, true);
+            leftVal->scope.parent->set(name, rightValPart, pub);
         }
     }
 

@@ -85,8 +85,12 @@ bool Parser::expr() {
 bool Parser::set() {
     uint orig = index;
 
-    if (!call())
+    bool pub = checkLit("pub");
+
+    if (!call()) {
+        index = orig;
         return false;
+    }
 
     if (!checkLit("=")) {
         uncache();
@@ -98,7 +102,7 @@ bool Parser::set() {
         throw Error(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr expr = std::make_shared<Expression>(Expression::SET, "", orig);
+    ExprPtr expr = std::make_shared<Expression>(Expression::SET, pub ? "pub" : "", orig);
     expr->right = uncache();
     expr->left = uncache();
     cache.push_back(expr);
