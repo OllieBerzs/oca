@@ -478,7 +478,8 @@ void Tuple::add(const std::string& name, std::any val) {
 std::string Tuple::tos() {
     std::string result = "(";
     for (auto var : scope.vars) {
-        result += var.name + ": ";
+        if (!std::isdigit(var.name[0]))
+            result += var.name + ": ";
         result += var.value->tos();
         result += ", ";
     }

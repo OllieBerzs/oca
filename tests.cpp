@@ -41,7 +41,7 @@ TEST_CASE("Evaluation of basic types") {
 
     auto tuple = oca.runString("(2, 3, (true, false))");
     REQUIRE(tuple->typestr() == "(int, int, (bool, bool))");
-    REQUIRE(tuple->tos() == "(0: 2, 1: 3, 2: (0: true, 1: false))");
+    REQUIRE(tuple->tos() == "(2, 3, (true, false))");
 }
 
 TEST_CASE("Variable setting and getting") {
@@ -97,7 +97,7 @@ TEST_CASE("Operators") {
     REQUIRE(oca.runString("2 > 3")->tos() == "false");
     REQUIRE(oca.runString("2 <= 3")->tos() == "true");
     REQUIRE(oca.runString("2 >= 3")->tos() == "false");
-    REQUIRE(oca.runString("2 .. 4")->tos() == "(0: 2, 1: 3, 2: 4)");
+    REQUIRE(oca.runString("2 .. 4")->tos() == "(2, 3, 4)");
     REQUIRE(oca.runString("0b0101 and 0b0110")->tos() == "4");
     REQUIRE(oca.runString("0b0101 or 0b0110")->tos() == "7");
     REQUIRE(oca.runString("0b0101 xor 0b0110")->tos() == "3");
