@@ -11,7 +11,7 @@
 OCA_BEGIN
 
 Expression::Expression(Expression::Type type, const std::string& val, uint index)
-    : type(type), val(val), index(index) {}
+    : type(type), val(val), left(nullptr), right(nullptr), index(index) {}
 
 void Expression::print(uint indent, char mod) {
     std::vector<std::string> typestrings = {
@@ -85,11 +85,19 @@ bool Parser::expr() {
 bool Parser::set() {
     uint orig = index;
 
-    if (!call())
+    bool pub = checkLit("pub");
+
+    bool any = false;
+    if (checkLit("*"))
+        any = true;
+    else if (!call()) {
+        index = orig;
         return false;
+    }
 
     if (!checkLit("=")) {
-        uncache();
+        if (!any)
+            uncache();
         index = orig;
         return false;
     }
@@ -98,9 +106,10 @@ bool Parser::set() {
         throw Error(NOTHING_TO_SET);
 
     // assemble assignment
-    ExprPtr expr = std::make_shared<Expression>(Expression::SET, "", orig);
+    ExprPtr expr = std::make_shared<Expression>(Expression::SET, pub ? "pub" : "", orig);
     expr->right = uncache();
-    expr->left = uncache();
+    if (!any)
+        expr->left = uncache();
     cache.push_back(expr);
 
     return true;
@@ -331,10 +340,14 @@ bool Parser::value() {
             uint origt = index;
             std::string nam = "";
             bool pub = checkLit("pub");
-            if (name()) {
-                if (checkLit(":"))
-                    nam = (pub ? "pub " : "") + uncache()->val;
-                else {
+            bool any = checkLit("*");
+            if (any || name()) {
+                if (checkLit(":")) {
+                    if (!any)
+                        nam = (pub ? "pub " : "") + uncache()->val;
+                    else
+                        nam = (pub ? "pub " : "") + std::string("*");
+                } else {
                     cache.pop_back();
                     --index;
                     if (pub)

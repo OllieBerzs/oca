@@ -55,9 +55,11 @@ void Scope::add(const Scope& scope) {
 void Scope::print() {
     std::string out = "{";
     for (auto& var : vars) {
-        if (var.publicity)
-            out += "[p]";
+        if (!var.publicity)
+            out += "[";
         out += var.name + " ";
+        if (!var.publicity)
+            out += "]";
     }
     if (out.size() > 1)
         out.pop_back();
