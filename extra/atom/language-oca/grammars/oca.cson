@@ -44,16 +44,16 @@
     'name': 'entity.name.function.oca'
   }
 
+  # variables
+  {
+    'match': '(\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*)|\\*) *[=:](?![=<>])'
+    'name': 'storage.type.oca'
+  }
+
   # operators
   {
     'match': '(\\+|-|\\*|\\/|%|\\^|<|>|==|<=|>=|!=|\\.\\.|and|or|xor|lsh|rsh)'
     'name': 'keyword.operator.oca'
-  }
-
-  # variables
-  {
-    'match': '\\b([A-Za-z_][A-Za-z_0-9]*(, *[A-Za-z_][A-Za-z_0-9]*)*) *[=:](?![=<>])'
-    'name': 'storage.type.oca'
   }
 
   # numerals
@@ -82,7 +82,7 @@
 
   # functions
   {
-    'match': '\\b(print|debug|input|pause|assert|type|each|inject)|\\.(times|len|int|real|upcase|lowcase|chars)\\b'
+    'match': '\\b(print|debug|input|pause|assert|type|each)|\\.(times|len|int|real|upcase|lowcase|chars)\\b'
     'name': 'support.function.oca'
   }
 ]

@@ -53,12 +53,6 @@ State::State()
         std::string str = arg.value->typestr();
         return cast(str);
     });
-
-    bind("inject", "t", [&, this] CPPFUNC {
-        auto rightScope = dynamic_cast<Tuple&>(*arg.value).scope;
-        scope.add(rightScope);
-        return NIL;
-    });
 }
 
 State::~State() {
@@ -212,7 +206,7 @@ ValuePtr State::evaluate(const std::vector<ExprPtr>& ast, bool asTuple) {
         val = evaler.eval(e, scope);
 
         #ifdef OUT_VALUES
-        std::cout << "->" << val->tos(true) << "\n";
+        std::cout << "->" << val->tos() << "\n";
         #endif
     }
 

@@ -41,33 +41,40 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
     current = expr;
 
     bool pub = expr->val == "pub";
+    bool any = expr->left == nullptr;
 
     std::vector<ExprPtr> lefts;
-    ExprPtr it = expr->left;
-    while (it->type == Expression::CALLS) {
-        lefts.push_back(it->left);
-        it = it->right;
+    if (!any) {
+        ExprPtr it = expr->left;
+        while (it->type == Expression::CALLS) {
+            lefts.push_back(it->left);
+            it = it->right;
+        }
+        lefts.push_back(it);
     }
-    lefts.push_back(it);
 
     ValuePtr rightVal = eval(expr->right, scope);
-    uint counter = ARRAY_BEGIN_INDEX;
-    for (auto& leftExpr : lefts) {
-        std::string name = leftExpr->val;
-        ValuePtr leftVal = Nil::in(&scope);
+    if (any) {
+        scope.add(rightVal->scope);
+    } else {
+        uint counter = ARRAY_BEGIN_INDEX;
+        for (auto& leftExpr : lefts) {
+            std::string name = leftExpr->val;
+            ValuePtr leftVal = Nil::in(&scope);
 
-        if (leftExpr->type == Expression::ACCESS) {
-            leftVal = eval(leftExpr, scope);
-            name = leftExpr->right->val;
-        }
-        if (lefts.size() == 1)
-            leftVal->scope.parent->set(name, rightVal, pub);
-        else {
-            ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
-            ++counter;
-            if (rightValPart->isNil())
-                throw Error(CANNOT_SPLIT);
-            leftVal->scope.parent->set(name, rightValPart, pub);
+            if (leftExpr->type == Expression::ACCESS) {
+                leftVal = eval(leftExpr, scope);
+                name = leftExpr->right->val;
+            }
+            if (lefts.size() == 1)
+                leftVal->scope.parent->set(name, rightVal, pub);
+            else {
+                ValuePtr rightValPart = rightVal->scope.get(std::to_string(counter), false);
+                ++counter;
+                if (rightValPart->isNil())
+                    throw Error(CANNOT_SPLIT);
+                leftVal->scope.parent->set(name, rightValPart, pub);
+            }
         }
     }
 
@@ -217,19 +224,24 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
         while (expr && expr->left) {
             std::string nam = "";
             bool pub = (expr->val.find("pub ") != std::string::npos);
+            bool any = (expr->val.find("*") != std::string::npos);
 
-            if (expr->val == "") {
-                pub = true;
-                nam = std::to_string(counter);
-                ++counter;
-                ++static_cast<Tuple&>(*result).count;
+            if (!any) {
+                if (expr->val == "") {
+                    pub = true;
+                    nam = std::to_string(counter);
+                    ++counter;
+                    ++static_cast<Tuple&>(*result).count;
+                }
+                if (pub && expr->val != "")
+                    nam = expr->val.substr(4);
+                if (nam == "")
+                    nam = expr->val;
+                result->scope.set(nam, eval(expr->left, scope), pub);
+            } else {
+                result->scope.add(eval(expr->left, scope)->scope);
             }
-            if (pub && expr->val != "")
-                nam = expr->val.substr(4);
-            if (nam == "")
-                nam = expr->val;
 
-            result->scope.set(nam, eval(expr->left, scope), pub);
             expr = expr->right;
         }
     } else if (
