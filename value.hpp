@@ -76,10 +76,12 @@ public:
 class Tuple : public Value {
 public:
     uint count = 0;
+    uint size = 0;
     explicit Tuple(Scope* parent);
     static std::shared_ptr<Tuple> from(Scope& scope);
     ValuePtr copy();
-    void add(const std::string& name, std::any val);
+    void add(const std::string& name, ValuePtr value);
+    bool remove(const std::string& name);
     std::string tos();
     std::string typestr();
 };

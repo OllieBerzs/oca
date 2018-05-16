@@ -7,6 +7,8 @@
 #include <sstream>
 #include <cmath>
 #include <cctype>
+#include <regex>
+#include <algorithm>
 #include "oca.hpp"
 #include "utils.hpp"
 
@@ -226,6 +228,18 @@ Integer::Integer(int val, Scope* parent) : val(val) {
         }
         return NIL;
     });
+
+    bind("ascii", "", [&] CPPFUNC {
+        int num = arg.caller->toi();
+        char c = static_cast<char>(num);
+        std::string empty = "";
+        return cast(empty + c);
+    });
+
+    bind("real", "", [&] CPPFUNC {
+        int num = arg.caller->toi();
+        return cast(static_cast<float>(num));
+    });
 }
 
 ValuePtr Integer::copy() {
@@ -309,6 +323,21 @@ Real::Real(float val, Scope* parent) : val(val) {
         if (arg.value->isr())
             return cast(left < arg.value->tor());
         return NIL;
+    });
+
+    bind("floor", "", [&] CPPFUNC {
+        float num = arg.caller->tor();
+        return cast(static_cast<int>(std::floor(num)));
+    });
+
+    bind("ceil", "", [&] CPPFUNC {
+        float num = arg.caller->tor();
+        return cast(static_cast<int>(std::ceil(num)));
+    });
+
+    bind("round", "", [&] CPPFUNC {
+        float num = arg.caller->tor();
+        return cast(static_cast<int>(std::round(num)));
     });
 }
 
@@ -395,6 +424,52 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         std::string str = arg.caller->tos();
         return cast(std::stof(str));
     });
+
+    bind("ascii", "", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        if (str.size() != 1)
+            throw Error(CUSTOM_ERROR, "String must be 1 character long.");
+        return cast(static_cast<int>(str.at(0)));
+    });
+
+    bind("find", "s", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        std::string regexString = arg.value->tos();
+        std::regex regex(regexString);
+        std::smatch match;
+        if (std::regex_search(str, match, regex))
+            return cast(static_cast<int>(match.position()));
+        else
+            return cast(-1);
+    });
+
+    bind("replace", "ss", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        std::string regexString = arg[0]->tos();
+        std::string replaceString = arg[1]->tos();
+        std::regex regex(regexString);
+        return cast(std::regex_replace(str, regex, replaceString));
+    });
+
+    bind("at", "i", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        int index = arg.value->toi();
+        if (index < 0 || index >= str.size())
+            throw Error(CUSTOM_ERROR, "Index " + std::to_string(index) + " out of bounds.");
+        return cast(std::string() + str.at(index));
+    });
+
+    bind("each", "", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        Block& yield = static_cast<Block&>(*arg.yield);
+        for (int i = 0; i < str.size(); ++i) {
+            auto tuple = std::make_shared<Tuple>(nullptr);
+            tuple->add("0", cast(i));
+            tuple->add("1", cast(std::string() + str.at(i)));
+            yield(Nil::in(arg.caller->scope.parent), tuple, NIL);
+        }
+        return arg.caller;
+    });
 }
 
 ValuePtr String::copy() {
@@ -456,6 +531,99 @@ std::string Bool::typestr() {
 
 Tuple::Tuple(Scope* parent) {
     scope = Scope(parent);
+
+    bind("size", "", [&] CPPFUNC {
+        auto tuple = arg.caller;
+        return cast(static_cast<int>(static_cast<Tuple&>(*tuple).size));
+    });
+
+    bind("insert", "ka", [&] CPPFUNC {
+        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        std::string name = arg[0]->tos();
+        if (std::isdigit(name[0])) {
+            int index = std::stoi(name);
+            if (index < 0 || index > tuple.count)
+                throw Error(CUSTOM_ERROR, "Index " + name + " out of range(+1).");
+
+            std::vector<ValuePtr> array(tuple.count);
+            for (int i = 0; i < tuple.count; ++i)
+                array[i] = tuple.scope.get(std::to_string(i), false);
+
+            array.insert(array.begin() + index, arg[1]);
+            tuple.add(std::to_string(tuple.count), cast(0));
+
+            for (int i = 0; i < array.size(); ++i)
+                tuple.scope.set(std::to_string(i), array[i], true);
+        } else
+            tuple.add(name, arg[1]);
+        return arg.caller;
+    });
+
+    bind("remove", "k", [&] CPPFUNC {
+        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        std::string name = arg.value->tos();
+        if (std::isdigit(name[0])) {
+            int index = std::stoi(name);
+            if (index < 0 || index >= tuple.count)
+                throw Error(CUSTOM_ERROR, "Index " + name + " out of range.");
+
+            std::vector<ValuePtr> array(tuple.count);
+            for (int i = 0; i < tuple.count; ++i)
+                array[i] = tuple.scope.get(std::to_string(i), false);
+
+            array.erase(array.begin() + index);
+            tuple.remove(std::to_string(tuple.count - 1));
+
+            for (int i = 0; i < array.size(); ++i)
+                tuple.scope.set(std::to_string(i), array[i], true);
+
+        } else if (!tuple.remove(name))
+            throw Error(CUSTOM_ERROR, "Key '" + name + "' does not exist.");
+        return arg.caller;
+    });
+
+    bind("at", "k", [&] CPPFUNC {
+        auto tuple = arg.caller;
+        std::string name = arg.value->tos();
+        return tuple->scope.get(name, false);
+    });
+
+    bind("each", "", [&] CPPFUNC {
+        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        Block& yield = static_cast<Block&>(*arg.yield);
+        for (auto& var : tuple.scope.vars) {
+            auto& vref = *var.value;
+            if (TYPE_EQ(vref, Func))
+                continue;
+            auto param = std::make_shared<Tuple>(nullptr);
+            param->add("0", cast(var.name));
+            param->add("1", var.value);
+            yield(Nil::in(arg.caller->scope.parent), param, NIL);
+        }
+        return arg.caller;
+    });
+
+    bind("sort", "", [&] CPPFUNC {
+        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        Block& yield = static_cast<Block&>(*arg.yield);
+        int count = tuple.count;
+
+        std::vector<ValuePtr> array(count);
+        for (int i = 0; i < count; ++i)
+            array[i] = tuple.scope.get(std::to_string(i), false);
+
+        std::sort(array.begin(), array.end(), [&](ValuePtr& a, ValuePtr& b) -> bool {
+            auto param = std::make_shared<Tuple>(nullptr);
+            param->add("0", a);
+            param->add("1", b);
+            return yield(Nil::in(arg.caller->scope.parent), param, NIL)->tob();
+        });
+
+        for (int i = 0; i < count; ++i)
+            tuple.scope.set(std::to_string(i), array[i], true);
+
+        return arg.caller;
+    });
 }
 
 ValuePtr Tuple::copy() {
@@ -469,17 +637,36 @@ std::shared_ptr<Tuple> Tuple::from(Scope& scope) {
     return t;
 }
 
-void Tuple::add(const std::string& name, std::any val) {
-    auto vptr = cast(val);
-    vptr->scope.parent = &scope;
-    scope.set(name, vptr, true);
+void Tuple::add(const std::string& name, ValuePtr value) {
+    scope.set(name, value, true);
+    if (std::isdigit(name.at(0)))
+        ++count;
+    ++size;
+}
+
+bool Tuple::remove(const std::string& name) {
+    if (scope.remove(name)) {
+        if (std::isdigit(name.at(0)))
+            --count;
+        --size;
+        return true;
+    }
+    return false;
 }
 
 std::string Tuple::tos() {
     std::string result = "(";
-    for (auto var : scope.vars) {
-        if (!std::isdigit(var.name[0]))
-            result += var.name + ": ";
+    for (int i = 0; i < count; ++i) {
+        result += scope.get(std::to_string(i), true)->tos();
+        result += ", ";
+    }
+    for (auto& var : scope.vars) {
+        auto& vref = *var.value;
+        if (TYPE_EQ(vref, Func))
+            continue;
+        if (std::isdigit(var.name[0]))
+            continue;
+        result += var.name + ": ";
         result += var.value->tos();
         result += ", ";
     }
@@ -491,7 +678,10 @@ std::string Tuple::tos() {
 
 std::string Tuple::typestr() {
     std::string result = "(";
-    for (auto var : scope.vars) {
+    for (auto& var : scope.vars) {
+        auto& vref = *var.value;
+        if (TYPE_EQ(vref, Func))
+            continue;
         result += var.value->typestr();
         result += ", ";
     }
@@ -574,6 +764,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         }
         expr = expr->right;
     }
+
     return result;
 }
 
@@ -644,6 +835,10 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         case 't':
             if (!v->ist())
                 throw Error(TYPE_MISMATCH, v->typestr() + " wanted tuple.");
+            break;
+        case 'k':
+            if (!v->isi() && !v->iss())
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted int/str.");
             break;
         }
     }

@@ -5,6 +5,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <cmath>
+#include <cstdlib>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include "oca.hpp"
 #include "utils.hpp"
 
@@ -19,6 +25,8 @@ ValuePtr Arg::operator[](uint i) {
 State::State()
     : global(nullptr), scope(nullptr), evaler(this), eh(this), lextime(0), parsetime(0),
       evaltime(0) {
+    begin = std::chrono::high_resolution_clock::now();
+
     bind("print", "a", [&] CPPFUNC {
         std::cout << arg.value->tos() << "\n";
         return NIL;
@@ -49,9 +57,180 @@ State::State()
         return NIL;
     });
 
+    bind("error", "s", [&] CPPFUNC {
+        std::string message = arg.value->tos();
+        throw Error(CUSTOM_ERROR, message);
+        return NIL;
+    });
+
     bind("type", "a", [&] CPPFUNC {
         std::string str = arg.value->typestr();
         return cast(str);
+    });
+
+    bind("abs", "n", [&] CPPFUNC {
+        if (arg.value->isi()) {
+            auto& val = static_cast<Integer&>(*arg.value);
+            return cast(std::abs(val.val));
+        } else {
+            auto& val = static_cast<Real&>(*arg.value);
+            return cast(std::abs(val.val));
+        }
+    });
+
+    bind("acos", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::acos(val.val));
+    });
+
+    bind("asin", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::asin(val.val));
+    });
+
+    bind("atan", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::atan(val.val));
+    });
+
+    bind("acot", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::atan(1 / val.val));
+    });
+
+    bind("cos", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::cos(val.val));
+    });
+
+    bind("sin", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::sin(val.val));
+    });
+
+    bind("tan", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(std::tan(val.val));
+    });
+
+    bind("cot", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(1 / std::tan(val.val));
+    });
+
+    bind("cot", "r", [&] CPPFUNC {
+        auto& val = static_cast<Real&>(*arg.value);
+        return cast(1 / std::tan(val.val));
+    });
+
+    bind("max", "nn", [&] CPPFUNC {
+        if (arg[0]->isi()) {
+            if (!arg[1]->isi())
+                throw Error(CUSTOM_ERROR, "Expected similar types.");
+            return cast(std::max(arg[0]->toi(), arg[1]->toi()));
+        } else {
+            if (!arg[1]->isr())
+                throw Error(CUSTOM_ERROR, "Expected similar types.");
+            return cast(std::fmax(arg[0]->tor(), arg[1]->tor()));
+        }
+    });
+
+    bind("min", "nn", [&] CPPFUNC {
+        if (arg[0]->isi()) {
+            if (!arg[1]->isi())
+                throw Error(CUSTOM_ERROR, "Expected similar types.");
+            return cast(std::min(arg[0]->toi(), arg[1]->toi()));
+        } else {
+            if (!arg[1]->isr())
+                throw Error(CUSTOM_ERROR, "Expected similar types.");
+            return cast(std::fmin(arg[0]->tor(), arg[1]->tor()));
+        }
+    });
+
+    bind("rad", "r", [&] CPPFUNC {
+        float halfc = 3.14159265358979323846f / 180.0f;
+        return cast(arg.value->tor() * halfc);
+    });
+
+    bind("deg", "r", [&] CPPFUNC {
+        float halfc = 3.14159265358979323846f / 180.0f;
+        return cast(arg.value->tor() / halfc);
+    });
+
+    bind("pi", "", [&] CPPFUNC { return cast(3.14159265358979323846f); });
+
+    bind("log", "rr", [&] CPPFUNC {
+        float base = arg[0]->tor();
+        float x = arg[1]->tor();
+        return cast(std::log(x) / std::log(base));
+    });
+
+    bind("ln", "r", [&] CPPFUNC {
+        float x = arg.value->tor();
+        return cast(std::log(x));
+    });
+
+    bind("lg", "r", [&] CPPFUNC {
+        float x = arg.value->tor();
+        return cast(std::log10(x));
+    });
+
+    bind("random", "", [&] CPPFUNC {
+        float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        return cast(r);
+    });
+
+    bind("seed", "i", [&] CPPFUNC {
+        std::srand(arg.value->toi());
+        return NIL;
+    });
+
+    bind("sqrt", "r", [&] CPPFUNC { return cast(std::sqrt(arg.value->tor())); });
+
+    bind("cbrt", "r", [&] CPPFUNC { return cast(std::cbrt(arg.value->tor())); });
+
+    bind("read", "s", [&] CPPFUNC {
+        std::string path = arg.value->tos();
+        std::ifstream file(path);
+        if (!file.is_open())
+            throw Error(CUSTOM_ERROR, "Could not open file '" + path + "'.");
+        auto begin = std::istreambuf_iterator<char>(file);
+        auto end = std::istreambuf_iterator<char>();
+        std::string string(begin, end);
+        file.close();
+
+        return cast(string);
+    });
+
+    bind("write", "ss", [&] CPPFUNC {
+        std::string path = arg[0]->tos();
+        std::string string = arg[1]->tos();
+        std::ofstream file(path);
+        if (!file.is_open())
+            throw Error(CUSTOM_ERROR, "Could not open file '" + path + "'.");
+        file << string;
+        file.close();
+
+        return NIL;
+    });
+
+    bind("date", "", [&] CPPFUNC {
+        auto now = std::chrono::system_clock::now();
+        auto nowt = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&nowt), "%d-%m-%Y %X");
+        return cast(ss.str());
+    });
+
+    bind("clock", "", [&] CPPFUNC {
+        auto dur = std::chrono::high_resolution_clock::now() - begin;
+        int milli = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        return cast(milli);
+    });
+
+    bind("execute", "s", [&] CPPFUNC {
+        std::system(&arg.value->tos()[0]);
+        return NIL;
     });
 }
 
@@ -130,6 +309,8 @@ void State::runREPL() {
             }
         }
 
+        if (input == "\n")
+            continue;
         if (input == "exit\n")
             return;
 

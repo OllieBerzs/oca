@@ -31,6 +31,17 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
         vars.push_back({pub, name, copy});
 }
 
+bool Scope::remove(const std::string& name) {
+    for (int i = 0; i < vars.size(); ++i) {
+        if (vars[i].name == name) {
+            vars.erase(vars.begin() + i);
+            return true;
+            break;
+        }
+    }
+    return false;
+}
+
 ValuePtr Scope::get(const std::string& name, bool super) {
     ValuePtr val = Nil::in(this);
     for (auto var : vars) {
