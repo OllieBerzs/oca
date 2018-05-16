@@ -23,6 +23,7 @@ public:
     explicit Scope(Scope* parent);
 
     void set(const std::string& name, ValuePtr value, bool pub);
+    bool remove(const std::string& name);
     ValuePtr get(const std::string& name, bool super);
     void add(const Scope& scope);
 

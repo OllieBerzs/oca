@@ -95,14 +95,14 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     ValuePtr arg = eval(expr->right, scope);
     ValuePtr block = eval(expr->left, scope);
 
-    current = tracker;
-
     Value& vref = *val;
+    ValuePtr result = val;
     if (TYPE_EQ(vref, Func))
-        return static_cast<Func&>(vref)(Tuple::from(scope), arg, block);
+        result = static_cast<Func&>(vref)(Tuple::from(scope), arg, block);
     if (TYPE_EQ(vref, Block))
-        return static_cast<Block&>(vref)(Tuple::from(scope), arg, block);
-    return val;
+        result = static_cast<Block&>(vref)(Tuple::from(scope), arg, block);
+    current = tracker;
+    return result;
 }
 
 ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
@@ -121,15 +121,15 @@ ValuePtr Evaluator::oper(ExprPtr expr, Scope& scope) {
     if (func->isNil())
         throw Error(UNDEFINED_OPERATOR);
 
-    current = tracker;
-
     Value& funcref = *func;
+    ValuePtr result = func;
     if (TYPE_EQ(funcref, Func))
-        return static_cast<Func&>(funcref)(left, right, Nil::in(&scope));
+        result = static_cast<Func&>(funcref)(left, right, Nil::in(&scope));
     if (TYPE_EQ(funcref, Block))
-        return static_cast<Block&>(funcref)(left, right, Nil::in(&scope));
+        result = static_cast<Block&>(funcref)(left, right, Nil::in(&scope));
 
-    return func;
+    current = tracker;
+    return result;
 }
 
 ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
@@ -183,11 +183,12 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     current = tracker;
 
     Value& val = *right;
+    ValuePtr result = right;
     if (TYPE_EQ(val, Func))
-        return static_cast<Func&>(val)(left, arg, block);
+        result = static_cast<Func&>(val)(left, arg, block);
     if (TYPE_EQ(val, Block))
-        return static_cast<Block&>(val)(left, arg, block);
-    return right;
+        result = static_cast<Block&>(val)(left, arg, block);
+    return result;
 }
 
 ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
@@ -237,6 +238,7 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
                     nam = expr->val.substr(4);
                 if (nam == "")
                     nam = expr->val;
+                ++static_cast<Tuple&>(*result).size;
                 result->scope.set(nam, eval(expr->left, scope), pub);
             } else {
                 result->scope.add(eval(expr->left, scope)->scope);

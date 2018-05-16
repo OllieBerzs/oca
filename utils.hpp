@@ -41,6 +41,7 @@ inline ValuePtr cast(std::any val) {
         auto tuple = std::make_shared<Tuple>(nullptr);
         for (uint i = 0; i < vec.size(); ++i) {
             ++static_cast<Tuple&>(*tuple).count;
+            ++static_cast<Tuple&>(*tuple).size;
             tuple->scope.set(
                 std::to_string(i + ARRAY_BEGIN_INDEX),
                 std::make_shared<Integer>(vec[i], &tuple->scope), true);

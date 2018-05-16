@@ -35,6 +35,7 @@ class State {
     Evaluator evaler;
     ErrorHandler eh;
 
+    std::chrono::time_point<std::chrono::high_resolution_clock> begin;
     std::chrono::milliseconds lextime;
     std::chrono::milliseconds parsetime;
     std::chrono::milliseconds evaltime;
