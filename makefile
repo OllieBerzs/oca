@@ -74,7 +74,7 @@ test: $(TEST)
 	@echo [Test]
 	@./$(TEST)
 
-.PHONY: test script clean deps
+.PHONY: test script clean deps all
 
 # dependencies (generated) -----------------------------------
 oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
