@@ -295,9 +295,12 @@ ValuePtr Evaluator::fstring(ExprPtr expr, Scope& scope) {
             if (c == '}') {
                 auto oldSource = state->eh.source;
                 auto oldTokens = state->eh.tokens;
+                auto oldScope = state->scope;
+                state->scope = scope;
                 formatted += state->runString(innerStr)->tos();
                 state->eh.source = oldSource;
                 state->eh.tokens = oldTokens;
+                state->scope = oldScope;
                 inner = false;
                 innerStr = "";
             } else
