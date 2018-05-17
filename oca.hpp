@@ -46,8 +46,8 @@ public:
     State(const State&) = delete;
     State& operator=(const State&) = delete;
 
-    ValuePtr runFile(const std::string& path, bool asTuple = false);
-    ValuePtr runString(const std::string& source, bool asTuple = false);
+    ValuePtr runFile(const std::string& path);
+    ValuePtr runString(const std::string& source);
     void runREPL();
 
     void load(const std::string& lib);
@@ -56,7 +56,7 @@ public:
 private:
     std::vector<Token> lex(const std::string& source);
     std::vector<ExprPtr> parse(const std::vector<Token>& tokens);
-    ValuePtr evaluate(const std::vector<ExprPtr>& ast, bool asTuple);
+    ValuePtr evaluate(const std::vector<ExprPtr>& ast);
 
     friend class ErrorHandler;
     friend class Evaluator;

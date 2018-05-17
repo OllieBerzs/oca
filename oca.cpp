@@ -267,7 +267,7 @@ State::~State() {
     #endif
 }
 
-ValuePtr State::runFile(const std::string& path, bool asTuple) {
+ValuePtr State::runFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open())
         std::cout << "Could not open file " << path << "\n";
@@ -277,15 +277,15 @@ ValuePtr State::runFile(const std::string& path, bool asTuple) {
     file.close();
 
     eh.path = &path;
-    return runString(source, asTuple);
+    return runString(source);
 }
 
-ValuePtr State::runString(const std::string& source, bool asTuple) {
+ValuePtr State::runString(const std::string& source) {
     try {
         eh.source = &source;
         auto tokens = lex(source);
         auto ast = parse(tokens);
-        return evaluate(ast, asTuple);
+        return evaluate(ast);
     } catch (Error& e) {
         eh.panic(e);
         return NIL;
@@ -378,7 +378,7 @@ std::vector<ExprPtr> State::parse(const std::vector<Token>& tokens) {
     return ast;
 }
 
-ValuePtr State::evaluate(const std::vector<ExprPtr>& ast, bool asTuple) {
+ValuePtr State::evaluate(const std::vector<ExprPtr>& ast) {
     #ifdef OUT_VALUES
     std::cout << "------------ EVAL ------------\n";
     #endif
@@ -402,8 +402,6 @@ ValuePtr State::evaluate(const std::vector<ExprPtr>& ast, bool asTuple) {
     evaltime += std::chrono::duration_cast<std::chrono::milliseconds>(eduration);
     #endif
 
-    if (asTuple)
-        return Tuple::from(scope);
     return val;
 }
 

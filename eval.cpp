@@ -204,7 +204,8 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
     }
 
     state->scope = Scope(nullptr);
-    ValuePtr val = state->runFile(folder + expr->val + ".oca", true);
+    state->runFile(folder + expr->val + ".oca");
+    auto val = Tuple::from(state->scope);
 
     state->eh.path = oldPath;
     state->eh.source = oldSource;
