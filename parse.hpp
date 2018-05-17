@@ -31,6 +31,7 @@ public:
         BREAK,
         FILE,
         STR,
+        FSTR,
         INT,
         REAL,
         BOOL,
@@ -75,6 +76,7 @@ private:
     bool name();
     bool value();
     bool string();
+    bool fstring();
     bool integer();
     bool real();
     bool boolean();

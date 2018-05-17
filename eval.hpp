@@ -28,6 +28,7 @@ private:
     ValuePtr access(ExprPtr expr, Scope& scope);
     ValuePtr file(ExprPtr expr, Scope& scope);
     ValuePtr value(ExprPtr expr, Scope& scope);
+    ValuePtr fstring(ExprPtr expr, Scope& scope);
 };
 
 OCA_END

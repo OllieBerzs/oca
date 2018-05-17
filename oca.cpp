@@ -28,6 +28,11 @@ State::State()
     begin = std::chrono::high_resolution_clock::now();
 
     bind("print", "a", [&] CPPFUNC {
+        std::cout << arg.value->tos();
+        return NIL;
+    });
+
+    bind("println", "a", [&] CPPFUNC {
         std::cout << arg.value->tos() << "\n";
         return NIL;
     });

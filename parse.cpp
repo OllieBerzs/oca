@@ -15,9 +15,9 @@ Expression::Expression(Expression::Type type, const std::string& val, uint index
 
 void Expression::print(uint indent, char mod) {
     std::vector<std::string> typestrings = {
-        "set",      "call",      "access", "if",     "else",  "next", "main",
-        "branches", "part oper", "oper",   "return", "break", "file", "str",
-        "int",      "real",      "bool",   "block",  "tup",   "name", "calls"};
+        "set",       "call", "access", "if",    "else", "next", "main", "branches",
+        "part oper", "oper", "return", "break", "file", "str",  "fstr", "int",
+        "real",      "bool", "block",  "tup",   "name", "calls"};
 
     for (uint i = 0; i < indent; i++)
         std::cout << "  ";
@@ -330,7 +330,7 @@ bool Parser::name() {
 bool Parser::value() {
     uint cached = cache.size();
 
-    if (string() || integer() || real() || boolean()) {
+    if (string() || fstring() || integer() || real() || boolean()) {
         access();
         oper();
         return true;
@@ -394,6 +394,16 @@ bool Parser::string() {
 
     std::string s = get().val.substr(1, get().val.size() - 2);
     cache.push_back(std::make_shared<Expression>(Expression::STR, s, index));
+    ++index;
+    return true;
+}
+
+bool Parser::fstring() {
+    if (get().type != Token::FSTRING)
+        return false;
+
+    std::string s = get().val.substr(1, get().val.size() - 2);
+    cache.push_back(std::make_shared<Expression>(Expression::FSTR, s, index));
     ++index;
     return true;
 }

@@ -15,6 +15,7 @@ class Token {
 public:
     enum Type {
         STRING = 0,
+        FSTRING,
         BINNUM,
         HEXNUM,
         SCIENTNUM,
@@ -45,6 +46,7 @@ class Lexer {
     std::vector<int> captureGroupCounts;
     std::vector<std::pair<Token::Type, std::string>> syntax = {
         {Token::STRING, "'[^']*'"},
+        {Token::FSTRING, "\"[^\"]*\""},
         {Token::BINNUM, "0b[01]+"},
         {Token::HEXNUM, "0x[0-9A-Fa-f]+"},
         {Token::SCIENTNUM, "[0-9]+(\\.[0-9]+)?[eE]-?[0-9]+(\\.[0-9]+)?"},

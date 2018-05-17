@@ -252,6 +252,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
         result = std::make_shared<Block>(expr, &scope, this);
     } else if (expr->type == Expression::STR) {
         result = std::make_shared<String>(expr->val, &scope);
+    } else if (expr->type == Expression::FSTR) {
+        result = fstring(expr, scope);
     } else if (expr->type == Expression::INT) {
         result = std::make_shared<Integer>(std::stoi(expr->val), &scope);
     } else if (expr->type == Expression::REAL) {
@@ -260,6 +262,49 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
         result = std::make_shared<Bool>(expr->val == "true", &scope);
     }
     return result;
+}
+
+ValuePtr Evaluator::fstring(ExprPtr expr, Scope& scope) {
+    std::string string = expr->val;
+    std::string formatted = "";
+
+    bool escape = false;
+    bool inner = false;
+    std::string innerStr = "";
+    for (char c : string) {
+        if (escape) {
+            switch (c) {
+            case 'a': formatted += '\a'; break;
+            case 'b': formatted += '\b'; break;
+            case 'f': formatted += '\f'; break;
+            case 'n': formatted += '\n'; break;
+            case 'r': formatted += '\r'; break;
+            case 't': formatted += '\t'; break;
+            case 'v': formatted += '\v'; break;
+            case '\\': formatted += '\\'; break;
+            }
+            escape = false;
+        } else if (inner) {
+            if (c == '}') {
+                auto oldSource = state->eh.source;
+                auto oldTokens = state->eh.tokens;
+                formatted += state->runString(innerStr)->tos();
+                state->eh.source = oldSource;
+                state->eh.tokens = oldTokens;
+                inner = false;
+                innerStr = "";
+            } else
+                innerStr += c;
+        } else {
+            switch (c) {
+            case '\\': escape = true; break;
+            case '{': inner = true; break;
+            default: formatted += c; break;
+            }
+        }
+    }
+
+    return std::make_shared<String>(formatted, &scope);
 }
 
 OCA_END

@@ -16,6 +16,34 @@
         'name': 'punctuation.definition.string.end.oca'
     'name': 'string.quoted.single.oca'
   }
+  {
+    'begin': '"'
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.definition.string.begin.oca'
+    'end': '"'
+    'endCaptures':
+      '0':
+        'name': 'punctuation.definition.string.end.oca'
+    'name': 'string.quoted.single.oca'
+    'patterns': [
+      {
+        'match': '\\\\.'
+        'name': 'constant.character.escape.oca'
+      }
+      {
+        'begin': '{'
+        'beginCaptures':
+          '0':
+            'name': 'constant.character.escape.oca'
+        'end': '}'
+        'endCaptures':
+          '0':
+            'name': 'constant.character.escape.oca'
+        'name': 'constant.character.escape.oca'
+      }
+    ]
+  }
 
   # comments
   {

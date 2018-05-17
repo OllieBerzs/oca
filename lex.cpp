@@ -11,9 +11,9 @@ OCA_BEGIN
 
 void Token::print() const {
     std::vector<std::string> typestrings = {
-        "string",  "binnum",   "hexnum",     "scientnum", "real",     "integer",
-        "boolean", "filepath", "keyword",    "name",      "operator", "punctuation",
-        "comment", "indent",   "whitespace", "invalid",   "last"};
+        "string",      "fstring", "binnum",   "hexnum",     "scientnum", "real",
+        "integer",     "boolean", "filepath", "keyword",    "name",      "operator",
+        "punctuation", "comment", "indent",   "whitespace", "invalid",   "last"};
     std::cout << "<" << typestrings[type] << ">";
     if (type != Type::INDENT)
         std::cout << val;
