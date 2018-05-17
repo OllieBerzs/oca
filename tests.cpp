@@ -35,6 +35,10 @@ TEST_CASE("Evaluation of basic types") {
     REQUIRE(str->typestr() == "str");
     REQUIRE(str->tos() == "This is a string!");
 
+    auto fstr = oca.runString("\"2 + 3 = {2 + 3}\"");
+    REQUIRE(fstr->typestr() == "str");
+    REQUIRE(fstr->tos() == "2 + 3 = 5");
+
     auto boolean = oca.runString("true");
     REQUIRE(boolean->typestr() == "bool");
     REQUIRE(boolean->tos() == "true");
