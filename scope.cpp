@@ -76,9 +76,10 @@ void Scope::print() {
     for (auto& var : vars) {
         if (!var.publicity)
             out += "[";
-        out += var.name + " ";
+        out += var.name;
         if (!var.publicity)
             out += "]";
+        out += " ";
     }
     if (out.size() > 1)
         out.pop_back();

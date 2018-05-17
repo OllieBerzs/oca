@@ -732,7 +732,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     // set super and yield in scope
     Scope temp(&scope);
     temp.set("yield", block, true);
-    temp.set("super", caller, true);
+    temp.set("self", caller, true);
 
     // set parameters
     if (params.size() == 1)

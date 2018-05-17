@@ -102,9 +102,9 @@
     'name': 'constant.language.oca'
   }
 
-  # super
+  # self
   {
-    'match': '\\b(super)\\b'
+    'match': '\\b(self)\\b'
     'name': 'variable.language.self.oca'
   }
 
