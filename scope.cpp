@@ -32,7 +32,7 @@ void Scope::set(const std::string& name, ValuePtr value, bool pub) {
 }
 
 bool Scope::remove(const std::string& name) {
-    for (int i = 0; i < vars.size(); ++i) {
+    for (uint i = 0; i < vars.size(); ++i) {
         if (vars[i].name == name) {
             vars.erase(vars.begin() + i);
             return true;

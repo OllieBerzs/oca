@@ -454,7 +454,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     bind("at", "i", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         int index = arg.value->toi();
-        if (index < 0 || index >= str.size())
+        if (index < 0 || index >= static_cast<int>(str.size()))
             throw Error(CUSTOM_ERROR, "Index " + std::to_string(index) + " out of bounds.");
         return cast(std::string() + str.at(index));
     });
@@ -462,7 +462,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     bind("each", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (int i = 0; i < str.size(); ++i) {
+        for (uint i = 0; i < str.size(); ++i) {
             auto tuple = std::make_shared<Tuple>(nullptr);
             tuple->add("0", cast(i));
             tuple->add("1", cast(std::string() + str.at(i)));
@@ -552,7 +552,7 @@ Tuple::Tuple(Scope* parent) {
             array.insert(array.begin() + index, arg[1]);
             tuple.add(std::to_string(tuple.count), cast(0));
 
-            for (int i = 0; i < array.size(); ++i)
+            for (uint i = 0; i < array.size(); ++i)
                 tuple.scope.set(std::to_string(i), array[i], true);
         } else
             tuple.add(name, arg[1]);
@@ -574,7 +574,7 @@ Tuple::Tuple(Scope* parent) {
             array.erase(array.begin() + index);
             tuple.remove(std::to_string(tuple.count - 1));
 
-            for (int i = 0; i < array.size(); ++i)
+            for (uint i = 0; i < array.size(); ++i)
                 tuple.scope.set(std::to_string(i), array[i], true);
 
         } else if (!tuple.remove(name))
