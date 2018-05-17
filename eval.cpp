@@ -281,6 +281,7 @@ ValuePtr Evaluator::fstring(ExprPtr expr, Scope& scope) {
             case 'r': formatted += '\r'; break;
             case 't': formatted += '\t'; break;
             case 'v': formatted += '\v'; break;
+            case '{': formatted += '{'; break;
             case '\\': formatted += '\\'; break;
             }
             escape = false;
