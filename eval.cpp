@@ -64,7 +64,9 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
 
             if (leftExpr->type == Expression::ACCESS) {
                 leftVal = eval(leftExpr, scope);
-                name = leftExpr->right->val;
+                if (leftVal->isNil())
+                    throw Error(NEW_TUPLE_KEY);
+                name = leftVal->scope.parent->get(leftVal);
             }
             if (lefts.size() == 1)
                 leftVal->scope.parent->set(name, rightVal, pub);
