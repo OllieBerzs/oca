@@ -75,8 +75,8 @@ public:
 
 class Tuple : public Value {
 public:
-    uint count = 0;
-    uint size = 0;
+    int count = 0;
+    int size = 0;
     explicit Tuple(Scope* parent);
     static std::shared_ptr<Tuple> from(Scope& scope);
     ValuePtr copy();
