@@ -64,7 +64,9 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
 
             if (leftExpr->type == Expression::ACCESS) {
                 leftVal = eval(leftExpr, scope);
-                name = leftExpr->right->val;
+                if (leftVal->isNil())
+                    throw Error(NEW_TUPLE_KEY);
+                name = leftVal->scope.parent->get(leftVal);
             }
             if (lefts.size() == 1)
                 leftVal->scope.parent->set(name, rightVal, pub);
@@ -86,11 +88,14 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     auto tracker = current;
     current = expr;
 
-    ValuePtr val = scope.get(expr->val, true);
-    if (val->isNil())
-        val = state->global.get(expr->val, true);
-    if (val->isNil())
-        throw Error(UNDEFINED);
+    ValuePtr val = state->global.get(expr->val, true);
+    Scope* searchScope = &scope;
+    while (val->isNil()) {
+        val = searchScope->get(expr->val, true);
+        if (!searchScope->parent && val->isNil())
+            throw Error(UNDEFINED);
+        searchScope = searchScope->parent;
+    }
 
     ValuePtr arg = eval(expr->right, scope);
     ValuePtr block = eval(expr->left, scope);

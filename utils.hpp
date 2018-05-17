@@ -10,6 +10,7 @@
 #endif
 
 #include <any>
+#include <iostream>
 #include "common.hpp"
 #include "value.hpp"
 
@@ -47,8 +48,10 @@ inline ValuePtr cast(std::any val) {
                 std::make_shared<Integer>(vec[i], &tuple->scope), true);
         }
         return tuple;
-    } else
+    } else {
+        std::cout << "Error: Bad cast.\n";
         return Nil::in(nullptr);
+    }
 }
 
 OCA_END

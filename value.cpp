@@ -224,7 +224,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
         int times = arg.caller->toi();
         Block& yield = static_cast<Block&>(*arg.yield);
         for (int i = 0; i < times; ++i) {
-            yield(Nil::in(arg.caller->scope.parent), cast(i), NIL);
+            yield(Tuple::from(*arg.caller->scope.parent), cast(i), NIL);
         }
         return NIL;
     });
@@ -462,11 +462,11 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     bind("each", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (uint i = 0; i < str.size(); ++i) {
+        for (int i = 0; i < static_cast<int>(str.size()); ++i) {
             auto tuple = std::make_shared<Tuple>(nullptr);
             tuple->add("0", cast(i));
             tuple->add("1", cast(std::string() + str.at(i)));
-            yield(Nil::in(arg.caller->scope.parent), tuple, NIL);
+            yield(Tuple::from(*arg.caller->scope.parent), tuple, NIL);
         }
         return arg.caller;
     });
@@ -598,7 +598,7 @@ Tuple::Tuple(Scope* parent) {
             auto param = std::make_shared<Tuple>(nullptr);
             param->add("0", cast(var.name));
             param->add("1", var.value);
-            yield(Nil::in(arg.caller->scope.parent), param, NIL);
+            yield(Tuple::from(*arg.caller->scope.parent), param, NIL);
         }
         return arg.caller;
     });
@@ -616,7 +616,7 @@ Tuple::Tuple(Scope* parent) {
             auto param = std::make_shared<Tuple>(nullptr);
             param->add("0", a);
             param->add("1", b);
-            return yield(Nil::in(arg.caller->scope.parent), param, NIL)->tob();
+            return yield(Tuple::from(*arg.caller->scope.parent), param, NIL)->tob();
         });
 
         for (int i = 0; i < count; ++i)
@@ -732,7 +732,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     // set super and yield in scope
     Scope temp(&scope);
     temp.set("yield", block, true);
-    temp.set("super", caller, true);
+    temp.set("self", caller, true);
 
     // set parameters
     if (params.size() == 1)

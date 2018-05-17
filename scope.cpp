@@ -44,7 +44,7 @@ bool Scope::remove(const std::string& name) {
 
 ValuePtr Scope::get(const std::string& name, bool super) {
     ValuePtr val = Nil::in(this);
-    for (auto var : vars) {
+    for (auto& var : vars) {
         if (var.name == name) {
             val = var.value;
             if (!super && !var.publicity)
@@ -53,6 +53,14 @@ ValuePtr Scope::get(const std::string& name, bool super) {
         }
     }
     return val;
+}
+
+std::string Scope::get(ValuePtr value) {
+    for (auto& var : vars) {
+        if (var.value.get() == value.get())
+            return var.name;
+    }
+    return "";
 }
 
 void Scope::add(const Scope& scope) {
@@ -68,9 +76,10 @@ void Scope::print() {
     for (auto& var : vars) {
         if (!var.publicity)
             out += "[";
-        out += var.name + " ";
+        out += var.name;
         if (!var.publicity)
             out += "]";
+        out += " ";
     }
     if (out.size() > 1)
         out.pop_back();
