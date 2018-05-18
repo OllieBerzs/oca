@@ -15,6 +15,7 @@ Error::Error(ErrorType type, const std::string& detail) : type(type), detail(det
 ErrorHandler::ErrorHandler(const State* state) : state(state) {}
 
 void ErrorHandler::panic(const Error& error) const {
+    std::cout << "-";
     enableANSI();
     auto info = getErrorInfo(error);
 
@@ -30,7 +31,6 @@ void ErrorHandler::panic(const Error& error) const {
 
     char c = ' ';
     bool found = false;
-
     while ((c != '\n' && index < (*source).size()) || !found) {
         c = (*source)[index];
         if ((c == '\n' || index == (*source).size() - 1) && !found) {
@@ -53,7 +53,7 @@ void ErrorHandler::panic(const Error& error) const {
     std::string lineEnd = errline.substr(colEnd, errline.size() - colEnd);
 
     std::cout << ESC "38;5;14m"
-              << "-- " << info.typestring << " -------------------- " << filename << "\n"
+              << "- " << info.typestring << " -------------------- " << filename << "\n"
               << ESC "0m";
 
     if (lineNum > 1)

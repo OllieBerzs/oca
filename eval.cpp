@@ -157,16 +157,18 @@ ValuePtr Evaluator::cond(ExprPtr expr, Scope& scope) {
     if (branch->isNil())
         return branch;
 
-    ValuePtr result = Nil::in(&scope);
+    auto temp = Scope(&scope);
+    ValuePtr result = Nil::in(&temp);
     ExprPtr it = static_cast<Block&>(*branch).val;
     while (it && it->left) {
         if (it->left->type == Expression::RETURN) {
             returning = true;
-            return eval(it->left->right, scope);
+            result = eval(it->left->right, temp);
+            break;
         }
         if (it->left->type == Expression::BREAK)
-            return result;
-        result = eval(it->left, scope);
+            break;
+        result = eval(it->left, temp);
         it = it->right;
     }
     return result;
