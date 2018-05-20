@@ -15,9 +15,9 @@ Expression::Expression(Expression::Type type, const std::string& val, uint index
 
 void Expression::print(uint indent, char mod) {
     std::vector<std::string> typestrings = {
-        "set",       "call", "access", "if",    "else",      "next", "main", "branches",
-        "part oper", "oper", "return", "break", "file",      "str",  "fstr", "int",
-        "real",      "bool", "block",  "tup",   "empty tup", "name", "calls"};
+        "set",       "call", "access", "if",    "else",       "next", "main", "branches",
+        "part oper", "oper", "return", "break", "file",       "str",  "fstr", "int",
+        "real",      "bool", "block",  "tabl",  "empty tabl", "name", "calls"};
 
     for (uint i = 0; i < indent; i++)
         std::cout << "  ";
@@ -359,14 +359,14 @@ bool Parser::value() {
             if (!expr()) {
                 if (cache.size() != cached)
                     throw Error(NOTHING_TO_SET);
-                cache.push_back(std::make_shared<Expression>(Expression::EMPTY_TUP, "", origt));
+                cache.push_back(std::make_shared<Expression>(Expression::EMPTY_TABL, "", origt));
                 empty = true;
                 break;
             }
 
-            ExprPtr tup = std::make_shared<Expression>(Expression::TUP, nam, origt);
-            tup->left = uncache();
-            cache.push_back(tup);
+            ExprPtr tabl = std::make_shared<Expression>(Expression::TABL, nam, origt);
+            tabl->left = uncache();
+            cache.push_back(tabl);
 
             if (!checkLit(","))
                 break;
@@ -381,12 +381,12 @@ bool Parser::value() {
             throw Error(NO_CLOSING_BRACE);
 
         if (!empty) {
-            // assemble tuple
-            ExprPtr tup = cache[cached];
+            // assemble table
+            ExprPtr tabl = cache[cached];
             for (uint i = cached; i < cache.size() - 1; ++i)
                 cache[i]->right = cache[i + 1];
             cache.resize(cached);
-            cache.push_back(tup);
+            cache.push_back(tabl);
         }
 
         access();

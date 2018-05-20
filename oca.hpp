@@ -65,7 +65,7 @@ private:
     friend class Real;
     friend class String;
     friend class Bool;
-    friend class Tuple;
+    friend class Table;
     friend class Block;
     friend class Func;
     friend class Scope;

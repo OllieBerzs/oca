@@ -72,7 +72,7 @@ bool Value::iss() {
 }
 
 bool Value::ist() {
-    if (TYPE_EQ(*this, Tuple))
+    if (TYPE_EQ(*this, Table))
         return true;
     else
         return false;
@@ -224,7 +224,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
         int times = arg.caller->toi();
         Block& yield = static_cast<Block&>(*arg.yield);
         for (int i = 0; i < times; ++i) {
-            yield(Tuple::from(*arg.caller->scope.parent), cast(i), NIL);
+            yield(Table::from(*arg.caller->scope.parent), cast(i), NIL);
         }
         return NIL;
     });
@@ -463,10 +463,10 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         std::string str = arg.caller->tos();
         Block& yield = static_cast<Block&>(*arg.yield);
         for (int i = 0; i < static_cast<int>(str.size()); ++i) {
-            auto tuple = std::make_shared<Tuple>(nullptr);
-            tuple->add("0", cast(i));
-            tuple->add("1", cast(std::string() + str.at(i)));
-            yield(Tuple::from(*arg.caller->scope.parent), tuple, NIL);
+            auto Table = std::make_shared<Table>(nullptr);
+            Table->add("0", cast(i));
+            Table->add("1", cast(std::string() + str.at(i)));
+            yield(Table::from(*arg.caller->scope.parent), Table, NIL);
         }
         return arg.caller;
     });
@@ -529,122 +529,122 @@ std::string Bool::typestr() {
 
 // ---------------------------------
 
-Tuple::Tuple(Scope* parent) {
+Table::Table(Scope* parent) {
     scope = Scope(parent);
 
     bind("size", "", [&] CPPFUNC {
-        auto tuple = arg.caller;
-        return cast(static_cast<int>(static_cast<Tuple&>(*tuple).size));
+        auto Table = arg.caller;
+        return cast(static_cast<int>(static_cast<Table&>(*Table).size));
     });
 
     bind("insert", "ka", [&] CPPFUNC {
-        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        auto& Table = static_cast<Table&>(*arg.caller);
         std::string name = arg[0]->tos();
         if (std::isdigit(name[0])) {
             int index = std::stoi(name);
-            if (index < 0 || index > tuple.count)
+            if (index < 0 || index > Table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range(+1).");
 
-            std::vector<ValuePtr> array(tuple.count);
-            for (int i = 0; i < tuple.count; ++i)
-                array[i] = tuple.scope.get(std::to_string(i), false);
+            std::vector<ValuePtr> array(Table.count);
+            for (int i = 0; i < Table.count; ++i)
+                array[i] = Table.scope.get(std::to_string(i), false);
 
             array.insert(array.begin() + index, arg[1]);
-            tuple.add(std::to_string(tuple.count), cast(0));
+            Table.add(std::to_string(Table.count), cast(0));
 
             for (uint i = 0; i < array.size(); ++i)
-                tuple.scope.set(std::to_string(i), array[i], true);
+                Table.scope.set(std::to_string(i), array[i], true);
         } else
-            tuple.add(name, arg[1]);
+            Table.add(name, arg[1]);
         return arg.caller;
     });
 
     bind("remove", "k", [&] CPPFUNC {
-        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        auto& Table = static_cast<Table&>(*arg.caller);
         std::string name = arg.value->tos();
         if (std::isdigit(name[0])) {
             int index = std::stoi(name);
-            if (index < 0 || index >= tuple.count)
+            if (index < 0 || index >= Table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range.");
 
-            std::vector<ValuePtr> array(tuple.count);
-            for (int i = 0; i < tuple.count; ++i)
-                array[i] = tuple.scope.get(std::to_string(i), false);
+            std::vector<ValuePtr> array(Table.count);
+            for (int i = 0; i < Table.count; ++i)
+                array[i] = Table.scope.get(std::to_string(i), false);
 
             array.erase(array.begin() + index);
-            tuple.remove(std::to_string(tuple.count - 1));
+            Table.remove(std::to_string(Table.count - 1));
 
             for (uint i = 0; i < array.size(); ++i)
-                tuple.scope.set(std::to_string(i), array[i], true);
+                Table.scope.set(std::to_string(i), array[i], true);
 
-        } else if (!tuple.remove(name))
+        } else if (!Table.remove(name))
             throw Error(CUSTOM_ERROR, "Key '" + name + "' does not exist.");
         return arg.caller;
     });
 
     bind("at", "k", [&] CPPFUNC {
-        auto tuple = arg.caller;
+        auto Table = arg.caller;
         std::string name = arg.value->tos();
-        return tuple->scope.get(name, false);
+        return Table->scope.get(name, false);
     });
 
     bind("each", "", [&] CPPFUNC {
-        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        auto& Table = static_cast<Table&>(*arg.caller);
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (auto& var : tuple.scope.vars) {
+        for (auto& var : Table.scope.vars) {
             auto& vref = *var.value;
             if (TYPE_EQ(vref, Func))
                 continue;
-            auto param = std::make_shared<Tuple>(nullptr);
+            auto param = std::make_shared<Table>(nullptr);
             param->add("0", cast(var.name));
             param->add("1", var.value);
-            yield(Tuple::from(*arg.caller->scope.parent), param, NIL);
+            yield(Table::from(*arg.caller->scope.parent), param, NIL);
         }
         return arg.caller;
     });
 
     bind("sort", "", [&] CPPFUNC {
-        auto& tuple = static_cast<Tuple&>(*arg.caller);
+        auto& Table = static_cast<Table&>(*arg.caller);
         Block& yield = static_cast<Block&>(*arg.yield);
-        int count = tuple.count;
+        int count = Table.count;
 
         std::vector<ValuePtr> array(count);
         for (int i = 0; i < count; ++i)
-            array[i] = tuple.scope.get(std::to_string(i), false);
+            array[i] = Table.scope.get(std::to_string(i), false);
 
         std::sort(array.begin(), array.end(), [&](ValuePtr& a, ValuePtr& b) -> bool {
-            auto param = std::make_shared<Tuple>(nullptr);
+            auto param = std::make_shared<Table>(nullptr);
             param->add("0", a);
             param->add("1", b);
-            return yield(Tuple::from(*arg.caller->scope.parent), param, NIL)->tob();
+            return yield(Table::from(*arg.caller->scope.parent), param, NIL)->tob();
         });
 
         for (int i = 0; i < count; ++i)
-            tuple.scope.set(std::to_string(i), array[i], true);
+            Table.scope.set(std::to_string(i), array[i], true);
 
         return arg.caller;
     });
 }
 
-ValuePtr Tuple::copy() {
-    // return std::make_shared<Tuple>(*this);
+ValuePtr Table::copy() {
+    // return std::make_shared<Table>(*this);
     return nullptr;
 }
 
-std::shared_ptr<Tuple> Tuple::from(Scope& scope) {
-    auto t = std::make_shared<Tuple>(nullptr);
+std::shared_ptr<Table> Table::from(Scope& scope) {
+    auto t = std::make_shared<Table>(nullptr);
     t->scope = scope;
     return t;
 }
 
-void Tuple::add(const std::string& name, ValuePtr value) {
+void Table::add(const std::string& name, ValuePtr value) {
     scope.set(name, value, true);
     if (std::isdigit(name.at(0)))
         ++count;
     ++size;
 }
 
-bool Tuple::remove(const std::string& name) {
+bool Table::remove(const std::string& name) {
     if (scope.remove(name)) {
         if (std::isdigit(name.at(0)))
             --count;
@@ -654,7 +654,7 @@ bool Tuple::remove(const std::string& name) {
     return false;
 }
 
-std::string Tuple::tos() {
+std::string Table::tos() {
     std::string result = "(";
     for (int i = 0; i < count; ++i) {
         result += scope.get(std::to_string(i), true)->tos();
@@ -678,7 +678,7 @@ std::string Tuple::tos() {
     return result;
 }
 
-std::string Tuple::typestr() {
+std::string Table::typestr() {
     std::string result = "(";
     for (auto& var : scope.vars) {
         auto& vref = *var.value;
@@ -722,7 +722,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     // get argument count
     uint argc = 0;
     if (arg->ist())
-        argc = static_cast<Tuple&>(*arg).count;
+        argc = static_cast<Table&>(*arg).count;
     else if (!arg->isNil())
         argc = 1;
 
@@ -731,7 +731,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         throw Error(NO_ARGUMENT);
     if (argc < params.size())
         throw Error(
-            SMALL_TUPLE, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+            SMALL_Table, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // set super and yield in scope
     Scope temp(&scope);
@@ -797,7 +797,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
     // get argument count
     uint argc = 0;
     if (arg->ist())
-        argc = static_cast<Tuple&>(*arg).count;
+        argc = static_cast<Table&>(*arg).count;
     else if (!arg->isNil())
         argc = 1;
     if (arg->ist() && argc == 0)
@@ -808,7 +808,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         throw Error(NO_ARGUMENT);
     if (argc < params.size())
         throw Error(
-            SMALL_TUPLE, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+            SMALL_Table, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // check argument types
     for (uint i = 0; i < params.size(); ++i) {
@@ -838,7 +838,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
             break;
         case 't':
             if (!v->ist())
-                throw Error(TYPE_MISMATCH, v->typestr() + " wanted tuple.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted Table.");
             break;
         case 'k':
             if (!v->isi() && !v->iss())

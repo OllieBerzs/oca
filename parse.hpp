@@ -36,8 +36,8 @@ public:
         REAL,
         BOOL,
         BLOCK,
-        TUP,
-        EMPTY_TUP,
+        TABL,
+        EMPTY_TABL,
         NAME,
         CALLS
     };

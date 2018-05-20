@@ -116,7 +116,7 @@ ErrorInfo ErrorHandler::getParseErrorInfo(const Error& error) const {
     case NO_CLOSING_BRACE:
         return {tokens->at(tokenIndex - 1).pos,
                 static_cast<uint>(tokens->at(tokenIndex - 1).val.size()),
-                "Expected a closing brace for tuple", "NO CLOSING BRACE"};
+                "Expected a closing brace for table", "NO CLOSING BRACE"};
 
     case NO_INDENT:
         return {tokens->at(tokenIndex).pos, static_cast<uint>(tokens->at(tokenIndex).val.size()),
@@ -164,10 +164,10 @@ ErrorInfo ErrorHandler::getParseErrorInfo(const Error& error) const {
 ErrorInfo ErrorHandler::getEvalErrorInfo(const Error& error) const {
     auto currentExpr = state->evaler.current;
     switch (error.type) {
-    case NEW_TUPLE_KEY:
+    case NEW_TABLE_KEY:
         return {tokens->at(currentExpr->left->index).pos,
                 static_cast<uint>(tokens->at(currentExpr->left->index).val.size()),
-                "You cannot error.detail a new key to a tuple.", "NEW TUPLE KEY"};
+                "You cannot error.detail a new key to a table.", "NEW TABLE KEY"};
 
     case CANNOT_SPLIT:
         return {tokens->at(currentExpr->index).pos,
@@ -184,21 +184,21 @@ ErrorInfo ErrorHandler::getEvalErrorInfo(const Error& error) const {
                 static_cast<uint>(tokens->at(currentExpr->index).val.size()),
                 "The conditional for 'if' must evaluate to a boolean value.", "IF BOOL"};
 
-    case UNDEFINED_IN_TUPLE:
+    case UNDEFINED_IN_TABLE:
         return {tokens->at(currentExpr->index).pos,
                 static_cast<uint>(tokens->at(currentExpr->index).val.size()),
-                "Undefined name in tuple.", "UNDEFINED IN TUPLE"};
+                "Undefined name in table.", "UNDEFINED IN TABLE"};
 
     case NO_ARGUMENT:
         return {tokens->at(currentExpr->index).pos,
                 static_cast<uint>(tokens->at(currentExpr->index).val.size()),
                 "This block requires an argument to be called.", "NO ARGUMENT"};
 
-    case SMALL_TUPLE:
+    case SMALL_TABLE:
         return {tokens->at(currentExpr->index).pos,
                 static_cast<uint>(tokens->at(currentExpr->index).val.size()),
-                "The tuple is too small of an argument for function " + error.detail,
-                "SMALL TUPLE"};
+                "The table is too small of an argument for function " + error.detail,
+                "SMALL TABLE"};
 
     case UNDEFINED:
         return {tokens->at(currentExpr->index).pos,

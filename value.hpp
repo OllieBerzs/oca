@@ -73,12 +73,12 @@ public:
     std::string typestr();
 };
 
-class Tuple : public Value {
+class Table : public Value {
 public:
     int count = 0;
     int size = 0;
-    explicit Tuple(Scope* parent);
-    static std::shared_ptr<Tuple> from(Scope& scope);
+    explicit Table(Scope* parent);
+    static std::shared_ptr<Table> from(Scope& scope);
     ValuePtr copy();
     void add(const std::string& name, ValuePtr value);
     bool remove(const std::string& name);
