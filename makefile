@@ -2,7 +2,6 @@
 
 CXX = clang++
 ARCH = x86_64
-DEBUG = true
 
 # End of user config -------------------------------------
 
@@ -16,16 +15,8 @@ TEST = tests
 TARGET = $(ARCH)-linux-gnu
 endif
 
-CPPFLAGS = -target $(TARGET) -Wall -std=c++17
-ifeq ($(CXX), g++)
-CPPFLAGS = -Wall -std=c++17
-endif
-
-ifeq ($(DEBUG), true)
-CPPFLAGS += -g -O0
-else
-CPPFLAGS += -O2
-endif
+CPPFLAGS = -target $(TARGET) -Wall -std=c++17 -g -O0
+LINKFLAGS = -target $(TARGET) -Wall -std=c++17 -g -O0
 
 # Objects
 BINOBJ = main.o
@@ -33,6 +24,11 @@ TESTOBJ = tests.o
 OBJ = oca.o lex.o parse.o value.o scope.o eval.o error.o
 
 all: $(BIN)
+
+release: CXX = g++
+release: CPPFLAGS = -Wall -std=c++17 -O2
+release: LINKFLAGS = -Wall -std=c++17 -O2 -static-libgcc -static-libstdc++
+release: $(BIN)
 
 # object files
 %.o:
@@ -42,12 +38,12 @@ all: $(BIN)
 # binaries
 $(BIN): $(BINOBJ) $(OBJ)
 	@echo [Link] $(BIN)
-	@$(CXX) $(CPPFLAGS) -o $(BIN) $^
+	@$(CXX) $(LINKFLAGS) -o $(BIN) $^
 	@$(RM) *.o-*
 
 $(TEST): $(TESTOBJ) $(OBJ)
 	@echo [Link] $(TEST)
-	@$(CXX) $(CPPFLAGS) -o $(TEST) $^
+	@$(CXX) $(LINKFLAGS) -o $(TEST) $^
 	@$(RM) *.o-*
 
 check:
@@ -74,7 +70,7 @@ test: $(TEST)
 	@echo [Test]
 	@./$(TEST)
 
-.PHONY: test script clean deps all
+.PHONY: test script clean deps all release
 
 # dependencies (generated) -----------------------------------
 oca.o: oca.cpp oca.hpp common.hpp ocaconf.hpp lex.hpp scope.hpp value.hpp \
