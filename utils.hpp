@@ -39,15 +39,15 @@ inline ValuePtr cast(std::any val) {
         return std::make_shared<String>(std::any_cast<std::string>(val), nullptr);
     } else if (val.type() == typeid(std::vector<int>)) {
         auto vec = std::any_cast<std::vector<int>>(val);
-        auto Table = std::make_shared<Table>(nullptr);
+        auto table = std::make_shared<Table>(nullptr);
         for (uint i = 0; i < vec.size(); ++i) {
-            ++static_cast<Table&>(*Table).count;
-            ++static_cast<Table&>(*Table).size;
-            Table->scope.set(
+            ++static_cast<Table&>(*table).count;
+            ++static_cast<Table&>(*table).size;
+            table->scope.set(
                 std::to_string(i + ARRAY_BEGIN_INDEX),
-                std::make_shared<Integer>(vec[i], &Table->scope), true);
+                std::make_shared<Integer>(vec[i], &table->scope), true);
         }
-        return Table;
+        return table;
     } else {
         std::cout << "Error: Bad cast.\n";
         return Nil::in(nullptr);

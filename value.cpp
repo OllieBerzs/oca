@@ -463,10 +463,10 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         std::string str = arg.caller->tos();
         Block& yield = static_cast<Block&>(*arg.yield);
         for (int i = 0; i < static_cast<int>(str.size()); ++i) {
-            auto Table = std::make_shared<Table>(nullptr);
-            Table->add("0", cast(i));
-            Table->add("1", cast(std::string() + str.at(i)));
-            yield(Table::from(*arg.caller->scope.parent), Table, NIL);
+            auto table = std::make_shared<Table>(nullptr);
+            table->add("0", cast(i));
+            table->add("1", cast(std::string() + str.at(i)));
+            yield(Table::from(*arg.caller->scope.parent), table, NIL);
         }
         return arg.caller;
     });
@@ -533,65 +533,65 @@ Table::Table(Scope* parent) {
     scope = Scope(parent);
 
     bind("size", "", [&] CPPFUNC {
-        auto Table = arg.caller;
-        return cast(static_cast<int>(static_cast<Table&>(*Table).size));
+        auto table = arg.caller;
+        return cast(static_cast<int>(static_cast<Table&>(*table).size));
     });
 
     bind("insert", "ka", [&] CPPFUNC {
-        auto& Table = static_cast<Table&>(*arg.caller);
+        auto& table = static_cast<Table&>(*arg.caller);
         std::string name = arg[0]->tos();
         if (std::isdigit(name[0])) {
             int index = std::stoi(name);
-            if (index < 0 || index > Table.count)
+            if (index < 0 || index > table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range(+1).");
 
-            std::vector<ValuePtr> array(Table.count);
-            for (int i = 0; i < Table.count; ++i)
-                array[i] = Table.scope.get(std::to_string(i), false);
+            std::vector<ValuePtr> array(table.count);
+            for (int i = 0; i < table.count; ++i)
+                array[i] = table.scope.get(std::to_string(i), false);
 
             array.insert(array.begin() + index, arg[1]);
-            Table.add(std::to_string(Table.count), cast(0));
+            table.add(std::to_string(table.count), cast(0));
 
             for (uint i = 0; i < array.size(); ++i)
-                Table.scope.set(std::to_string(i), array[i], true);
+                table.scope.set(std::to_string(i), array[i], true);
         } else
-            Table.add(name, arg[1]);
+            table.add(name, arg[1]);
         return arg.caller;
     });
 
     bind("remove", "k", [&] CPPFUNC {
-        auto& Table = static_cast<Table&>(*arg.caller);
+        auto& table = static_cast<Table&>(*arg.caller);
         std::string name = arg.value->tos();
         if (std::isdigit(name[0])) {
             int index = std::stoi(name);
-            if (index < 0 || index >= Table.count)
+            if (index < 0 || index >= table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range.");
 
-            std::vector<ValuePtr> array(Table.count);
-            for (int i = 0; i < Table.count; ++i)
-                array[i] = Table.scope.get(std::to_string(i), false);
+            std::vector<ValuePtr> array(table.count);
+            for (int i = 0; i < table.count; ++i)
+                array[i] = table.scope.get(std::to_string(i), false);
 
             array.erase(array.begin() + index);
-            Table.remove(std::to_string(Table.count - 1));
+            table.remove(std::to_string(table.count - 1));
 
             for (uint i = 0; i < array.size(); ++i)
-                Table.scope.set(std::to_string(i), array[i], true);
+                table.scope.set(std::to_string(i), array[i], true);
 
-        } else if (!Table.remove(name))
+        } else if (!table.remove(name))
             throw Error(CUSTOM_ERROR, "Key '" + name + "' does not exist.");
         return arg.caller;
     });
 
     bind("at", "k", [&] CPPFUNC {
-        auto Table = arg.caller;
+        auto table = arg.caller;
         std::string name = arg.value->tos();
-        return Table->scope.get(name, false);
+        return table->scope.get(name, false);
     });
 
     bind("each", "", [&] CPPFUNC {
-        auto& Table = static_cast<Table&>(*arg.caller);
+        auto& table = static_cast<Table&>(*arg.caller);
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (auto& var : Table.scope.vars) {
+        for (auto& var : table.scope.vars) {
             auto& vref = *var.value;
             if (TYPE_EQ(vref, Func))
                 continue;
@@ -604,13 +604,13 @@ Table::Table(Scope* parent) {
     });
 
     bind("sort", "", [&] CPPFUNC {
-        auto& Table = static_cast<Table&>(*arg.caller);
+        auto& table = static_cast<Table&>(*arg.caller);
         Block& yield = static_cast<Block&>(*arg.yield);
-        int count = Table.count;
+        int count = table.count;
 
         std::vector<ValuePtr> array(count);
         for (int i = 0; i < count; ++i)
-            array[i] = Table.scope.get(std::to_string(i), false);
+            array[i] = table.scope.get(std::to_string(i), false);
 
         std::sort(array.begin(), array.end(), [&](ValuePtr& a, ValuePtr& b) -> bool {
             auto param = std::make_shared<Table>(nullptr);
@@ -620,7 +620,7 @@ Table::Table(Scope* parent) {
         });
 
         for (int i = 0; i < count; ++i)
-            Table.scope.set(std::to_string(i), array[i], true);
+            table.scope.set(std::to_string(i), array[i], true);
 
         return arg.caller;
     });
@@ -731,7 +731,7 @@ ValuePtr Block::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         throw Error(NO_ARGUMENT);
     if (argc < params.size())
         throw Error(
-            SMALL_Table, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+            SMALL_TABLE, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // set super and yield in scope
     Scope temp(&scope);
@@ -808,7 +808,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
         throw Error(NO_ARGUMENT);
     if (argc < params.size())
         throw Error(
-            SMALL_Table, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
+            SMALL_TABLE, "(" + std::to_string(argc) + " < " + std::to_string(params.size()) + ").");
 
     // check argument types
     for (uint i = 0; i < params.size(); ++i) {
@@ -838,7 +838,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
             break;
         case 't':
             if (!v->ist())
-                throw Error(TYPE_MISMATCH, v->typestr() + " wanted Table.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted table.");
             break;
         case 'k':
             if (!v->isi() && !v->iss())
