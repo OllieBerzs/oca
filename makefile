@@ -66,6 +66,9 @@ repl: $(BIN)
 	@echo [Repl]
 	@./$(BIN)
 
+test: CXX = g++
+test: CPPFLAGS = -Wall -std=c++17 -O2
+test: LINKFLAGS = -Wall -std=c++17 -O2 -static-libgcc -static-libstdc++
 test: $(TEST)
 	@echo [Test]
 	@./$(TEST)
