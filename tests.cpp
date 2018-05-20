@@ -43,9 +43,9 @@ TEST_CASE("Evaluation of basic types") {
     REQUIRE(boolean->typestr() == "bool");
     REQUIRE(boolean->tos() == "true");
 
-    auto tuple = oca.runString("(2, 3, (true, false))");
-    REQUIRE(tuple->typestr() == "(int, int, (bool, bool))");
-    REQUIRE(tuple->tos() == "(2, 3, (true, false))");
+    auto table = oca.runString("(2, 3, (true, false))");
+    REQUIRE(table->typestr() == "(int, int, (bool, bool))");
+    REQUIRE(table->tos() == "(2, 3, (true, false))");
 }
 
 TEST_CASE("Variable setting and getting") {
@@ -57,15 +57,15 @@ TEST_CASE("Variable setting and getting") {
     oca.runString("a = 7");
     REQUIRE(oca.runString("a")->tos() == "7");
 
-    // simple tuples
+    // simple table
     oca.runString("b = (1, 2, 3, 4)");
     REQUIRE(oca.runString("b.2")->tos() == "3");
 
-    // named tuples
+    // named table
     oca.runString("c = (pub x: 5, pub y: 6, pub z: 10)");
     REQUIRE(oca.runString("c.x")->tos() == "5");
 
-    // complex tuples
+    // complex table
     oca.runString("complex = (pub x: (1, 2, 3), pub y: 'hi')");
     oca.runString("complex.x.1 = 6");
     REQUIRE(oca.runString("complex.x.1")->tos() == "6");

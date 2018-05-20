@@ -5,4 +5,4 @@ jobs:
       - image: gcc:7.1.0
     steps:
       - checkout
-      - run: make test CXX=g++ DEBUG=false
+      - run: make test

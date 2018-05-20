@@ -65,7 +65,7 @@ ValuePtr Evaluator::set(ExprPtr expr, Scope& scope) {
             if (leftExpr->type == Expression::ACCESS) {
                 leftVal = eval(leftExpr, scope);
                 if (leftVal->isNil())
-                    throw Error(NEW_TUPLE_KEY);
+                    throw Error(NEW_TABLE_KEY);
                 name = leftVal->scope.parent->get(leftVal);
             }
             if (lefts.size() == 1)
@@ -103,9 +103,9 @@ ValuePtr Evaluator::call(ExprPtr expr, Scope& scope) {
     Value& vref = *val;
     ValuePtr result = val;
     if (TYPE_EQ(vref, Func))
-        result = static_cast<Func&>(vref)(Tuple::from(scope), arg, block);
+        result = static_cast<Func&>(vref)(Table::from(scope), arg, block);
     if (TYPE_EQ(vref, Block))
-        result = static_cast<Block&>(vref)(Tuple::from(scope), arg, block);
+        result = static_cast<Block&>(vref)(Table::from(scope), arg, block);
     current = tracker;
     return result;
 }
@@ -182,12 +182,10 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     bool super = expr->left->val == "super";
     ValuePtr right = left->scope.get(expr->right->val, super);
     if (right->isNil())
-        throw Error(UNDEFINED_IN_TUPLE);
+        throw Error(UNDEFINED_IN_TABLE);
 
     ValuePtr arg = eval(expr->right->right, scope);
     ValuePtr block = eval(expr->right->left, scope);
-
-    current = tracker;
 
     Value& val = *right;
     ValuePtr result = right;
@@ -195,6 +193,8 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
         result = static_cast<Func&>(val)(left, arg, block);
     if (TYPE_EQ(val, Block))
         result = static_cast<Block&>(val)(left, arg, block);
+
+    current = tracker;
     return result;
 }
 
@@ -212,7 +212,7 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
 
     state->scope = Scope(nullptr);
     state->runFile(folder + expr->val + ".oca");
-    auto val = Tuple::from(state->scope);
+    auto val = Table::from(state->scope);
 
     state->eh.path = oldPath;
     state->eh.source = oldSource;
@@ -223,12 +223,15 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
+    auto tracker = current;
+    current = expr;
+
     ValuePtr result = Nil::in(&scope);
-    if (expr->type == Expression::TUP) {
+    if (expr->type == Expression::TABL) {
         if (expr->right == nullptr && expr->val == "")
             return eval(expr->left, scope);
 
-        result = std::make_shared<Tuple>(&scope);
+        result = std::make_shared<Table>(&scope);
         uint counter = ARRAY_BEGIN_INDEX;
         while (expr && expr->left) {
             std::string nam = "";
@@ -240,13 +243,13 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
                     pub = true;
                     nam = std::to_string(counter);
                     ++counter;
-                    ++static_cast<Tuple&>(*result).count;
+                    ++static_cast<Table&>(*result).count;
                 }
                 if (pub && expr->val != "")
                     nam = expr->val.substr(4);
                 if (nam == "")
                     nam = expr->val;
-                ++static_cast<Tuple&>(*result).size;
+                ++static_cast<Table&>(*result).size;
                 result->scope.set(nam, eval(expr->left, scope), pub);
             } else {
                 result->scope.add(eval(expr->left, scope)->scope);
@@ -254,6 +257,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
 
             expr = expr->right;
         }
+    } else if (expr->type == Expression::EMPTY_TABL) {
+        result = std::make_shared<Table>(&scope);
     } else if (
         expr->type == Expression::BLOCK || expr->type == Expression::MAIN ||
         expr->type == Expression::ELSE) {
@@ -269,6 +274,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
     } else if (expr->type == Expression::BOOL) {
         result = std::make_shared<Bool>(expr->val == "true", &scope);
     }
+
+    current = tracker;
     return result;
 }
 
