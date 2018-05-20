@@ -394,7 +394,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         return cast(left != right);
     });
 
-    bind("len", "", [&] CPPFUNC {
+    bind("size", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         return cast(static_cast<int>(str.size()));
     });

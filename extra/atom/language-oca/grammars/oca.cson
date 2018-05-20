@@ -110,7 +110,7 @@
 
   # functions
   {
-    'match': '\\b(println|print|debug|input|pause|assert|error|type|abs|acos|asin|atan|acot|cos|sin|tan|cot|max|min|rad|deg|pi|log|ln|lg|random|seed|sqrt|cbrt|read|write|date|clock|execute)|\\.(times|ascii|floor|ceil|round|len|int|real|upcase|lowcase|each|find|replace|at|size|insert|remove|at|sort)\\b'
+    'match': '\\b(println|print|debug|input|pause|assert|error|type|abs|acos|asin|atan|acot|cos|sin|tan|cot|max|min|rad|deg|pi|log|ln|lg|random|seed|sqrt|cbrt|read|write|date|clock|execute)|\\.(times|ascii|floor|ceil|round|size|int|real|upcase|lowcase|each|find|replace|at|size|insert|remove|at|sort)\\b'
     'name': 'support.function.oca'
   }
 ]
