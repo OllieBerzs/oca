@@ -254,6 +254,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
 
             expr = expr->right;
         }
+    } else if (expr->type == Expression::EMPTY_TUP) {
+        result = std::make_shared<Tuple>(&scope);
     } else if (
         expr->type == Expression::BLOCK || expr->type == Expression::MAIN ||
         expr->type == Expression::ELSE) {

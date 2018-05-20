@@ -37,6 +37,7 @@ public:
         BOOL,
         BLOCK,
         TUP,
+        EMPTY_TUP,
         NAME,
         CALLS
     };

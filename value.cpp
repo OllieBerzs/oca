@@ -670,8 +670,10 @@ std::string Tuple::tos() {
         result += var.value->tos();
         result += ", ";
     }
-    result.pop_back();
-    result.pop_back();
+    if (result.size() > 1) {
+        result.pop_back();
+        result.pop_back();
+    }
     result += ")";
     return result;
 }
@@ -685,8 +687,10 @@ std::string Tuple::typestr() {
         result += var.value->typestr();
         result += ", ";
     }
-    result.pop_back();
-    result.pop_back();
+    if (result.size() > 1) {
+        result.pop_back();
+        result.pop_back();
+    }
     result += ")";
     return result;
 }
