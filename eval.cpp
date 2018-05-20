@@ -187,14 +187,14 @@ ValuePtr Evaluator::access(ExprPtr expr, Scope& scope) {
     ValuePtr arg = eval(expr->right->right, scope);
     ValuePtr block = eval(expr->right->left, scope);
 
-    current = tracker;
-
     Value& val = *right;
     ValuePtr result = right;
     if (TYPE_EQ(val, Func))
         result = static_cast<Func&>(val)(left, arg, block);
     if (TYPE_EQ(val, Block))
         result = static_cast<Block&>(val)(left, arg, block);
+
+    current = tracker;
     return result;
 }
 
@@ -223,6 +223,9 @@ ValuePtr Evaluator::file(ExprPtr expr, Scope& scope) {
 }
 
 ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
+    auto tracker = current;
+    current = expr;
+
     ValuePtr result = Nil::in(&scope);
     if (expr->type == Expression::TABL) {
         if (expr->right == nullptr && expr->val == "")
@@ -271,6 +274,8 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
     } else if (expr->type == Expression::BOOL) {
         result = std::make_shared<Bool>(expr->val == "true", &scope);
     }
+
+    current = tracker;
     return result;
 }
 

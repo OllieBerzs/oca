@@ -163,6 +163,8 @@ ErrorInfo ErrorHandler::getParseErrorInfo(const Error& error) const {
 
 ErrorInfo ErrorHandler::getEvalErrorInfo(const Error& error) const {
     auto currentExpr = state->evaler.current;
+    if (!currentExpr)
+        std::cout << "Error: null current expr\n";
     switch (error.type) {
     case NEW_TABLE_KEY:
         return {tokens->at(currentExpr->left->index).pos,

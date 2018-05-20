@@ -470,6 +470,24 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         }
         return arg.caller;
     });
+
+    bind("split", "s", [&] CPPFUNC {
+        std::string str = arg.caller->tos();
+        std::string delim = arg.value->tos();
+        std::string word = "";
+        auto result = std::make_shared<Table>(nullptr);
+        uint index = ARRAY_BEGIN_INDEX;
+        for (char c : str) {
+            if (c == delim[0]) {
+                result->add(std::to_string(index), cast(word));
+                word = "";
+                ++index;
+            } else
+                word += c;
+        }
+        result->add(std::to_string(index), cast(word));
+        return result;
+    });
 }
 
 ValuePtr String::copy() {
