@@ -123,11 +123,6 @@ State::State()
         return cast(1 / std::tan(val.val));
     });
 
-    bind("cot", "r", [&] CPPFUNC {
-        auto& val = static_cast<Real&>(*arg.value);
-        return cast(1 / std::tan(val.val));
-    });
-
     bind("max", "nn", [&] CPPFUNC {
         if (arg[0]->isi()) {
             if (!arg[1]->isi())
@@ -153,35 +148,35 @@ State::State()
     });
 
     bind("rad", "r", [&] CPPFUNC {
-        float halfc = 3.14159265358979323846f / 180.0f;
+        oca_real halfc = 3.14159265358979323846 / 180.0;
         return cast(arg.value->tor() * halfc);
     });
 
     bind("deg", "r", [&] CPPFUNC {
-        float halfc = 3.14159265358979323846f / 180.0f;
+        oca_real halfc = 3.14159265358979323846 / 180.0;
         return cast(arg.value->tor() / halfc);
     });
 
-    bind("pi", "", [&] CPPFUNC { return cast(3.14159265358979323846f); });
+    bind("pi", "", [&] CPPFUNC { return cast(3.14159265358979323846); });
 
     bind("log", "rr", [&] CPPFUNC {
-        float base = arg[0]->tor();
-        float x = arg[1]->tor();
+        oca_real base = arg[0]->tor();
+        oca_real x = arg[1]->tor();
         return cast(std::log(x) / std::log(base));
     });
 
     bind("ln", "r", [&] CPPFUNC {
-        float x = arg.value->tor();
+        oca_real x = arg.value->tor();
         return cast(std::log(x));
     });
 
     bind("lg", "r", [&] CPPFUNC {
-        float x = arg.value->tor();
+        oca_real x = arg.value->tor();
         return cast(std::log10(x));
     });
 
     bind("random", "", [&] CPPFUNC {
-        float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        oca_real r = static_cast<oca_real>(std::rand()) / static_cast<oca_real>(RAND_MAX);
         return cast(r);
     });
 
@@ -208,8 +203,8 @@ State::State()
     });
 
     bind("write", "ss", [&] CPPFUNC {
-        std::string path = arg[0]->tos();
-        std::string string = arg[1]->tos();
+        std::string string = arg[0]->tos();
+        std::string path = arg[1]->tos();
         std::ofstream file(path);
         if (!file.is_open())
             throw Error(CUSTOM_ERROR, "Could not open file '" + path + "'.");
@@ -229,7 +224,7 @@ State::State()
 
     bind("clock", "", [&] CPPFUNC {
         auto dur = std::chrono::high_resolution_clock::now() - begin;
-        int milli = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        oca_int milli = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
         return cast(milli);
     });
 

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cctype>
 #include <regex>
+#include <iomanip>
 #include <algorithm>
 #include "oca.hpp"
 #include "utils.hpp"
@@ -22,14 +23,14 @@ void Value::bind(const std::string& name, const std::string& args, CPPFunc func)
     scope.set(name, std::make_shared<Func>(func, args, &scope), true);
 }
 
-int Value::toi() {
+oca_int Value::toi() {
     if (TYPE_EQ(*this, Integer))
         return static_cast<Integer&>(*this).val;
     else
         return 0;
 }
 
-float Value::tor() {
+oca_real Value::tor() {
     if (TYPE_EQ(*this, Real))
         return static_cast<Real&>(*this).val;
     else
@@ -80,12 +81,12 @@ bool Value::ist() {
 
 // ---------------------------------
 
-Integer::Integer(int val, Scope* parent) : val(val) {
+Integer::Integer(oca_int val, Scope* parent) : val(val) {
     scope = Scope(parent);
 
     // functions
     bind("__add", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left + arg.value->toi());
         if (arg.value->isr())
@@ -94,7 +95,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__sub", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left - arg.value->toi());
         if (arg.value->isr())
@@ -103,7 +104,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__mul", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left * arg.value->toi());
         if (arg.value->isr())
@@ -112,7 +113,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__div", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left / arg.value->toi());
         if (arg.value->isr())
@@ -121,35 +122,35 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__mod", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left % right);
     });
 
     bind("__pow", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         ValuePtr right = arg.value;
         if (right->isi())
-            return cast(static_cast<int>(std::pow(left, right->toi())));
+            return cast(static_cast<oca_int>(std::pow(left, right->toi())));
         if (right->isr())
-            return cast(static_cast<float>(std::pow(left, right->tor())));
+            return cast(static_cast<oca_real>(std::pow(left, right->tor())));
         return NIL;
     });
 
     bind("__eq", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left == right);
     });
 
     bind("__neq", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left != right);
     });
 
     bind("__gr", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left > arg.value->toi());
         if (arg.value->isr())
@@ -158,7 +159,7 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__ls", "n", [&] CPPFUNC {
-        int left = arg.caller->toi();
+        oca_int left = arg.caller->toi();
         if (arg.value->isi())
             return cast(left < arg.value->toi());
         if (arg.value->isr())
@@ -167,23 +168,23 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__geq", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left >= right);
     });
 
     bind("__leq", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left <= right);
     });
 
     bind("__ran", "i", [&] CPPFUNC {
-        int begin = arg.caller->toi();
-        int end = arg.value->toi();
-        std::vector<int> vec(end - begin + 1);
-        int counter = 0;
-        for (int i = begin; i <= end; ++i) {
+        oca_int begin = arg.caller->toi();
+        oca_int end = arg.value->toi();
+        std::vector<oca_int> vec(end - begin + 1);
+        oca_int counter = 0;
+        for (oca_int i = begin; i <= end; ++i) {
             vec[counter] = i;
             ++counter;
         }
@@ -191,54 +192,54 @@ Integer::Integer(int val, Scope* parent) : val(val) {
     });
 
     bind("__and", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left & right);
     });
 
     bind("__or", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left | right);
     });
 
     bind("__xor", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left ^ right);
     });
 
     bind("__lsh", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left << right);
     });
 
     bind("__rsh", "i", [&] CPPFUNC {
-        int left = arg.caller->toi();
-        int right = arg.value->toi();
+        oca_int left = arg.caller->toi();
+        oca_int right = arg.value->toi();
         return cast(left >> right);
     });
 
     bind("times", "", [&] CPPFUNC {
-        int times = arg.caller->toi();
+        oca_int times = arg.caller->toi();
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (int i = 0; i < times; ++i) {
+        for (oca_int i = 0; i < times; ++i) {
             yield(Table::from(*arg.caller->scope.parent), cast(i), NIL);
         }
         return NIL;
     });
 
     bind("ascii", "", [&] CPPFUNC {
-        int num = arg.caller->toi();
+        oca_int num = arg.caller->toi();
         char c = static_cast<char>(num);
         std::string empty = "";
         return cast(empty + c);
     });
 
     bind("real", "", [&] CPPFUNC {
-        int num = arg.caller->toi();
-        return cast(static_cast<float>(num));
+        oca_int num = arg.caller->toi();
+        return cast(static_cast<oca_real>(num));
     });
 }
 
@@ -256,13 +257,13 @@ std::string Integer::typestr() {
 
 // ----------------------------------
 
-Real::Real(float val, Scope* parent) : val(val) {
+Real::Real(oca_real val, Scope* parent) : val(val) {
     scope = Scope(nullptr);
     scope.parent = parent;
 
     // functions
     bind("__add", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left + arg.value->toi());
         if (arg.value->isr())
@@ -271,7 +272,7 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("__sub", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left - arg.value->toi());
         if (arg.value->isr())
@@ -280,7 +281,7 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("__mul", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left * arg.value->toi());
         if (arg.value->isr())
@@ -289,7 +290,7 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("__div", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left / arg.value->toi());
         if (arg.value->isr())
@@ -298,17 +299,17 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("__pow", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         ValuePtr right = arg.value;
         if (right->isi())
-            return cast(static_cast<float>(std::pow(left, right->toi())));
+            return cast(static_cast<oca_real>(std::pow(left, right->toi())));
         if (right->isr())
-            return cast(static_cast<float>(std::pow(left, right->tor())));
+            return cast(static_cast<oca_real>(std::pow(left, right->tor())));
         return NIL;
     });
 
     bind("__gr", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left > arg.value->toi());
         if (arg.value->isr())
@@ -317,7 +318,7 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("__ls", "n", [&] CPPFUNC {
-        float left = arg.caller->tor();
+        oca_real left = arg.caller->tor();
         if (arg.value->isi())
             return cast(left < arg.value->toi());
         if (arg.value->isr())
@@ -326,18 +327,18 @@ Real::Real(float val, Scope* parent) : val(val) {
     });
 
     bind("floor", "", [&] CPPFUNC {
-        float num = arg.caller->tor();
-        return cast(static_cast<int>(std::floor(num)));
+        oca_real num = arg.caller->tor();
+        return cast(static_cast<oca_int>(std::floor(num)));
     });
 
     bind("ceil", "", [&] CPPFUNC {
-        float num = arg.caller->tor();
-        return cast(static_cast<int>(std::ceil(num)));
+        oca_real num = arg.caller->tor();
+        return cast(static_cast<oca_int>(std::ceil(num)));
     });
 
     bind("round", "", [&] CPPFUNC {
-        float num = arg.caller->tor();
-        return cast(static_cast<int>(std::round(num)));
+        oca_real num = arg.caller->tor();
+        return cast(static_cast<oca_int>(std::round(num)));
     });
 }
 
@@ -346,7 +347,9 @@ ValuePtr Real::copy() {
 }
 
 std::string Real::tos() {
-    std::string str = std::to_string(val);
+    std::stringstream ss;
+    ss << std::setprecision(16) << std::fixed << val;
+    std::string str = ss.str();
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);
     if (str.back() == '.')
         str += '0';
@@ -372,11 +375,11 @@ String::String(const std::string& val, Scope* parent) : val(val) {
 
     bind("__mul", "i", [&] CPPFUNC {
         std::string left = arg.caller->tos();
-        int right = arg.value->toi();
+        oca_int right = arg.value->toi();
         std::string result = "";
         if (right <= 0)
             return cast(result); // TODO: should error
-        for (int i = 0; i < right; ++i) {
+        for (oca_int i = 0; i < right; ++i) {
             result += left;
         }
         return cast(result);
@@ -396,7 +399,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
 
     bind("size", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
-        return cast(static_cast<int>(str.size()));
+        return cast(static_cast<oca_int>(str.size()));
     });
 
     bind("upcase", "", [&] CPPFUNC {
@@ -417,19 +420,19 @@ String::String(const std::string& val, Scope* parent) : val(val) {
 
     bind("int", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
-        return cast(std::stoi(str));
+        return cast(std::stoll(str));
     });
 
     bind("real", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
-        return cast(std::stof(str));
+        return cast(std::stod(str));
     });
 
     bind("ascii", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         if (str.size() != 1)
             throw Error(CUSTOM_ERROR, "String must be 1 character long.");
-        return cast(static_cast<int>(str.at(0)));
+        return cast(static_cast<oca_int>(str.at(0)));
     });
 
     bind("find", "s", [&] CPPFUNC {
@@ -438,7 +441,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
         std::regex regex(regexString);
         std::smatch match;
         if (std::regex_search(str, match, regex))
-            return cast(static_cast<int>(match.position()));
+            return cast(static_cast<oca_int>(match.position()));
         else
             return cast(-1);
     });
@@ -453,8 +456,8 @@ String::String(const std::string& val, Scope* parent) : val(val) {
 
     bind("at", "i", [&] CPPFUNC {
         std::string str = arg.caller->tos();
-        int index = arg.value->toi();
-        if (index < 0 || index >= static_cast<int>(str.size()))
+        oca_int index = arg.value->toi();
+        if (index < 0 || index >= static_cast<oca_int>(str.size()))
             throw Error(CUSTOM_ERROR, "Index " + std::to_string(index) + " out of bounds.");
         return cast(std::string() + str.at(index));
     });
@@ -462,7 +465,7 @@ String::String(const std::string& val, Scope* parent) : val(val) {
     bind("each", "", [&] CPPFUNC {
         std::string str = arg.caller->tos();
         Block& yield = static_cast<Block&>(*arg.yield);
-        for (int i = 0; i < static_cast<int>(str.size()); ++i) {
+        for (oca_int i = 0; i < static_cast<oca_int>(str.size()); ++i) {
             auto table = std::make_shared<Table>(nullptr);
             table->add("0", cast(i));
             table->add("1", cast(std::string() + str.at(i)));
@@ -552,19 +555,19 @@ Table::Table(Scope* parent) {
 
     bind("size", "", [&] CPPFUNC {
         auto table = arg.caller;
-        return cast(static_cast<int>(static_cast<Table&>(*table).size));
+        return cast(static_cast<oca_int>(static_cast<Table&>(*table).size));
     });
 
     bind("insert", "ka", [&] CPPFUNC {
         auto& table = static_cast<Table&>(*arg.caller);
         std::string name = arg[0]->tos();
         if (std::isdigit(name[0])) {
-            int index = std::stoi(name);
+            oca_int index = std::stoi(name);
             if (index < 0 || index > table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range(+1).");
 
             std::vector<ValuePtr> array(table.count);
-            for (int i = 0; i < table.count; ++i)
+            for (oca_int i = 0; i < table.count; ++i)
                 array[i] = table.scope.get(std::to_string(i), false);
 
             array.insert(array.begin() + index, arg[1]);
@@ -581,12 +584,12 @@ Table::Table(Scope* parent) {
         auto& table = static_cast<Table&>(*arg.caller);
         std::string name = arg.value->tos();
         if (std::isdigit(name[0])) {
-            int index = std::stoi(name);
+            oca_int index = std::stoi(name);
             if (index < 0 || index >= table.count)
                 throw Error(CUSTOM_ERROR, "Index " + name + " out of range.");
 
             std::vector<ValuePtr> array(table.count);
-            for (int i = 0; i < table.count; ++i)
+            for (oca_int i = 0; i < table.count; ++i)
                 array[i] = table.scope.get(std::to_string(i), false);
 
             array.erase(array.begin() + index);
@@ -624,10 +627,10 @@ Table::Table(Scope* parent) {
     bind("sort", "", [&] CPPFUNC {
         auto& table = static_cast<Table&>(*arg.caller);
         Block& yield = static_cast<Block&>(*arg.yield);
-        int count = table.count;
+        oca_int count = table.count;
 
         std::vector<ValuePtr> array(count);
-        for (int i = 0; i < count; ++i)
+        for (oca_int i = 0; i < count; ++i)
             array[i] = table.scope.get(std::to_string(i), false);
 
         std::sort(array.begin(), array.end(), [&](ValuePtr& a, ValuePtr& b) -> bool {
@@ -637,7 +640,7 @@ Table::Table(Scope* parent) {
             return yield(Table::from(*arg.caller->scope.parent), param, NIL)->tob();
         });
 
-        for (int i = 0; i < count; ++i)
+        for (oca_int i = 0; i < count; ++i)
             table.scope.set(std::to_string(i), array[i], true);
 
         return arg.caller;
@@ -674,7 +677,7 @@ bool Table::remove(const std::string& name) {
 
 std::string Table::tos() {
     std::string result = "(";
-    for (int i = 0; i < count; ++i) {
+    for (oca_int i = 0; i < count; ++i) {
         result += scope.get(std::to_string(i), true)->tos();
         result += ", ";
     }
@@ -860,7 +863,7 @@ ValuePtr Func::operator()(ValuePtr caller, ValuePtr arg, ValuePtr block) {
             break;
         case 'k':
             if (!v->isi() && !v->iss())
-                throw Error(TYPE_MISMATCH, v->typestr() + " wanted int/str.");
+                throw Error(TYPE_MISMATCH, v->typestr() + " wanted oca_int/str.");
             break;
         }
     }

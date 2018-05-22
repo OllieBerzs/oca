@@ -29,16 +29,16 @@ inline void enableANSI() {
 }
 
 inline ValuePtr cast(std::any val) {
-    if (val.type() == typeid(int)) {
-        return std::make_shared<Integer>(std::any_cast<int>(val), nullptr);
-    } else if (val.type() == typeid(float)) {
-        return std::make_shared<Real>(std::any_cast<float>(val), nullptr);
+    if (val.type() == typeid(oca_int)) {
+        return std::make_shared<Integer>(std::any_cast<oca_int>(val), nullptr);
+    } else if (val.type() == typeid(oca_real)) {
+        return std::make_shared<Real>(std::any_cast<oca_real>(val), nullptr);
     } else if (val.type() == typeid(bool)) {
         return std::make_shared<Bool>(std::any_cast<bool>(val), nullptr);
     } else if (val.type() == typeid(std::string)) {
         return std::make_shared<String>(std::any_cast<std::string>(val), nullptr);
-    } else if (val.type() == typeid(std::vector<int>)) {
-        auto vec = std::any_cast<std::vector<int>>(val);
+    } else if (val.type() == typeid(std::vector<oca_int>)) {
+        auto vec = std::any_cast<std::vector<oca_int>>(val);
         auto table = std::make_shared<Table>(nullptr);
         for (uint i = 0; i < vec.size(); ++i) {
             ++static_cast<Table&>(*table).count;
