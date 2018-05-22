@@ -203,8 +203,8 @@ State::State()
     });
 
     bind("write", "ss", [&] CPPFUNC {
-        std::string path = arg[0]->tos();
-        std::string string = arg[1]->tos();
+        std::string string = arg[0]->tos();
+        std::string path = arg[1]->tos();
         std::ofstream file(path);
         if (!file.is_open())
             throw Error(CUSTOM_ERROR, "Could not open file '" + path + "'.");
@@ -224,7 +224,7 @@ State::State()
 
     bind("clock", "", [&] CPPFUNC {
         auto dur = std::chrono::high_resolution_clock::now() - begin;
-        int milli = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        oca_int milli = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
         return cast(milli);
     });
 
