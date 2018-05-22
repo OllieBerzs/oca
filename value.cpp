@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cctype>
 #include <regex>
+#include <iomanip>
 #include <algorithm>
 #include "oca.hpp"
 #include "utils.hpp"
@@ -346,7 +347,9 @@ ValuePtr Real::copy() {
 }
 
 std::string Real::tos() {
-    std::string str = std::to_string(val);
+    std::stringstream ss;
+    ss << std::setprecision(16) << val;
+    std::string str = ss.str();
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);
     if (str.back() == '.')
         str += '0';
