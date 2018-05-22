@@ -24,8 +24,8 @@ public:
     virtual std::string tos() = 0;
     virtual std::string typestr() = 0;
 
-    int toi();
-    float tor();
+    oca_int toi();
+    oca_real tor();
     bool tob();
 
     bool isi();
@@ -39,8 +39,8 @@ public:
 
 class Integer : public Value {
 public:
-    int val;
-    Integer(int val, Scope* parent);
+    oca_int val;
+    Integer(oca_int val, Scope* parent);
     ValuePtr copy();
     std::string tos();
     std::string typestr();
@@ -48,8 +48,8 @@ public:
 
 class Real : public Value {
 public:
-    float val;
-    Real(float val, Scope* parent);
+    oca_real val;
+    Real(oca_real val, Scope* parent);
     ValuePtr copy();
     std::string tos();
     std::string typestr();
@@ -75,8 +75,8 @@ public:
 
 class Table : public Value {
 public:
-    int count = 0;
-    int size = 0;
+    oca_int count = 0;
+    oca_int size = 0;
     explicit Table(Scope* parent);
     static std::shared_ptr<Table> from(Scope& scope);
     ValuePtr copy();

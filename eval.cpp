@@ -268,9 +268,9 @@ ValuePtr Evaluator::value(ExprPtr expr, Scope& scope) {
     } else if (expr->type == Expression::FSTR) {
         result = fstring(expr, scope);
     } else if (expr->type == Expression::INT) {
-        result = std::make_shared<Integer>(std::stoi(expr->val), &scope);
+        result = std::make_shared<Integer>(std::stoll(expr->val), &scope);
     } else if (expr->type == Expression::REAL) {
-        result = std::make_shared<Real>(std::stof(expr->val), &scope);
+        result = std::make_shared<Real>(std::stod(expr->val), &scope);
     } else if (expr->type == Expression::BOOL) {
         result = std::make_shared<Bool>(expr->val == "true", &scope);
     }

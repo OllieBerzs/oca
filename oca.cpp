@@ -153,35 +153,35 @@ State::State()
     });
 
     bind("rad", "r", [&] CPPFUNC {
-        float halfc = 3.14159265358979323846f / 180.0f;
+        oca_real halfc = 3.14159265358979323846 / 180.0;
         return cast(arg.value->tor() * halfc);
     });
 
     bind("deg", "r", [&] CPPFUNC {
-        float halfc = 3.14159265358979323846f / 180.0f;
+        oca_real halfc = 3.14159265358979323846 / 180.0;
         return cast(arg.value->tor() / halfc);
     });
 
-    bind("pi", "", [&] CPPFUNC { return cast(3.14159265358979323846f); });
+    bind("pi", "", [&] CPPFUNC { return cast(3.14159265358979323846); });
 
     bind("log", "rr", [&] CPPFUNC {
-        float base = arg[0]->tor();
-        float x = arg[1]->tor();
+        oca_real base = arg[0]->tor();
+        oca_real x = arg[1]->tor();
         return cast(std::log(x) / std::log(base));
     });
 
     bind("ln", "r", [&] CPPFUNC {
-        float x = arg.value->tor();
+        oca_real x = arg.value->tor();
         return cast(std::log(x));
     });
 
     bind("lg", "r", [&] CPPFUNC {
-        float x = arg.value->tor();
+        oca_real x = arg.value->tor();
         return cast(std::log10(x));
     });
 
     bind("random", "", [&] CPPFUNC {
-        float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        oca_real r = static_cast<oca_real>(std::rand()) / static_cast<oca_real>(RAND_MAX);
         return cast(r);
     });
 
