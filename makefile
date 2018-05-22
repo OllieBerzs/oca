@@ -27,7 +27,7 @@ all: $(BIN)
 
 release: CXX = g++
 release: CPPFLAGS = -Wall -std=c++17 -O2
-release: LINKFLAGS = -Wall -std=c++17 -O2 -static-libgcc -static-libstdc++
+release: LINKFLAGS = -Wall -std=c++17 -O2 -static
 release: $(BIN)
 
 # object files
