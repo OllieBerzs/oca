@@ -348,7 +348,7 @@ ValuePtr Real::copy() {
 
 std::string Real::tos() {
     std::stringstream ss;
-    ss << std::setprecision(16) << val;
+    ss << std::setprecision(16) << std::fixed << val;
     std::string str = ss.str();
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);
     if (str.back() == '.')
