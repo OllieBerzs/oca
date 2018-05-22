@@ -123,11 +123,6 @@ State::State()
         return cast(1 / std::tan(val.val));
     });
 
-    bind("cot", "r", [&] CPPFUNC {
-        auto& val = static_cast<Real&>(*arg.value);
-        return cast(1 / std::tan(val.val));
-    });
-
     bind("max", "nn", [&] CPPFUNC {
         if (arg[0]->isi()) {
             if (!arg[1]->isi())
