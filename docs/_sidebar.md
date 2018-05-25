@@ -1,6 +1,7 @@
 * [**About**](/)
 * **Language**
   * [Hello, Oca!](lang/helloworld)
+  * [Types](lang/types)
 
 * **Standard library**
   * [Global](stdlib/global)
