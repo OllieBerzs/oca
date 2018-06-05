@@ -2,6 +2,12 @@
 * **Language**
   * [Hello, Oca!](lang/helloworld)
   * [Types](lang/types)
+  * [Files](lang/files)
+  * [Assignment](lang/assignment)
+  * [More on blocks](lang/blocks)
+  * [More on tables](lang/table)
+  * [Conditionals](lang/conditionals)
+  * [Operators](lang/operators)
 
 * **Standard library**
   * [Global](stdlib/global)
